@@ -45,8 +45,12 @@ def get_builder(codes, structure, parameters):
         },
         "dielectric":{
             "scf": scf_overrides,
-            "property":dielectric_property
+            "property":dielectric_property,
+            "settings.sleep_submission_time": 10.0,
         },
+        "settings":{
+        "run_parallel": False
+        }
     }
     
     builder = VibroWorkChain.get_builder_from_protocol(
