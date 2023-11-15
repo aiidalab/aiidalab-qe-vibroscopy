@@ -73,6 +73,9 @@ def get_builder(codes, structure, parameters):
 
     return builder
 
+    if structure.pbc != (True, True, True):
+        builder.iraman.dielectric.pop("kpoints_parallel_distance", None)
+
 
 workchain_and_builder = {
     "workchain": VibroWorkChain,
