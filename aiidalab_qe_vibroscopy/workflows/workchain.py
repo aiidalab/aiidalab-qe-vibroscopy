@@ -1,4 +1,4 @@
-from aiida.orm import load_code, Dict
+from aiida.orm import load_code, Dict, Bool
 from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_vibroscopy.common.properties import PhononProperty
@@ -42,15 +42,18 @@ def get_builder(codes, structure, parameters):
         "phonon":{
             "scf": scf_overrides,
             "supercell_matrix":supercell_matrix,
+            "clean_workdir": Bool(False),
         },
         "dielectric":{
             "scf": scf_overrides,
             "property":dielectric_property,
-            "settings.sleep_submission_time": 10.0,
+            "settings.sleep_submission_time": 0.0,
+            "clean_workdir": Bool(False),
         },
         "settings":{
         "run_parallel": False
-        }
+        },
+        "clean_workdir": Bool(False),
     }
     
     builder = VibroWorkChain.get_builder_from_protocol(
@@ -66,7 +69,7 @@ def get_builder(codes, structure, parameters):
         spin_type=SpinType(parameters["workchain"]["spin_type"]),
         initial_magnetic_moments=parameters["advanced"]["initial_magnetic_moments"],
         )
-    
+
 
     return builder
 
