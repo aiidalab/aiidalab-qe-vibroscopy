@@ -2,6 +2,7 @@ from aiida.orm import load_code, Dict, Bool
 from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_vibroscopy.common.properties import PhononProperty
+from aiida_quantumespresso.workflows.pw.bands import PwBaseWorkChain
 
 VibroWorkChain = WorkflowFactory("vibroscopy_app.vibro")
 
@@ -36,25 +37,33 @@ def get_builder(codes, structure, parameters):
         trigger="harmonic" 
     if trigger not in ["iraman","harmonic"] and (phonon_property == "none" and dielectric_property != "none"):
         trigger="dielectric"
-         
+
+
+    #the kpoint_distance protocol is different in aiida-vibroscopy (Dielectric)     
     scf_overrides = deepcopy(parameters["advanced"])
     overrides = {
         "phonon":{
             "scf": scf_overrides,
             "supercell_matrix":supercell_matrix,
-            "clean_workdir": Bool(False),
+            #"clean_workdir": Bool(False),
         },
         "dielectric":{
             "scf": scf_overrides,
             "property":dielectric_property,
-            "settings.sleep_submission_time": 0.0,
-            "clean_workdir": Bool(False),
+            "settings.sleep_submission_time": 5.0,
+            #"clean_workdir": Bool(False),
         },
         "settings":{
         "run_parallel": False
         },
-        "clean_workdir": Bool(False),
+        #"clean_workdir": Bool(False),
     }
+
+    #Only for 2D and 1D materials
+    if structure.pbc != (True, True, True):
+        if "kpoints_distance" not in parameters["advanced"]:
+            overrides["dielectric"]["scf"]["kpoints_distance"] = PwBaseWorkChain.get_protocol_inputs(protocol)["kpoints_distance"]
+
     
     builder = VibroWorkChain.get_builder_from_protocol(
         pw_code=pw_code,
@@ -72,10 +81,6 @@ def get_builder(codes, structure, parameters):
 
 
     return builder
-
-    if structure.pbc != (True, True, True):
-        builder.iraman.dielectric.pop("kpoints_parallel_distance", None)
-
 
 workchain_and_builder = {
     "workchain": VibroWorkChain,

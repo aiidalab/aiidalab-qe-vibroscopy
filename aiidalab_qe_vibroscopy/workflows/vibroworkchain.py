@@ -213,7 +213,13 @@ class VibroWorkChain(WorkChain):
             }
             builder_iraman.phonon.phonopy.parameters = Dict({})
             
+            #Remove kpoints_parallel_distance if for 1D and 2D materials
+            if structure.pbc != (True, True, True):
+                builder_iraman.dielectric.pop("kpoints_parallel_distance", None)
+
             builder.iraman = builder_iraman
+
+
         
         for wchain in ["phonon","dielectric","harmonic","iraman",]:
             if trigger != wchain: builder.pop(wchain,None)
