@@ -9,9 +9,12 @@ from widget_bandsplot import BandsPlotWidget
 from aiidalab_qe.common.panel import ResultPanel
 import ipywidgets as ipw
 import numpy as np
-from IPython.display import clear_output, display
+from IPython.display import HTML, clear_output, display
 import base64
 import json
+from ase.visualize import view
+import nglview as nv
+from ase import Atoms
 
 
 from aiida_vibroscopy.utils.broadenings import multilorentz
@@ -308,3 +311,128 @@ class SpectrumPlotWidget(ipw.VBox):
 
 
 
+class ActiveModesWidget(ipw.VBox):
+    """Widget that display an animation (nglview) of the active modes."""
+    def __init__(self, node, **kwargs):
+        self.node = node
+        #VibriationalData 
+        self.vibro = self.node.outputs.vibronic.iraman.vibrational_data.numerical_accuracy_4 
+        #Raman active modes
+        frequencies, self.eigenvectors, self.labels = self.vibro.run_active_modes(selectrion_rules='raman')
+        self.rounded_frequencies = [round(frequency, 3) for frequency in frequencies]
+
+        #StructureData
+        self.structure_ase = self.node.inputs.structure.get_ase()
+
+        self.ngl = nv.NGLWidget()
+        
+        modes_values = [f"{index + 1}: {value}" for index, value in enumerate(self.rounded_frequencies)]
+        # Create Raman modes widget
+        self.active_modes = ipw.Dropdown(
+            options= modes_values,
+            value=modes_values[0],  # Default value
+            description='Select mode:',
+            style={"description_width": "initial"},
+        )
+
+        self.amplitude = ipw.FloatText(
+            value=3.0,
+            description="Amplitude :",
+            disabled=False,
+            style={"description_width": "initial"},
+        )
+
+        self._supercell = [
+            ipw.BoundedIntText(value=1, min=1, layout={"width": "40px"}),
+            ipw.BoundedIntText(value=1, min=1, layout={"width": "40px"}),
+            ipw.BoundedIntText(value=1, min=1, layout={"width": "40px"}),
+        ]
+        
+        self.supercell_selector = ipw.HBox(
+            [
+                ipw.HTML(
+                    description="Super cell:", style={"description_width": "initial"}
+                )
+            ]
+            + self._supercell
+        )
+
+        self.modes_table = ipw.Output()
+        self.animation = ipw.Output()
+        self._display_table()
+        self._select_active_mode(None)
+        widget_list = [self.active_modes, self.amplitude, self._supercell[0], self._supercell[1], self._supercell[2]]
+        for elem in widget_list:
+            elem.observe(self._select_active_mode, names="value")
+        
+        super().__init__(
+            children=[
+                ipw.HBox([ipw.VBox([ipw.HTML(value="<b> Raman Active Modes </b>"),self.modes_table]),ipw.VBox([self.active_modes, self.amplitude, self.supercell_selector, self.animation], layout={"justify_content": "center"})]),
+            ]
+
+        )
+
+    def _display_table(self):
+        """Display table with the active modes."""
+        #Create an HTML table with the active modes
+        table_data = [list(x) for x in zip(self.rounded_frequencies,self.labels)]
+        table_html = "<table>"
+        table_html += "<tr><th>Frequencies (cm-1) </th><th> Label</th></tr>"
+        for row in table_data:
+            table_html += "<tr>"
+            for cell in row:
+                table_html += "<td style='text-align:center;'>{}</td>".format(cell)
+            table_html += "</tr>"
+        table_html += "</table>"
+        # Set layout to a fix size
+        self.modes_table.layout = {
+            "overflow": "auto",
+            "height": "200px",
+            "width": "150px",
+        }
+        with self.modes_table:
+            clear_output()
+            display(HTML(table_html))
+
+    def _select_active_mode(self, change):
+        """Display animation of the selected active mode."""
+        self._animation_widget()
+        with self.animation:
+            clear_output()
+            display(self.ngl)
+    
+    def _animation_widget(self):
+        """Create animation widget."""
+        # Get the index of the selected mode
+        index_str = self.active_modes.value.split(":")[0]
+        index = int(index_str) - 1
+        # Get the eigenvector of the selected mode
+        eigenvector = self.eigenvectors[index]
+        # Get the amplitude of the selected mode
+        amplitude = self.amplitude.value
+        # Get the structure of the selected mode
+        structure = self.structure_ase
+        # Create a trajectory
+        traj = []
+        time_array = np.linspace(0.0, 2 * np.pi, 20)
+        for time in time_array:
+            vibro_atoms = Atoms(
+                symbols=structure.symbols,
+                positions=structure.positions + amplitude * eigenvector * np.sin(time),
+                cell=structure.cell,
+                pbc=True,
+            )
+            supercell = vibro_atoms.repeat((self._supercell[0].value, self._supercell[1].value, self._supercell[2].value))
+            traj.append(supercell)
+        # Create the animation widget
+        self.ngl.clear()
+        self.ngl = nv.show_asetraj(traj) 
+        self.ngl.add_unitcell()
+        #Make the animation to be set in a loop
+        self.ngl._iplayer.children[0]._playing = False
+        self.ngl._iplayer.children[0]._playing = True
+        self.ngl._iplayer.children[0]._repeat = True
+        self.ngl._set_size("400px", "400px")
+        self.ngl.center()
+    
+    

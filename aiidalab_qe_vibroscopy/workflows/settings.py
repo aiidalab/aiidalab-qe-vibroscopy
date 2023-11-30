@@ -87,7 +87,7 @@ class Setting(Panel):
             ]
             
         for elem in ["x","y","z"]:
-            setattr(self,"_sc_"+elem,ipw.BoundedIntText(value=1, min=1, layout={"width": "40px"},disabled=False))
+            setattr(self,"_sc_"+elem,ipw.BoundedIntText(value=2, min=1, layout={"width": "40px"},disabled=False))
         
         for elem in [self._sc_x,self._sc_y,self._sc_z]:
             elem.observe(change_supercell, names="value")

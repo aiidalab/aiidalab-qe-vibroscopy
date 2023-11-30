@@ -130,6 +130,7 @@ class VibroWorkChain(WorkChain):
         
         
         if trigger == "phonon":
+            
             builder_phonon = PhononWorkChain.get_builder_from_protocol(
                 pw_code=pw_code,
                 phonopy_code=phonopy_code,

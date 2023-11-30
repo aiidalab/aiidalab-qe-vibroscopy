@@ -13,7 +13,7 @@ import numpy as np
 from ..utils.raman.result import export_iramanworkchain_data
 from ..utils.harmonic.result import export_phononworkchain_data
 import ipywidgets as ipw
-from ..utils.raman.result import SpectrumPlotWidget
+from ..utils.raman.result import SpectrumPlotWidget, ActiveModesWidget
 class Result(ResultPanel):
 
     title = "Vibrational Structure"
@@ -25,34 +25,14 @@ class Result(ResultPanel):
         phonon_data = export_phononworkchain_data(self.node)
 
         if spectra_data:
-
-            #VibriationalData 
-            vibro = self.node.outputs.vibronic.iraman.vibrational_data.numerical_accuracy_4
-
-            #Raman active modes
-            frequencies, eigenvectors, labels = vibro.run_active_modes(selectrion_rules='raman')
-            rounded_frequencies = [round(frequency, 3) for frequency in frequencies]
-
-            #Create an HTML table with the active modes
-            table_data = [list(x) for x in zip(rounded_frequencies,labels)]
-            table_html = "<table>"
-            table_html += "<tr><th>Frequencies (cm-1) </th><th> Label</th></tr>"
-            for row in table_data:
-                table_html += "<tr>"
-                for cell in row:
-                    table_html += "<td style='text-align:center;'>{}</td>".format(cell)
-                table_html += "</tr>"
-            table_html += "</table>"
-
-            active_modes = ipw.VBox([ipw.HTML(value="<b> Raman Active Modes </b>"),ipw.HTML(value=table_html)])
-
-            spectrum_widget = SpectrumPlotWidget(self.node)
             
+            spectrum_widget = SpectrumPlotWidget(self.node)
+            raman_modes_animation = ActiveModesWidget(self.node)
             if spectra_data[3] in ["Raman vibrational spectrum","Infrared vibrational spectrum"]:
                 
 
                 self.children=[
-                    ipw.HBox([spectrum_widget, active_modes ])
+                    ipw.VBox([spectrum_widget, raman_modes_animation])
                 ]
         
         if phonon_data:    
