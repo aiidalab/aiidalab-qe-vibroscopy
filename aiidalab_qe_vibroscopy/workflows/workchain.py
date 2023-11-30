@@ -1,4 +1,4 @@
-from aiida.orm import load_code, Dict, Bool
+from aiida.orm import load_code, Dict
 from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_vibroscopy.common.properties import PhononProperty
@@ -45,18 +45,16 @@ def get_builder(codes, structure, parameters):
         "phonon":{
             "scf": scf_overrides,
             "supercell_matrix":supercell_matrix,
-            #"clean_workdir": Bool(False),
+
         },
         "dielectric":{
             "scf": scf_overrides,
             "property":dielectric_property,
             "settings.sleep_submission_time": 5.0,
-            #"clean_workdir": Bool(False),
         },
         "settings":{
         "run_parallel": False
         },
-        #"clean_workdir": Bool(False),
     }
 
     #Only for 2D and 1D materials
