@@ -44,6 +44,7 @@ class CustomInstallCommand(install):
             raise RuntimeError(f"Code phonopy is already set up!")
         super().run()
 
+
 setup(
     name="aiidalab-qe-vibroscopy",
     version="0.0.1",
@@ -57,10 +58,10 @@ setup(
     packages=find_packages(),
     entry_points={
         "aiidalab_qe.properties": [
-            #"harmonic = aiidalab_qe_vibroscopy.harmonic:property",
-            #"iraman = aiidalab_qe_vibroscopy.raman:property",
-            #"dielectric = aiidalab_qe_vibroscopy.dielectric:property",
-            #"phonons = aiidalab_qe_vibroscopy.phonons:property",
+            # "harmonic = aiidalab_qe_vibroscopy.harmonic:property",
+            # "iraman = aiidalab_qe_vibroscopy.raman:property",
+            # "dielectric = aiidalab_qe_vibroscopy.dielectric:property",
+            # "phonons = aiidalab_qe_vibroscopy.phonons:property",
             "vibronic = aiidalab_qe_vibroscopy.workflows:property",
         ],
         "aiida.workflows": [
@@ -70,10 +71,11 @@ setup(
     install_requires=[
         "aiida-vibroscopy>=1.0.2",
         "aiida-phonopy>=1.1.3",
-        "phonopy"
+        "phonopy",
+        "pre-commit",
     ],
     cmdclass={
-        'install': CustomInstallCommand,
+        "install": CustomInstallCommand,
     },
     package_data={},
     python_requires=">=3.6",

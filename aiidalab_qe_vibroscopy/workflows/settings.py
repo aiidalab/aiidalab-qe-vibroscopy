@@ -129,6 +129,7 @@ class Setting(Panel):
             value="off",
             style={"description_width": "initial"},
         )
+        self.material_is_polar_.observe(self._onclick_material_is_polar, "value")
 
         self.children = [
             self.settings_title,
@@ -164,10 +165,37 @@ class Setting(Panel):
         super().__init__(**kwargs)
 
     def _onclick_spectrum_choice(self, change):
-        if change["new"] == "raman":
+        # if spectra are choosen, we change the dielectric property
+        # and we do simulation on 1x1x1.
+        if change["new"] in ["raman", "ir"]:
+            self.dielectric_property_.value = change["new"]
+            self.phonon_property_.value = "none"
+            self.dielectric_property_.disabled = True
+            self.phonon_property_.disabled = True
+            for elem in [self._sc_x, self._sc_y, self._sc_z]:
+                elem.value = 1
+                elem.disabled = True
+        elif change["new"] == "off":
+            self.dielectric_property_.disabled = False
+            self.phonon_property_.disabled = False
+
+            # logic for polar materials, if we turn off spectra:
+            if self.material_is_polar_.value == "on":
+                self.dielectric_property_.value = "raman"
+            else:
+                self.dielectric_property_.value = "none"
+
+            for elem in [self._sc_x, self._sc_y, self._sc_z]:
+                elem.disabled = False
+
+    def _onclick_material_is_polar(self, change):
+        # if spectra are choosen, we change the dielectric property
+        # and we do simulation on 1x1x1.
+        if change["new"] == "on" and self.spectrum_.value == "off":
             self.dielectric_property_.value = "raman"
-        elif change["new"] == "ir":
-            self.dielectric_property_.value = "ir"
+            self.dielectric_property_.disabled = True
+        elif change["new"] == "off" and self.spectrum_.value == "off":
+            self.dielectric_property_.disabled = False
 
     def get_panel_value(self):
         """Return a dictionary with the input parameters for the plugin."""

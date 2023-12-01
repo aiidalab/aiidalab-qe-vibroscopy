@@ -74,11 +74,11 @@ def export_iramanworkchain_data(node):
                 labels,
             ) = vibro.run_powder_ir_intensities()
             total_intensities = polarized_intensities
-            
-            #sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
+
+            # sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
             if len(total_intensities) == 0:
-                return "No IR modes detected." #explanation added in the main results script of the app.
-            
+                return "No IR modes detected."  # explanation added in the main results script of the app.
+
             frequencies, total_intensities = plot_powder(frequencies, total_intensities)
 
             return [
@@ -95,12 +95,11 @@ def export_iramanworkchain_data(node):
                 labels,
             ) = vibro.run_powder_raman_intensities(frequency_laser=532, temperature=300)
             total_intensities = polarized_intensities + depolarized_intensities
-        
-            
-            #sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
+
+            # sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
             if len(total_intensities) == 0:
-                return "No Raman modes detected." #explanation added in the main results script of the app.
-            
+                return "No Raman modes detected."  # explanation added in the main results script of the app.
+
             frequencies, total_intensities = plot_powder(frequencies, total_intensities)
             return [
                 total_intensities,
@@ -151,10 +150,12 @@ class SpectrumPlotWidget(ipw.VBox):
 
     def __init__(self, node, **kwargs):
         self.node = node
-        vibro = self.node.outputs.vibronic.iraman.vibrational_data.numerical_accuracy_4
-
+        # VibrationalData
+        self.vibro = (
+            self.node.outputs.vibronic.iraman.vibrational_data.numerical_accuracy_4
+        )
         self.spectrum_type = (
-            "Raman" if "raman_tensors" in vibro.get_arraynames() else "IR"
+            "Raman" if "raman_tensors" in self.vibro.get_arraynames() else "IR"
         )
 
         self.description = ipw.HTML(
@@ -162,10 +163,7 @@ class SpectrumPlotWidget(ipw.VBox):
             Select the type of {self.spectrum_type} spectrum to plot.
             </div>"""
         )
-        # VibrationalData
-        self.vibro = (
-            self.node.outputs.vibronic.iraman.vibrational_data.numerical_accuracy_4
-        )
+
         self._plot_type = ipw.ToggleButtons(
             options=[
                 ("Powder", "powder"),
@@ -233,10 +231,11 @@ class SpectrumPlotWidget(ipw.VBox):
             b64_str = base64.b64encode(json_str.encode()).decode()
             self._download(payload=b64_str, filename=filename)
 
-        # hide the frequency and temperature if ir:
+        # hide the outgoing pol, frequency and temperature if ir:
         if self.spectrum_type == "IR":
             self.temperature.layout.display = "none"
             self.frequency_laser.layout.display = "none"
+            self.pol_outgoing.layout.display == "none"
 
         self._plot_type.observe(self._on_plot_type_change, names="value")
         self.plot_button.on_click(self._on_plot_button_clicked)
@@ -277,7 +276,8 @@ class SpectrumPlotWidget(ipw.VBox):
             with self.polarization_out:
                 clear_output()
                 display(self.pol_incoming)
-                display(self.pol_outgoing)
+                if self.spectrum_type == "Raman":
+                    display(self.pol_outgoing)
         else:
             self.pol_incoming.value = "0 0 1"
             self.pol_outgoing.value = "0 0 1"
@@ -342,7 +342,7 @@ class SpectrumPlotWidget(ipw.VBox):
                         frequencies,
                         labels,
                     ) = self.vibro.run_single_crystal_ir_intensities(
-                        pol_incoming=dir_incoming, pol_outgoing=dir_incoming
+                        pol_incoming=dir_incoming
                     )
 
                 self.frequencies, self.intensities = plot_powder(
@@ -396,15 +396,15 @@ class ActiveModesWidget(ipw.VBox):
 
     def __init__(self, node, **kwargs):
         self.node = node
-        vibro = self.node.outputs.vibronic.iraman.vibrational_data.numerical_accuracy_4
-
-        self.spectrum_type = (
-            "Raman" if "raman_tensors" in vibro.get_arraynames() else "IR"
-        )
-        # VibriationalData
+        # VibrationalData
         self.vibro = (
             self.node.outputs.vibronic.iraman.vibrational_data.numerical_accuracy_4
         )
+
+        self.spectrum_type = (
+            "Raman" if "raman_tensors" in self.vibro.get_arraynames() else "IR"
+        )
+
         # Raman or IR active modes
         frequencies, self.eigenvectors, self.labels = self.vibro.run_active_modes(
             selectrion_rules=self.spectrum_type.lower()
