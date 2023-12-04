@@ -8,7 +8,6 @@ HERE = pathlib.Path(__file__).parent
 # The text of the README file
 README = (HERE / "README.md").read_text()
 
-
 setup(
     name="aiidalab-qe-vibroscopy",
     version="0.0.1",
@@ -42,7 +41,7 @@ setup(
     python_requires=">=3.6",
 )
 
-# Run post_install.py after installation
-import subprocess
+# Install phonopy@localhost code.
+from phonopy_install import install_phonopy
 
-subprocess.run(["python", "pp_install.py"])
+install_phonopy()
