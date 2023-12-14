@@ -153,6 +153,12 @@ class Setting(Panel):
 
     def get_panel_value(self):
         """Return a dictionary with the input parameters for the plugin."""
+        if isinstance(self.calc_options, str):
+            return {
+                "calc_options": self.calc_options,
+                "material_is_polar": self.material_is_polar_.value,
+                "supercell_selector": self.supercell,
+            }
         return {
             "calc_options": self.calc_options.value,
             "material_is_polar": self.material_is_polar_.value,

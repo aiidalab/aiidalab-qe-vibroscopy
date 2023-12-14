@@ -17,23 +17,23 @@ def get_builder(codes, structure, parameters):
     calc_option = parameters["vibronic"].pop("calc_options", "raman")
 
     calc_option_mapping = {
-    "ph_bands": PhononProperty.BANDS,
-    "ph_pdos": PhononProperty.DOS,
-    "ph_therm": PhononProperty.THERMODYNAMIC,
+        "ph_bands": PhononProperty.BANDS,
+        "ph_pdos": PhononProperty.DOS,
+        "ph_therm": PhononProperty.THERMODYNAMIC,
     }
 
-    #Define the phonon property to be calculated
+    # Define the phonon property to be calculated
     phonon_property = calc_option_mapping.get(calc_option, PhononProperty.NONE)
 
-    #Define if the material is polar
+    # Define if the material is polar
     polar = parameters["vibronic"].pop("material_is_polar", "off")
-    #Define the supercell matrix
+    # Define the supercell matrix
     supercell_matrix = parameters["vibronic"].pop("supercell_selector", None)
 
-    #initialize the dielectric property
+    # initialize the dielectric property
     dielectric_property = "none"
-    #Logic to define the trigger and the dielectric property
-    if calc_option in ["ph_bands", "ph_pdos",  "ph_therm"]:
+    # Logic to define the trigger and the dielectric property
+    if calc_option in ["ph_bands", "ph_pdos", "ph_therm"]:
         if polar == "on":
             trigger = "harmonic"
             dielectric_property = "raman"
