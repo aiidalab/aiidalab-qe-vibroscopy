@@ -174,5 +174,8 @@ class Setting(Panel):
     def reset(self):
         """Reset the panel"""
         self.material_is_polar_.value = "off"
-        self.calc_options.value = "raman"
+        if isinstance(self.calc_options, str):
+            self.calc_options = "raman"
+        else:
+            self.calc_options.value = "raman"
         self.supercell = [2, 2, 2]
