@@ -26,8 +26,9 @@ class Setting(Panel):
             Calculations are performed using the <b><a href="https://aiida-vibroscopy.readthedocs.io/en/latest/"
         target="_blank">aiida-vibroscopy</b></a> plugin (L. Bastonero and N. Marzari, <a href="https://arxiv.org/abs/2308.04308"
         target="_blank">Automated all-functionals infrared and Raman spectra</a>). <br>
-            The plugin employes the finite-displacement and finite-field approach, for Phonon dispersion please select a supercell size:
-            the larger the supercell, the larger the computational cost of the simulations. Usually, a 2x2x2 supercell should be enough. <br>
+            The plugin employes the finite-displacement and finite-field approach.<br>
+            For Phonon properties, please select a supercell size: the larger the supercell, the larger the computational cost of the simulations. Usually, a 2x2x2 supercell should be enough. <br>
+            Raman spectra are simulated in the first-order non-resonant regime.
             </div>"""
         )
 
