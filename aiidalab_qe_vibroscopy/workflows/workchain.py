@@ -14,37 +14,16 @@ def get_builder(codes, structure, parameters):
     pw_code = codes.get("pw")
     phonopy_code = codes.get("phonopy")
 
-    calc_option = parameters["vibronic"].pop("calc_options", "raman")
-
-    calc_option_mapping = {
-        "ph_bands": PhononProperty.BANDS,
-        "ph_pdos": PhononProperty.DOS,
-        "ph_therm": PhononProperty.THERMODYNAMIC,
-    }
+    calc_option = parameters["vibronic"].pop("simulation_mode", 1)
 
     # Define the phonon property to be calculated
-    phonon_property = calc_option_mapping.get(calc_option, PhononProperty.NONE)
+    phonon_property = PhononProperty.THERMODYNAMIC
 
-    # Define if the material is polar
-    polar = parameters["vibronic"].pop("material_is_polar", "off")
     # Define the supercell matrix
     supercell_matrix = parameters["vibronic"].pop("supercell_selector", None)
 
     # initialize the dielectric property
-    dielectric_property = "none"
-    # Logic to define the trigger and the dielectric property
-    if calc_option in ["ph_bands", "ph_pdos", "ph_therm"]:
-        if polar == "on":
-            trigger = "harmonic"
-            dielectric_property = "raman"
-        else:
-            trigger = "phonon"
-    elif calc_option in ["raman", "ir"]:
-        trigger = "iraman"
-        dielectric_property = calc_option
-    elif calc_option == "dielectric":
-        trigger = "dielectric"
-        dielectric_property = "dielectric"
+    dielectric_property = "raman"
 
     scf_overrides = deepcopy(parameters["advanced"])
     overrides = {
@@ -67,7 +46,7 @@ def get_builder(codes, structure, parameters):
         phonopy_code=phonopy_code,
         structure=structure,
         protocol=protocol,
-        trigger=trigger,
+        simulation_mode=calc_option,
         phonon_property=phonon_property,
         dielectric_property=dielectric_property,
         overrides=overrides,

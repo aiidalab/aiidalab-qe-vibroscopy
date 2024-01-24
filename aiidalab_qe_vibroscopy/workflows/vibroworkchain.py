@@ -80,6 +80,7 @@ class VibroWorkChain(WorkChain):
         ###
         spec.expose_outputs(
             PhononWorkChain,
+            exclude=("supercells", "supercells_forces"),
             namespace="phonon",
             namespace_options={
                 "required": False,
@@ -88,6 +89,7 @@ class VibroWorkChain(WorkChain):
         )
         spec.expose_outputs(
             DielectricWorkChain,
+            exclude=("fields_data"),
             namespace="dielectric",
             namespace_options={
                 "required": False,
@@ -96,6 +98,7 @@ class VibroWorkChain(WorkChain):
         )
         spec.expose_outputs(
             HarmonicWorkChain,
+            exclude=("output_phonon", "output_dielectric"),
             namespace="harmonic",
             namespace_options={
                 "required": False,
@@ -104,6 +107,7 @@ class VibroWorkChain(WorkChain):
         )
         spec.expose_outputs(
             IRamanSpectraWorkChain,
+            exclude=("output_phonon", "output_dielectric"),
             namespace="iraman",
             namespace_options={
                 "required": False,
@@ -122,7 +126,7 @@ class VibroWorkChain(WorkChain):
         phonopy_code=None,
         overrides=None,
         options=None,
-        trigger=None,
+        simulation_mode=None,
         phonon_property=PhononProperty.NONE,
         dielectric_property=None,
         **kwargs,
@@ -134,6 +138,7 @@ class VibroWorkChain(WorkChain):
         :param phonopy_code: the ``Code`` instance configured for the ``phonopy.phonopy`` plugin.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param simulation_mode: what type of simulation to run. Refer to the settings.py of the app.
         :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
             the ``CalcJobs`` that are nested in this work chain.
         :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
@@ -142,54 +147,14 @@ class VibroWorkChain(WorkChain):
         """
         from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
 
-        if trigger not in [
-            "phonon",
-            "dielectric",
-            "harmonic",
-            "iraman",
-        ]:
-            raise ValueError('trigger not in "phonon","dielectric","harmonic","iraman"')
+        if simulation_mode not in range(1, 5):
+            raise ValueError("trigger not in [1,2,3,4]")
 
         builder = cls.get_builder()
 
-        if trigger == "phonon":
+        if simulation_mode == 1:
+            # Running the full workchain: IR/Raman, Phonons, INS, Dielectric
 
-            builder_phonon = PhononWorkChain.get_builder_from_protocol(
-                pw_code=pw_code,
-                phonopy_code=phonopy_code,
-                structure=structure,
-                protocol=protocol,
-                overrides=overrides["phonon"],
-                phonon_property=phonon_property,
-                **kwargs,
-            )
-
-            builder_phonon.phonopy.metadata.options.resources = {
-                "num_machines": 1,
-                "num_mpiprocs_per_machine": 1,
-            }
-
-            # MBO: I do not understand why I have to do this, but it works
-            symmetry = builder_phonon.pop("symmetry")
-            builder.phonon = builder_phonon
-            builder.phonon.symmetry = symmetry
-
-        elif trigger == "dielectric":
-            builder_dielectric = DielectricWorkChain.get_builder_from_protocol(
-                code=pw_code,
-                structure=structure,
-                protocol=protocol,
-                overrides=overrides["dielectric"],
-                **kwargs,
-            )
-
-            # MBO: I do not understand why I have to do this, but it works. maybe related with excludes.
-            symmetry = builder_dielectric.pop("symmetry")
-            builder.dielectric = builder_dielectric
-            builder.dielectric.symmetry = symmetry
-            builder.dielectric.property = dielectric_property
-
-        elif trigger == "harmonic":
             builder_harmonic = HarmonicWorkChain.get_builder_from_protocol(
                 pw_code=pw_code,
                 phonopy_code=phonopy_code,
@@ -200,7 +165,7 @@ class VibroWorkChain(WorkChain):
                 **kwargs,
             )
 
-            # MB supposes phonopy will always run serially, otherwise choose phono3py
+            # MB guesses phonopy will always run serially, otherwise choose phono3py
             # also this is needed to be set here.
             builder_harmonic.phonopy.metadata.options.resources = {
                 "num_machines": 1,
@@ -222,7 +187,8 @@ class VibroWorkChain(WorkChain):
 
             builder.harmonic = builder_harmonic
 
-        elif trigger == "iraman":
+        elif simulation_mode == 2:
+
             builder_iraman = IRamanSpectraWorkChain.get_builder_from_protocol(
                 code=pw_code,
                 structure=structure,
@@ -246,14 +212,54 @@ class VibroWorkChain(WorkChain):
 
             builder.iraman = builder_iraman
 
-        for wchain in [
-            "phonon",
-            "dielectric",
+        elif simulation_mode == 3:
+
+            builder_phonon = PhononWorkChain.get_builder_from_protocol(
+                pw_code=pw_code,
+                phonopy_code=phonopy_code,
+                structure=structure,
+                protocol=protocol,
+                overrides=overrides["phonon"],
+                phonon_property=phonon_property,
+                **kwargs,
+            )
+
+            builder_phonon.phonopy.metadata.options.resources = {
+                "num_machines": 1,
+                "num_mpiprocs_per_machine": 1,
+            }
+
+            # MBO: I do not understand why I have to do this, but it works
+            symmetry = builder_phonon.pop("symmetry")
+            builder.phonon = builder_phonon
+            builder.phonon.symmetry = symmetry
+
+        elif simulation_mode == 4:
+
+            builder_dielectric = DielectricWorkChain.get_builder_from_protocol(
+                code=pw_code,
+                structure=structure,
+                protocol=protocol,
+                overrides=overrides["dielectric"],
+                **kwargs,
+            )
+
+            # MBO: I do not understand why I have to do this, but it works. maybe related with excludes.
+            symmetry = builder_dielectric.pop("symmetry")
+            builder.dielectric = builder_dielectric
+            builder.dielectric.symmetry = symmetry
+            builder.dielectric.property = dielectric_property
+
+        # Deleting the not needed parts of the builder:
+        available_wchains = [
             "harmonic",
             "iraman",
-        ]:
-            if trigger != wchain:
-                builder.pop(wchain, None)
+            "phonon",
+            "dielectric",
+        ]
+        for wchain_idx in range(1, 5):
+            if simulation_mode != wchain_idx:
+                builder.pop(available_wchains[wchain_idx - 1], None)
 
         builder.structure = structure
 
