@@ -21,7 +21,7 @@ class Setting(Panel):
 
     simulation_mode = [
         ("IR/Raman, Phonon, Dielectric, INS properties", 1),
-        ("IR/Raman and Dielectric properties in primitive cell approach", 2),
+        ("IR/Raman and Dielectric in Primitive Cell Approach", 2),
         ("Phonons and INS for non-polar materials", 3),
         ("Dielectric properties", 4),
     ]
