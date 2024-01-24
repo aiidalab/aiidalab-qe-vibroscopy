@@ -20,7 +20,7 @@ class Setting(Panel):
     title = "Vibrational Settings"
 
     simulation_mode = [
-        ("Full: IR/Raman spectra, Phonon, Dielectric and INS properties", 1),
+        ("IR/Raman, Phonon, Dielectric, INS properties", 1),
         ("IR/Raman and Dielectric properties in primitive cell approach", 2),
         ("Phonons and INS for non-polar materials", 3),
         ("Dielectric properties", 4),
