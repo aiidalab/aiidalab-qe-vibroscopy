@@ -55,7 +55,7 @@ class Setting(Panel):
             <li style="list-style-type: none; display: inline-block;">&#8226; Dielectric properties: Born charges, high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors .</li> <br>
             <li style="list-style-type: none; display: inline-block;">&#8226; Inelastic neutron scattering (INS): dynamic structure factor and powder intensity maps.</li> <br> <br>
             For Phonon properties, please select a supercell size: the larger the supercell, the larger the computational cost of the simulations. Usually, a 2x2x2 supercell should be enough.
-            The hint button can be used to have a guess on the supercell (we impose a minimum of 15A for the lattice vectors magnitude along periodic directions).<br>
+            The hint button can be used to have a guess on the supercell (we impose a minimum of 15Å for the lattice vectors magnitude along periodic directions).<br>
             Raman spectra are simulated in the first-order non-resonant regime.
             </div>""",
             layout=ipw.Layout(width="400"),
@@ -170,9 +170,11 @@ class Setting(Panel):
     @tl.observe("input_structure")
     def _update_input_structure(self, change):
         if self.input_structure is not None:
-            self._sc_x.value = 2
-            self._sc_y.value = 2
-            self._sc_z.value = 2
+            for direction, periodic in zip(
+                [self._sc_x, self._sc_y, self._sc_z], self.input_structure.pbc
+            ):
+                direction.value = 2 if periodic else 1
+                direction.disabled = False if periodic else True
 
     def _display_supercell(self, change):
         selected = change["new"]
@@ -186,14 +188,14 @@ class Setting(Panel):
         minimal supercell size for phonons, imposing a minimum lattice parameter of 15 A.
         """
         if self.input_structure:
-            s = self.input_structure.get_pymatgen()
-            suggested_3D = 15 // np.array(s.lattice.abc) + 1
+            s = self.input_structure.get_ase()
+            suggested_3D = 15 // np.array(s.cell.cellpar()[:3]) + 1
 
             # if disabled, it means that it is a non-periodic direction.
             for direction, suggested, original in zip(
-                [self._sc_x, self._sc_y, self._sc_z], suggested_3D, s.lattice.abc
+                [self._sc_x, self._sc_y, self._sc_z], suggested_3D, s.cell.cellpar()[:3]
             ):
-                direction.value = suggested if not direction.disabled else original
+                direction.value = suggested if not direction.disabled else 1
         else:
             return
 
