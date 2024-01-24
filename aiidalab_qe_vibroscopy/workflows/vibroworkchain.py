@@ -127,8 +127,8 @@ class VibroWorkChain(WorkChain):
         overrides=None,
         options=None,
         simulation_mode=None,
-        phonon_property=PhononProperty.NONE,
-        dielectric_property=None,
+        phonon_property=PhononProperty.THERMODYNAMIC,
+        dielectric_property="raman",
         **kwargs,
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
@@ -148,7 +148,7 @@ class VibroWorkChain(WorkChain):
         from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
 
         if simulation_mode not in range(1, 5):
-            raise ValueError("trigger not in [1,2,3,4]")
+            raise ValueError("simulation_mode not in [1,2,3,4]")
 
         builder = cls.get_builder()
 

@@ -8,25 +8,25 @@ Authors:
 """
 import ipywidgets as ipw
 import traitlets as tl
+import numpy as np
 
+from aiida import orm
 from aiidalab_qe.common.panel import Panel
 from IPython.display import clear_output, display
 
 
 class Setting(Panel):
+
     title = "Vibrational Settings"
-    choices = [
-        (
-            "Full: IR/Raman spectra, Phonon properties, Dielectric properties and Inelastic neutron scattering",
-            1,
-        ),
+
+    simulation_mode = [
+        ("Full: IR/Raman spectra, Phonon, Dielectric and INS properties", 1),
         ("IR/Raman and Dielectric properties in primitive cell approach", 2),
-        (
-            "Phonons and Inelastic neutron scattering without non-analytic corrections for force constants (non-polar materials)",
-            3,
-        ),
-        ("Dielectric properties only", 4),
+        ("Phonons and INS for non-polar materials", 3),
+        ("Dielectric properties", 4),
     ]
+
+    input_structure = tl.Instance(orm.StructureData, allow_none=True)
 
     def __init__(self, **kwargs):
         self.settings_title = ipw.HTML(
@@ -50,12 +50,12 @@ class Setting(Panel):
 
         self.use_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
-            The plugin is capable of simulating the following properties: <br>
             <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; IR/Raman spectra, both single crystal and powder samples.</li> <br>
             <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; Phonons properties: bands, density of states and thermal properties.</li> <br>
             <li style="list-style-type: none; display: inline-block;">&#8226; Dielectric properties: Born charges, high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors .</li> <br>
-            <li style="list-style-type: none; display: inline-block;">&#8226; Inelastic neutron scattering: dynamic structure factor and powder intensity maps.</li> <br> <br>
-            For Phonon properties, please select a supercell size: the larger the supercell, the larger the computational cost of the simulations. Usually, a 2x2x2 supercell should be enough. <br>
+            <li style="list-style-type: none; display: inline-block;">&#8226; Inelastic neutron scattering (INS): dynamic structure factor and powder intensity maps.</li> <br> <br>
+            For Phonon properties, please select a supercell size: the larger the supercell, the larger the computational cost of the simulations. Usually, a 2x2x2 supercell should be enough.
+            The hint button can be used to have a guess on the supercell (we impose a minimum of 15A for the lattice vectors magnitude along periodic directions).<br>
             Raman spectra are simulated in the first-order non-resonant regime.
             </div>""",
             layout=ipw.Layout(width="400"),
@@ -66,10 +66,10 @@ class Setting(Panel):
             value="moderate",
         )
 
+        self.calc_options_description = ipw.HTML("Select calculation:")
         self.calc_options = ipw.Dropdown(
-            description="Select calculation:",
-            options=self.choices,
-            layout=ipw.Layout(width="750px"),
+            options=self.simulation_mode,
+            layout=ipw.Layout(width="450px"),
             value=1,
         )
 
@@ -86,16 +86,26 @@ class Setting(Panel):
                 self._sc_z.value,
             ]
 
-        for elem in ["x", "y", "z"]:
+        if self.input_structure:
+            pbc = self.input_structure.pbc
+        else:
+            pbc = (True, True, True)
+
+        for elem, periodic in zip(["x", "y", "z"], pbc):
+            # periodic allows support of hints also for 2D, 1D.
             setattr(
                 self,
                 "_sc_" + elem,
                 ipw.BoundedIntText(
-                    value=2, min=1, layout={"width": "40px"}, disabled=False
+                    value=2 if periodic else 1,
+                    min=1,
+                    layout={"width": "40px"},
+                    disabled=False if periodic else True,
                 ),
             )
         for elem in [self._sc_x, self._sc_y, self._sc_z]:
             elem.observe(change_supercell, names="value")
+
         self.supercell_selector = ipw.HBox(
             children=[
                 ipw.HTML(
@@ -110,9 +120,22 @@ class Setting(Panel):
             ],
         )
 
-        self.supercell_widget = ipw.HBox(
-            [self.supercell_selector],
-            layout=ipw.Layout(justify_content="flex-start"),
+        ## start supercell hint:
+
+        # supercell data
+        self.supercell_hint_button = ipw.Button(
+            description="Size hint",
+            disabled=False,
+            width="500px",
+        )
+        # supercell hint (15A lattice params)
+        self.supercell_hint_button.on_click(self._suggest_supercell)
+
+        ## end supercell hint.
+
+        self.supercell_widget = ipw.VBox(
+            [self.supercell_selector, self.supercell_hint_button],
+            # layout=ipw.Layout(justify_content="flex-start"),
         )
         # end Supercell.
 
@@ -133,11 +156,23 @@ class Setting(Panel):
                     ),
                 ]
             ),
-            self.calc_options,
+            ipw.HBox(
+                [
+                    self.calc_options_description,
+                    self.calc_options,
+                ],
+            ),
             self.supercell_widget,
         ]
 
         super().__init__(**kwargs)
+
+    @tl.observe("input_structure")
+    def _update_input_structure(self, change):
+        if self.input_structure is not None:
+            self._sc_x.value = 2
+            self._sc_y.value = 2
+            self._sc_z.value = 2
 
     def _display_supercell(self, change):
         selected = change["new"]
@@ -145,6 +180,22 @@ class Setting(Panel):
             self.supercell_widget.layout.display = "block"
         else:
             self.supercell_widget.layout.display = "none"
+
+    def _suggest_supercell(self, _=None):
+        """
+        minimal supercell size for phonons, imposing a minimum lattice parameter of 15 A.
+        """
+        if self.input_structure:
+            s = self.input_structure.get_pymatgen()
+            suggested_3D = 15 // np.array(s.lattice.abc) + 1
+
+            # if disabled, it means that it is a non-periodic direction.
+            for direction, suggested, original in zip(
+                [self._sc_x, self._sc_y, self._sc_z], suggested_3D, s.lattice.abc
+            ):
+                direction.value = suggested if not direction.disabled else original
+        else:
+            return
 
     def get_panel_value(self):
         """Return a dictionary with the input parameters for the plugin."""
