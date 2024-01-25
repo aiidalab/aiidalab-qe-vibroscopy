@@ -35,4 +35,4 @@ Source = "https://github.com/mikibonacci/aiidalab-qe-vibroscopy"
 "vibroscopy_app.vibro" = "aiidalab_qe_vibroscopy.workflows.vibroworkchain:VibroWorkChain"
 
 [project.entry-points.'aiidalab_qe.properties']
-"vibronic" = "aiidalab_qe_vibroscopy.workflows:property"
+"vibronic" = "aiidalab_qe_vibroscopy.app:property"

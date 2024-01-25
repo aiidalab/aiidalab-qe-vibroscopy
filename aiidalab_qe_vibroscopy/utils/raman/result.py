@@ -51,28 +51,35 @@ def export_iramanworkchain_data(node):
     We have multiple choices: IR, RAMAN.
     """
 
-    import json
-
-    from monty.json import jsanitize
-
-    parameters = {}
-
     if not "vibronic" in node.outputs:
         return None
     else:
-        if not "iraman" in node.outputs.vibronic:
+        if "iraman" in node.outputs.vibronic:
+            output_node = node.outputs.vibronic.iraman
+        elif "harmonic" in node.outputs.vibronic:
+            output_node = node.outputs.vibronic.harmonic
+        else:
+            # we have raman and ir only if we run IRamanWorkChain or HarmonicWorkChain
             return None
 
-    if "vibrational_data" in node.outputs.vibronic.iraman:
+    if "vibrational_data" in output_node:
 
-        vibrational_data = node.outputs.vibronic.iraman.vibrational_data
+        # We enable the possibility to provide both spectra.
+        # We give as output or string, or the output node.
+
+        spectra_data = {
+            "Raman": None,
+            "Ir": None,
+        }
+
+        vibrational_data = output_node.vibrational_data
         vibro = (
             vibrational_data.numerical_accuracy_4
             if hasattr(vibrational_data, "numerical_accuracy_4")
             else vibrational_data.numerical_accuracy_2
         )
 
-        if "raman_tensors" not in vibro.get_arraynames():
+        if "born_charges" in vibro.get_arraynames():
             (
                 polarized_intensities,
                 frequencies,
@@ -82,17 +89,14 @@ def export_iramanworkchain_data(node):
 
             # sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
             if len(total_intensities) == 0:
-                return "No IR modes detected."  # explanation added in the main results script of the app.
+                spectra_data[
+                    "Ir"
+                ] = "No IR modes detected."  # explanation added in the main results script of the app.
 
-            frequencies, total_intensities = plot_powder(frequencies, total_intensities)
+            spectra_data["Ir"] = output_node
 
-            return [
-                total_intensities,
-                frequencies,
-                labels,
-                "Infrared vibrational spectrum",
-            ]
-        else:
+        if "raman_tensors" in vibro.get_arraynames():
+
             (
                 polarized_intensities,
                 depolarized_intensities,
@@ -103,16 +107,12 @@ def export_iramanworkchain_data(node):
 
             # sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
             if len(total_intensities) == 0:
-                return "No Raman modes detected."  # explanation added in the main results script of the app.
+                spectra_data[
+                    "Raman"
+                ] = "No Raman modes detected."  # explanation added in the main results script of the app.
 
-            frequencies, total_intensities = plot_powder(frequencies, total_intensities)
-            return [
-                total_intensities,
-                frequencies,
-                labels,
-                "Raman vibrational spectrum",
-            ]
-
+            spectra_data["Raman"] = output_node
+        return spectra_data
     else:
         return None
 
@@ -153,17 +153,17 @@ class Result(ResultPanel):
 class SpectrumPlotWidget(ipw.VBox):
     """Widget that allows different options for plotting Raman or IR Spectrum."""
 
-    def __init__(self, node, **kwargs):
+    def __init__(self, node, output_node, spectrum_type, **kwargs):
         self.node = node
+        self.output_node = output_node
+        self.spectrum_type = spectrum_type
+
         # VibrationalData
-        vibrational_data = self.node.outputs.vibronic.iraman.vibrational_data
+        vibrational_data = self.output_node.vibrational_data
         self.vibro = (
             vibrational_data.numerical_accuracy_4
             if hasattr(vibrational_data, "numerical_accuracy_4")
             else vibrational_data.numerical_accuracy_2
-        )
-        self.spectrum_type = (
-            "Raman" if "raman_tensors" in self.vibro.get_arraynames() else "IR"
         )
 
         self.description = ipw.HTML(
@@ -402,18 +402,17 @@ class SpectrumPlotWidget(ipw.VBox):
 class ActiveModesWidget(ipw.VBox):
     """Widget that display an animation (nglview) of the active modes."""
 
-    def __init__(self, node, **kwargs):
+    def __init__(self, node, output_node, spectrum_type, **kwargs):
         self.node = node
+        self.output_node = output_node
+        self.spectrum_type = spectrum_type
+
         # VibrationalData
-        vibrational_data = self.node.outputs.vibronic.iraman.vibrational_data
+        vibrational_data = self.output_node.vibrational_data
         self.vibro = (
             vibrational_data.numerical_accuracy_4
             if hasattr(vibrational_data, "numerical_accuracy_4")
             else vibrational_data.numerical_accuracy_2
-        )
-
-        self.spectrum_type = (
-            "Raman" if "raman_tensors" in self.vibro.get_arraynames() else "IR"
         )
 
         # Raman or IR active modes

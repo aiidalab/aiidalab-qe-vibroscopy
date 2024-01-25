@@ -51,7 +51,7 @@ class Setting(Panel):
         self.use_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
             <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; IR/Raman spectra, both single crystal and powder samples.</li> <br>
-            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; Phonons properties: bands, density of states and thermal properties.</li> <br>
+            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; Phonons properties: bands, density of states and thermal properties (Helmoltz free energy, entropy and specific heat at constant volume).</li> <br>
             <li style="list-style-type: none; display: inline-block;">&#8226; Dielectric properties: Born charges, high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors .</li> <br>
             <li style="list-style-type: none; display: inline-block;">&#8226; Inelastic neutron scattering (INS): dynamic structure factor and powder intensity maps.</li> <br> <br>
             For Phonon properties, please select a supercell size: the larger the supercell, the larger the computational cost of the simulations. Usually, a 2x2x2 supercell should be enough.

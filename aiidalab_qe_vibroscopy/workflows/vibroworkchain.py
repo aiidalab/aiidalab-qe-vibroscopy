@@ -185,6 +185,9 @@ class VibroWorkChain(WorkChain):
 
             builder_harmonic.phonopy.parameters = Dict(dict=phonon_property.value)
 
+            # Setting the `raman` dielectric property, to compute up to the third order derivative wrt finite electric fields.
+            builder_harmonic.dielectric.property = dielectric_property
+
             builder.harmonic = builder_harmonic
 
         elif simulation_mode == 2:

@@ -20,32 +20,14 @@ class Result(ResultPanel):
 
     title = "Vibrational Structure"
     workchain_label = "iraman"
+    children_result_widget = ()
 
     def _update_view(self):
 
+        children_result_widget = ()
+
         spectra_data = export_iramanworkchain_data(self.node)
         phonon_data = export_phononworkchain_data(self.node)
-
-        if spectra_data:
-
-            if isinstance(spectra_data, str):
-                # No Modes are detected. So we explain why
-                no_mode_widget = ipw.HTML(spectra_data)
-                explanation_widget = ipw.HTML(
-                    "This may be due to the fact that the current implementation of aiida-vibroscopy plugin only considers first-order effects."
-                )
-
-                self.children = [ipw.VBox([no_mode_widget, explanation_widget])]
-
-            else:
-                spectrum_widget = SpectrumPlotWidget(self.node)
-                raman_modes_animation = ActiveModesWidget(self.node)
-                if spectra_data[3] in [
-                    "Raman vibrational spectrum",
-                    "Infrared vibrational spectrum",
-                ]:
-
-                    self.children = [ipw.VBox([spectrum_widget, raman_modes_animation])]
 
         if phonon_data:
             if phonon_data[2] == "bands":
@@ -53,7 +35,7 @@ class Result(ResultPanel):
                     bands=[phonon_data[0]],
                     **phonon_data[1],
                 )
-                self.children = [_bands_plot_view]
+                children_result_widget += (_bands_plot_view,)
 
             elif phonon_data[2] == "dos":
                 _bands_plot_view = BandsPlotWidget(
@@ -62,7 +44,7 @@ class Result(ResultPanel):
                     show_legend=False,
                     **phonon_data[1],
                 )
-                self.children = [_bands_plot_view]
+                children_result_widget += (_bands_plot_view,)
 
             elif phonon_data[2] == "thermal":
                 import plotly.graph_objects as go
@@ -86,4 +68,40 @@ class Result(ResultPanel):
                 g.add_scatter(x=T, y=E, name=f"Entropy ({E_units})")
                 g.add_scatter(x=T, y=Cv, name=f"Specific Heat-V=const ({Cv_units})")
 
-                self.children = [g]
+                children_result_widget += (g,)
+
+        if spectra_data:
+
+            # Here we should provide the possibility to have both IR and Raman,
+            # as the new logic can provide both at the same time.
+            # We are gonna use the same widget, providing the correct spectrum_type: "Raman" or "Ir".
+
+            for spectrum, data in spectra_data.items():
+
+                if not data:
+                    continue
+
+                elif isinstance(data, str):
+                    # No Modes are detected. So we explain why
+                    no_mode_widget = ipw.HTML(data)
+                    explanation_widget = ipw.HTML(
+                        "This may be due to the fact that the current implementation of aiida-vibroscopy plugin only considers first-order effects."
+                    )
+
+                    children_result_widget += (
+                        ipw.VBox([no_mode_widget, explanation_widget]),
+                    )
+
+                else:
+                    spectrum_widget = SpectrumPlotWidget(
+                        node=self.node, output_node=data, spectrum_type=spectrum
+                    )
+                    raman_modes_animation = ActiveModesWidget(
+                        node=self.node, output_node=data, spectrum_type=spectrum
+                    )
+
+                    children_result_widget += (
+                        ipw.VBox([spectrum_widget, raman_modes_animation]),
+                    )
+
+        self.children = children_result_widget
