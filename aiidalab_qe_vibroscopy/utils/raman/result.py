@@ -416,8 +416,9 @@ class ActiveModesWidget(ipw.VBox):
         )
 
         # Raman or IR active modes
+        selection_rule = self.spectrum_type.lower()
         frequencies, self.eigenvectors, self.labels = self.vibro.run_active_modes(
-            selectrion_rules=self.spectrum_type.lower()
+            selection_rule=selection_rule,
         )
         self.rounded_frequencies = [round(frequency, 3) for frequency in frequencies]
 

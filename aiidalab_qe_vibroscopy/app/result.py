@@ -93,15 +93,16 @@ class Result(ResultPanel):
                     )
 
                 else:
+                    subwidget_title = ipw.HTML(f"<h3>{spectrum} spectroscopy</h3>")
                     spectrum_widget = SpectrumPlotWidget(
                         node=self.node, output_node=data, spectrum_type=spectrum
                     )
-                    raman_modes_animation = ActiveModesWidget(
+                    modes_animation = ActiveModesWidget(
                         node=self.node, output_node=data, spectrum_type=spectrum
                     )
 
                     children_result_widget += (
-                        ipw.VBox([spectrum_widget, raman_modes_animation]),
+                        ipw.VBox([subwidget_title, spectrum_widget, modes_animation]),
                     )
 
         self.children = children_result_widget
