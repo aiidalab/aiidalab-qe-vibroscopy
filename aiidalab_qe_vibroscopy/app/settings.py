@@ -209,7 +209,7 @@ class Setting(Panel):
         """Return a dictionary with the input parameters for the plugin."""
         if isinstance(self.calc_options, str):
             return {
-                "simulation_mode": self.calc_options.value,
+                "simulation_mode": self.calc_options,
                 "supercell_selector": self.supercell,
             }
         return {
