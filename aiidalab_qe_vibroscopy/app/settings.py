@@ -38,7 +38,7 @@ class Setting(Panel):
             Calculations are performed using the <b><a href="https://aiida-vibroscopy.readthedocs.io/en/latest/"
         target="_blank">aiida-vibroscopy</b></a> plugin (L. Bastonero and N. Marzari, <a href="https://arxiv.org/abs/2308.04308"
         target="_blank">Automated all-functionals infrared and Raman spectra</a>).
-            The plugin employes the finite-displacement and finite-field approach.
+            The plugin employes the finite-displacement and finite-field approach. Raman spectra are simulated in the first-order non-resonant regime.
             </div>""",
             layout=ipw.Layout(width="400"),
         )
@@ -50,16 +50,20 @@ class Setting(Panel):
 
         self.use_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
-            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; IR/Raman spectra, both single crystal and powder samples.</li> <br>
-            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; Phonons properties: bands, density of states and thermal properties (Helmoltz free energy, entropy and specific heat at constant volume).</li> <br>
-            <li style="list-style-type: none; display: inline-block;">&#8226; Dielectric properties: Born charges, high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors .</li> <br>
-            <li style="list-style-type: none; display: inline-block;">&#8226; Inelastic neutron scattering (INS): dynamic structure factor and powder intensity maps.</li> <br> <br>
-            For Phonon properties, please select a supercell size: the larger the supercell, the larger the computational cost of the simulations. Usually, a 2x2x2 supercell should be enough.
-            The hint button can be used to have a guess on the supercell (we impose a minimum of 15Å for the lattice vectors magnitude along periodic directions).<br>
-            Raman spectra are simulated in the first-order non-resonant regime.
+            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; <em>IR/Raman spectra</em>: both single crystal and powder samples.</li> <br>
+            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; <em>Phonons properties</em>: bands, density of states and thermal properties (Helmoltz free energy, entropy and specific heat at constant volume).</li> <br>
+            <li style="list-style-type: none; display: inline-block;">&#8226; <em>Dielectric properties</em>: Born charges, high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors .</li> <br>
+            <li style="list-style-type: none; display: inline-block;">&#8226; <em>Inelastic neutron scattering (INS)</em>: dynamic structure factor and powder intensity maps.</li> <br> <br>   
             </div>""",
             layout=ipw.Layout(width="400"),
         )
+
+        self.hint_button_help = ipw.HTML(
+            """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
+            Select a supercell size for Phonon properties. Larger supercells increase computational costs. A 2x2x2 supercell is usually adequate.<br>
+            Utilize the <em>Size hint</em> button for an estimate, maintaining a minimum lattice vector magnitude of 15Å along periodic directions.
+            </div>""",)
+
 
         self.workchain_protocol = ipw.ToggleButtons(
             options=["fast", "moderate", "precise"],
@@ -70,7 +74,7 @@ class Setting(Panel):
         self.calc_options = ipw.Dropdown(
             options=self.simulation_mode,
             layout=ipw.Layout(width="450px"),
-            value=1,
+            value=self.simulation_mode[0][1],
         )
 
         self.calc_options.observe(self._display_supercell, names="value")
@@ -127,13 +131,14 @@ class Setting(Panel):
             description="Size hint",
             disabled=False,
             width="500px",
+            button_style="info",
         )
         # supercell hint (15A lattice params)
         self.supercell_hint_button.on_click(self._suggest_supercell)
 
         ## end supercell hint.
 
-        self.supercell_widget = ipw.VBox(
+        self.supercell_widget = ipw.HBox(
             [self.supercell_selector, self.supercell_hint_button],
             # layout=ipw.Layout(justify_content="flex-start"),
         )
@@ -162,6 +167,7 @@ class Setting(Panel):
                     self.calc_options,
                 ],
             ),
+            self.hint_button_help,
             self.supercell_widget,
         ]
 
