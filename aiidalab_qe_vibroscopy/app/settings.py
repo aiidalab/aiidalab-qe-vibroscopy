@@ -224,5 +224,8 @@ class Setting(Panel):
 
     def reset(self):
         """Reset the panel"""
-        self.calc_options.value = 1
-        self.supercell = [2, 2, 2]
+        if isinstance(self.calc_options, str):
+            self.calc_options = "IR/Raman, Phonon, Dielectric, INS properties"
+        else:
+            self.calc_options.value = 1
+            self.supercell = [2, 2, 2]
