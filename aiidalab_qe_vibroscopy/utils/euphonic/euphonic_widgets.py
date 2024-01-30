@@ -5,6 +5,7 @@ import base64
 from IPython.display import HTML, clear_output, display
 
 import euphonic
+from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
 
 import ipywidgets as ipw
 import plotly.graph_objects as go
@@ -50,9 +51,30 @@ def generate_force_constant_instance(phonon_calc):
             ) as handle:
                 temp_file.write_bytes(handle.read())
                 if "phonopy.yaml" in filename:
-                    fc = euphonic.ForceConstants.from_phonopy(
-                        path=dirpath, summary_name="phonopy.yaml"
-                    )
+                    try:
+                        fc = euphonic.ForceConstants.from_phonopy(
+                            path=dirpath,
+                            summary_name="phonopy.yaml",
+                        )
+                    except:
+                        # all this is needed to load the euphonic instance, in case no FC are written in phonopy.yaml
+                        phonon = phonon_calc.outputs.phonopy_data.get_phonopy_instance()
+                        phonon.produce_force_constants()
+                        p2s_map = phonon_calc.called[
+                            -1
+                        ].inputs.phonopy_data.get_cells_mappings()["primitive"][
+                            "p2s_map"
+                        ]
+                        write_force_constants_to_hdf5(
+                            force_constants=phonon.force_constants,
+                            filename=pathlib.Path(dirpath) / "fc.hdf5",
+                            p2s_map=p2s_map,
+                        )
+                        fc = euphonic.ForceConstants.from_phonopy(
+                            path=dirpath,
+                            summary_name="phonopy.yaml",
+                            fc_name="fc.hdf5",
+                        )
             # print(filename)
         # print(dirpath)
     return fc
