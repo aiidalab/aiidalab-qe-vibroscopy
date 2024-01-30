@@ -18,10 +18,17 @@ def get_builder(codes, structure, parameters):
     supercell_matrix = parameters["vibronic"].pop("supercell_selector", None)
 
     scf_overrides = deepcopy(parameters["advanced"])
+
+    # The following include_all is needed to have forces written
     overrides = {
         "phonon": {
             "scf": scf_overrides,
             "supercell_matrix": supercell_matrix,
+            "phonopy": {
+                "parameters": {
+                    "INCLUDE_ALL": True,
+                }
+            },
         },
         "dielectric": {"scf": scf_overrides},
     }

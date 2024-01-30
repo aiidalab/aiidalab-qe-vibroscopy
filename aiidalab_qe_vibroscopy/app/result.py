@@ -11,7 +11,15 @@ from aiidalab_qe.common.panel import ResultPanel
 import numpy as np
 
 from ..utils.raman.result import export_iramanworkchain_data
-from ..utils.harmonic.result import export_phononworkchain_data
+
+# from ..utils.harmonic.result import export_phononworkchain_data
+
+from ..utils.euphonic.euphonic_widgets import (
+    export_phononworkchain_data,
+    IntensityFullWidget,
+    PowderFullWidget,
+)
+
 import ipywidgets as ipw
 from ..utils.raman.result import SpectrumPlotWidget, ActiveModesWidget
 
@@ -30,23 +38,26 @@ class Result(ResultPanel):
         phonon_data = export_phononworkchain_data(self.node)
 
         if phonon_data:
-            if phonon_data[2] == "bands":
+
+            # euphonic
+            if phonon_data["bands"]:
                 _bands_plot_view = BandsPlotWidget(
-                    bands=[phonon_data[0]],
-                    **phonon_data[1],
+                    bands=[phonon_data["bands"][0]],
+                    **phonon_data["bands"][1],
                 )
                 children_result_widget += (_bands_plot_view,)
 
-            elif phonon_data[2] == "dos":
-                _bands_plot_view = BandsPlotWidget(
-                    dos=phonon_data[0],
+            # euphonic
+            if phonon_data["pdos"]:
+                _pdos_plot_view = BandsPlotWidget(
+                    dos=phonon_data["pdos"][0],
                     plot_fermilevel=False,
                     show_legend=False,
-                    **phonon_data[1],
+                    **phonon_data["pdos"][1],
                 )
-                children_result_widget += (_bands_plot_view,)
+                children_result_widget += (_pdos_plot_view,)
 
-            elif phonon_data[2] == "thermal":
+            if phonon_data["thermal"]:
                 import plotly.graph_objects as go
 
                 T = phonon_data[0][0]
@@ -69,6 +80,12 @@ class Result(ResultPanel):
                 g.add_scatter(x=T, y=Cv, name=f"Specific Heat-V=const ({Cv_units})")
 
                 children_result_widget += (g,)
+
+            # euphonic
+            if phonon_data["fc"]:
+                intensity_map = IntensityFullWidget(fc=phonon_data["fc"])
+                powder_map = PowderFullWidget(fc=phonon_data["fc"])
+                children_result_widget += (intensity_map, powder_map)
 
         if spectra_data:
 

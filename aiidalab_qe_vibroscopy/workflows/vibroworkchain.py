@@ -188,6 +188,11 @@ class VibroWorkChain(WorkChain):
             # Setting the `raman` dielectric property, to compute up to the third order derivative wrt finite electric fields.
             builder_harmonic.dielectric.property = dielectric_property
 
+            # To run euphonic: we should be able to get rid of this, using phonopy API.
+            builder_harmonic.phonon.phonopy.settings = Dict(
+                dict={"keep_phonopy_yaml": True}
+            )
+
             builder.harmonic = builder_harmonic
 
         elif simulation_mode == 2:
@@ -231,6 +236,9 @@ class VibroWorkChain(WorkChain):
                 "num_machines": 1,
                 "num_mpiprocs_per_machine": 1,
             }
+
+            # To run euphonic: we should be able to get rid of this, using phonopy API.
+            builder_phonon.phonopy.settings = Dict(dict={"keep_phonopy_yaml": True})
 
             # MBO: I do not understand why I have to do this, but it works
             symmetry = builder_phonon.pop("symmetry")
