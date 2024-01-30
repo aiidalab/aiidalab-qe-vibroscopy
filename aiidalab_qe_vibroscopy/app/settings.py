@@ -138,10 +138,9 @@ class Setting(Panel):
 
         ## end supercell hint.
 
-        self.supercell_widget = ipw.HBox(
+        self.supercell_widget = ipw.VBox([self.hint_button_help,ipw.HBox(
             [self.supercell_selector, self.supercell_hint_button],
-            # layout=ipw.Layout(justify_content="flex-start"),
-        )
+        )]) 
         # end Supercell.
 
         self.children = [
@@ -167,7 +166,6 @@ class Setting(Panel):
                     self.calc_options,
                 ],
             ),
-            self.hint_button_help,
             self.supercell_widget,
         ]
 
