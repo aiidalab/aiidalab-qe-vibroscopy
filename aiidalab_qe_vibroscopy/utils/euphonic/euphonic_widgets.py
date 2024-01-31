@@ -104,7 +104,7 @@ def generate_force_constant_instance(phonopy_calc):
     return fc
 
 
-def export_phononworkchain_data(node, fermi_energy=None):
+def export_euphonic_data(node, fermi_energy=None):
 
     if not "vibronic" in node.outputs:
         # Not a phonon calculation

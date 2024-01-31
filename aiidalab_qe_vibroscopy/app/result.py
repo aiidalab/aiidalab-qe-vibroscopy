@@ -12,10 +12,10 @@ import numpy as np
 
 from ..utils.raman.result import export_iramanworkchain_data
 
-# from ..utils.harmonic.result import export_phononworkchain_data
+from ..utils.phonons.result import export_phononworkchain_data
 
 from ..utils.euphonic.euphonic_widgets import (
-    export_phononworkchain_data,
+    export_euphonic_data,
     IntensityFullWidget,
     PowderFullWidget,
 )
@@ -36,10 +36,10 @@ class Result(ResultPanel):
 
         spectra_data = export_iramanworkchain_data(self.node)
         phonon_data = export_phononworkchain_data(self.node)
+        ins_data = export_euphonic_data(self.node)
 
         if phonon_data:
 
-            # euphonic
             if phonon_data["bands"]:
                 _bands_plot_view = BandsPlotWidget(
                     bands=[phonon_data["bands"][0]],
@@ -47,7 +47,6 @@ class Result(ResultPanel):
                 )
                 children_result_widget += (_bands_plot_view,)
 
-            # euphonic
             if phonon_data["pdos"]:
                 _pdos_plot_view = BandsPlotWidget(
                     dos=phonon_data["pdos"][0],
@@ -57,16 +56,16 @@ class Result(ResultPanel):
                 )
                 children_result_widget += (_pdos_plot_view,)
 
-            if phonon_data["thermal"]:
+            if phonon_data["thermo"]:
                 import plotly.graph_objects as go
 
-                T = phonon_data[0][0]
-                F = phonon_data[0][1]
-                F_units = phonon_data[0][2]
-                E = phonon_data[0][3]
-                E_units = phonon_data[0][4]
-                Cv = phonon_data[0][5]
-                Cv_units = phonon_data[0][6]
+                T = phonon_data["thermo"][0][0]
+                F = phonon_data["thermo"][0][1]
+                F_units = phonon_data["thermo"][0][2]
+                E = phonon_data["thermo"][0][3]
+                E_units = phonon_data["thermo"][0][4]
+                Cv = phonon_data["thermo"][0][5]
+                Cv_units = phonon_data["thermo"][0][6]
 
                 g = go.FigureWidget(
                     layout=go.Layout(
@@ -82,10 +81,10 @@ class Result(ResultPanel):
                 children_result_widget += (g,)
 
             # euphonic
-            if phonon_data["fc"]:
-                intensity_map = IntensityFullWidget(fc=phonon_data["fc"])
-                powder_map = PowderFullWidget(fc=phonon_data["fc"])
-                children_result_widget += (intensity_map, powder_map)
+        if ins_data["fc"]:
+            intensity_map = IntensityFullWidget(fc=ins_data["fc"])
+            powder_map = PowderFullWidget(fc=ins_data["fc"])
+            children_result_widget += (intensity_map, powder_map)
 
         if spectra_data:
 

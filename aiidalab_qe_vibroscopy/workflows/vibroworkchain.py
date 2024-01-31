@@ -422,10 +422,11 @@ class VibroWorkChain(WorkChain):
     def results(self):
         """Inspect all sub-processes."""
         workchain = self.ctx[self.ctx.key]
+        failed = False
 
         if not workchain.is_finished_ok:
             self.report(f"the child WorkChain with <PK={workchain.pk}> failed")
-            return self.exit_codes.ERROR_WORKCHAIN_FAILED
+            failed = True
         else:
             self.out_many(
                 self.exposed_outputs(
@@ -433,14 +434,24 @@ class VibroWorkChain(WorkChain):
                 )
             )
 
-        for calc_type in ["bands", "pdos", "thermo"]:
-            if calc_type in self.ctx.keys():
-                if not self.ctx[calc_type].is_finished_ok:
-                    self.report(
-                        f"the child PhonopyCalculation with <PK={workchain.pk}> failed"
-                    )
-                    return self.exit_codes.ERROR_WORKCHAIN_FAILED
+        if "bands" in self.ctx.keys():
+            if self.ctx["bands"].is_finished_ok:
+                self.out("phonon_bands", self.ctx["bands"].outputs.phonon_bands)
+            else:
+                self.report(f"the child bands PhonopyCalculation failed")
+                failed = True
 
-            self.out("phonon_bands", self.ctx["bands"].outputs.phonon_bands)
-            self.out("phonon_pdos", self.ctx["pdos"].outputs.projected_phonon_dos)
-            self.out("phonon_thermo", self.ctx["thermo"].outputs.thermal_properties)
+            if self.ctx["pdos"].is_finished_ok:
+                self.out("phonon_pdos", self.ctx["pdos"].outputs.projected_phonon_dos)
+            else:
+                self.report(f"the child pdos PhonopyCalculation failed")
+                failed = True
+
+            if self.ctx["thermo"].is_finished_ok:
+                self.out("phonon_thermo", self.ctx["thermo"].outputs.thermal_properties)
+            else:
+                self.report(f"the child thermo PhonopyCalculation failed")
+                failed = True
+
+        if failed:
+            return self.exit_codes.ERROR_WORKCHAIN_FAILED
