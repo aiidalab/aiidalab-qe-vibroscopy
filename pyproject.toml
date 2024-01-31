@@ -23,6 +23,7 @@ dependencies = [
     "phonopy",
     "euphonic>=1.1.0",
     "pre-commit",
+    "euphonic",
 ]
 
 [project.scripts]
