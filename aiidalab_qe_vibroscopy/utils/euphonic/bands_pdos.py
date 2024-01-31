@@ -31,6 +31,14 @@ These are then used in the widgets to plot the corresponding quantities.
 def compute_pdos(
     fc,
 ):
+    """Function to calculate square of a number.
+
+    Args:
+        fc: Force Constant object as obtained using the `generate_force_constant_instance` method.
+
+    Returns:
+        [data, parameters, type_of_data]: [pdos, parameters for plot,  type of data (bands, dos ...)].
+    """
     # PDOS, we should allow changes in Ebins and mesh grid.
     # we should provide this as ProjectionData for the new BandsPlotWidget.
 
@@ -38,9 +46,9 @@ def compute_pdos(
     phonons, mode_grads = fc.calculate_qpoint_phonon_modes(
         util.mp_grid(
             [
-                5,
-                5,
-                5,
+                20,
+                20,
+                20,
             ]
         ),
         return_mode_gradients=True,
@@ -116,6 +124,14 @@ def compute_pdos(
 
 
 def compute_bands(fc):
+    """Function to calculate square of a number.
+
+    Args:
+        fc: Force Constant object as obtained using the `generate_force_constant_instance` method.
+
+    Returns:
+        [data, parameters, type_of_data]: [bands, parameters for plot,  type of data (bands, dos ...)].
+    """
 
     # We need support for low-D systems.
 

@@ -16,14 +16,17 @@ from ..euphonic.intensity_maps import *
 import json
 from monty.json import jsanitize
 
+# sys and os used to prevent euphonic to print in the stdout.
+import sys
+import os
+
 ########################
 ################################ START DESCRIPTION
 ########################
 
 """
 In this module we have the functions and widgets to be used in the app.
-Essentially we create the force constants (fc) instance via the phonopy.yaml file,
-generated via the PhononWorkChain of the aiida-vibroscopy plugin.
+Essentially we create the force constants (fc) instance via the phonopy.yaml.
 
 def export_phononworkchain_data(node, fermi_energy=None):
 Functions from intensity_maps.py and bands_pdos.py are used in order to computed the quantities, in the
@@ -35,47 +38,68 @@ export_phononworkchain_data function, used then in the result.py panel.
 ########################
 
 
-def generate_force_constant_instance(phonon_calc):
+def generate_force_constant_instance(phonopy_calc):
+
+    ####### This is almost copied from PhonopyCalculation
+    from phonopy.interface.phonopy_yaml import PhonopyYaml
+
+    kwargs = {}
+
+    if "settings" in phonopy_calc.inputs:
+        the_settings = phonopy_calc.inputs.settings.get_dict()
+        for key in ["symmetrize_nac", "factor_nac", "subtract_residual_forces"]:
+            if key in the_settings:
+                kwargs.update({key: the_settings[key]})
+
+    if "phonopy_data" in phonopy_calc.inputs:
+        ph = phonopy_calc.inputs.phonopy_data.get_phonopy_instance(**kwargs)
+        p2s_map = phonopy_calc.inputs.phonopy_data.get_cells_mappings()["primitive"][
+            "p2s_map"
+        ]
+        ph.produce_force_constants()
+    elif "force_constants" in phonopy_calc.inputs:
+        ph = phonopy_calc.inputs.force_constants.get_phonopy_instance(**kwargs)
+        p2s_map = phonopy_calc.inputs.force_constants.get_cells_mappings()["primitive"][
+            "p2s_map"
+        ]
+        ph.force_constants = phonopy_calc.inputs.force_constants.get_array(
+            "force_constants"
+        )
+
+    #######
+
     # Create temporary directory
+    #
     with tempfile.TemporaryDirectory() as dirpath:
-        # Open the output file from the AiiDA storage and copy content to the temporary file
-        for (
-            filename
-        ) in (
-            phonon_calc.outputs.output_phonopy.retrieved.base.repository.list_object_names()
-        ):
-            # Create the file with the desired name
-            temp_file = pathlib.Path(dirpath) / filename
-            with phonon_calc.outputs.output_phonopy.retrieved.open(
-                filename, "rb"
-            ) as handle:
-                temp_file.write_bytes(handle.read())
-                if "phonopy.yaml" in filename:
-                    try:
-                        fc = euphonic.ForceConstants.from_phonopy(
-                            path=dirpath,
-                            summary_name="phonopy.yaml",
-                        )
-                    except:
-                        # all this is needed to load the euphonic instance, in case no FC are written in phonopy.yaml
-                        phonon = phonon_calc.outputs.phonopy_data.get_phonopy_instance()
-                        phonon.produce_force_constants()
-                        p2s_map = phonon_calc.called[
-                            -1
-                        ].inputs.phonopy_data.get_cells_mappings()["primitive"][
-                            "p2s_map"
-                        ]
-                        write_force_constants_to_hdf5(
-                            force_constants=phonon.force_constants,
-                            filename=pathlib.Path(dirpath) / "fc.hdf5",
-                            p2s_map=p2s_map,
-                        )
-                        fc = euphonic.ForceConstants.from_phonopy(
-                            path=dirpath,
-                            summary_name="phonopy.yaml",
-                            fc_name="fc.hdf5",
-                        )
-            # print(filename)
+        # phonopy.yaml generation:
+        phpy_yaml = PhonopyYaml()
+        phpy_yaml.set_phonon_info(ph)
+        phpy_yaml_txt = str(phpy_yaml)
+
+        with open(
+            pathlib.Path(dirpath) / "phonopy.yaml", "w", encoding="utf8"
+        ) as handle:
+            handle.write(phpy_yaml_txt)
+
+        # Force constants hdf5 file generation:
+        # all this is needed to load the euphonic instance, in case no FC are written in phonopy.yaml
+
+        write_force_constants_to_hdf5(
+            force_constants=ph.force_constants,
+            filename=pathlib.Path(dirpath) / "fc.hdf5",
+            p2s_map=p2s_map,
+        )
+
+        # Read force constants (fc.hdf5) and summary+NAC (phonopy.yaml)
+        old_stdout = sys.stdout  # backup current stdout
+        sys.stdout = open(os.devnull, "w")
+        fc = euphonic.ForceConstants.from_phonopy(
+            path=dirpath,
+            summary_name="phonopy.yaml",
+            fc_name="fc.hdf5",
+        )
+        sys.stdout = old_stdout  # reset old stdout
+        # print(filename)
         # print(dirpath)
     return fc
 
@@ -83,28 +107,19 @@ def generate_force_constant_instance(phonon_calc):
 def export_phononworkchain_data(node, fermi_energy=None):
 
     if not "vibronic" in node.outputs:
+        # Not a phonon calculation
         return None
     else:
-        if (
-            not "harmonic" in node.outputs.vibronic
-            and not "phonon" in node.outputs.vibronic
-        ):
+        if not "phonon_bands" in node.outputs.vibronic:
             return None
 
-    output_set = (
-        node.outputs.vibronic.harmonic
-        if "harmonic" in node.outputs.vibronic
-        else node.outputs.vibronic.phonon
-    )
+    output_set = node.outputs.vibronic.phonon_bands
 
-    if "output_phonopy" in output_set:
-        phonon_calc = output_set.output_phonopy.retrieved.creator.caller
-        fc = generate_force_constant_instance(phonon_calc)
-        bands = compute_bands(fc)
-        pdos = compute_pdos(fc)
-        return {"fc": fc, "bands": bands, "pdos": pdos, "thermal": None}
-    else:
-        return None
+    phonopy_calc = output_set.creator
+    fc = generate_force_constant_instance(phonopy_calc)
+    bands = compute_bands(fc)
+    pdos = compute_pdos(fc)
+    return {"fc": fc, "bands": bands, "pdos": pdos, "thermal": None}
 
 
 def generated_curated_data(spectra):

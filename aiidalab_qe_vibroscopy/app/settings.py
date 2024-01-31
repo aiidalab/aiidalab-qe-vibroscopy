@@ -53,7 +53,7 @@ class Setting(Panel):
             <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; <em>IR/Raman spectra</em>: both single crystal and powder samples.</li> <br>
             <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; <em>Phonons properties</em>: bands, density of states and thermal properties (Helmoltz free energy, entropy and specific heat at constant volume).</li> <br>
             <li style="list-style-type: none; display: inline-block;">&#8226; <em>Dielectric properties</em>: Born charges, high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors .</li> <br>
-            <li style="list-style-type: none; display: inline-block;">&#8226; <em>Inelastic neutron scattering (INS)</em>: dynamic structure factor and powder intensity maps.</li> <br> <br>   
+            <li style="list-style-type: none; display: inline-block;">&#8226; <em>Inelastic neutron scattering (INS)</em>: dynamic structure factor and powder intensity maps.</li> <br> <br>
             </div>""",
             layout=ipw.Layout(width="400"),
         )
@@ -62,12 +62,7 @@ class Setting(Panel):
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
             Select a supercell size for Phonon properties. Larger supercells increase computational costs. A 2x2x2 supercell is usually adequate.<br>
             Utilize the <em>Size hint</em> button for an estimate, maintaining a minimum lattice vector magnitude of 15Å along periodic directions.
-            </div>""",)
-
-
-        self.workchain_protocol = ipw.ToggleButtons(
-            options=["fast", "moderate", "precise"],
-            value="moderate",
+            </div>""",
         )
 
         self.calc_options_description = ipw.HTML("Select calculation:")
@@ -138,9 +133,14 @@ class Setting(Panel):
 
         ## end supercell hint.
 
-        self.supercell_widget = ipw.VBox([self.hint_button_help,ipw.HBox(
-            [self.supercell_selector, self.supercell_hint_button],
-        )]) 
+        self.supercell_widget = ipw.VBox(
+            [
+                self.hint_button_help,
+                ipw.HBox(
+                    [self.supercell_selector, self.supercell_hint_button],
+                ),
+            ]
+        )
         # end Supercell.
 
         self.children = [

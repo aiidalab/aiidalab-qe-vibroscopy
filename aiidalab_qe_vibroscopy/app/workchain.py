@@ -24,11 +24,6 @@ def get_builder(codes, structure, parameters):
         "phonon": {
             "scf": scf_overrides,
             "supercell_matrix": supercell_matrix,
-            "phonopy": {
-                "parameters": {
-                    "INCLUDE_ALL": True,
-                }
-            },
         },
         "dielectric": {"scf": scf_overrides},
     }

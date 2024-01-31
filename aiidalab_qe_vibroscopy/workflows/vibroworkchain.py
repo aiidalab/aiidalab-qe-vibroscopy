@@ -1,8 +1,9 @@
 """Implementation of the VibroWorkchain for managing the aiida-vibroscopy workchains."""
+from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, calcfunction
 from aiida.orm import AbstractCode, Int, Float, Dict, Code, StructureData, load_code
-from aiida.plugins import WorkflowFactory
+from aiida.plugins import WorkflowFactory, CalculationFactory
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida.engine import WorkChain, calcfunction, if_
@@ -13,6 +14,7 @@ IRamanSpectraWorkChain = WorkflowFactory("vibroscopy.spectra.iraman")
 HarmonicWorkChain = WorkflowFactory("vibroscopy.phonons.harmonic")
 DielectricWorkChain = WorkflowFactory("vibroscopy.dielectric")
 PhononWorkChain = WorkflowFactory("vibroscopy.phonons.phonon")
+PhonopyCalculation = CalculationFactory("phonopy.phonopy")
 
 
 class VibroWorkChain(WorkChain):
@@ -71,10 +73,31 @@ class VibroWorkChain(WorkChain):
                 "help": "Inputs for the `IRamanSpectraWorkChain`.",
             },
         )
+        spec.input(
+            "phonopy_bands_dict",
+            valid_type=Dict,
+            required=False,
+            help="Settings for phonopy bands calculation.",
+        )
+        spec.input(
+            "phonopy_pdos_dict",
+            valid_type=Dict,
+            required=False,
+            help="Settings for phonopy pdos calculation.",
+        )
+        spec.input(
+            "phonopy_thermo_dict",
+            valid_type=Dict,
+            required=False,
+            help="Settings for phonopy pdos calculation.",
+        )
         ###
         spec.outline(
             cls.setup,
             cls.vibrate,
+            if_(cls.should_run_phonopy)(
+                cls.run_phonopy,
+            ),
             cls.results,
         )
         ###
@@ -113,6 +136,24 @@ class VibroWorkChain(WorkChain):
                 "required": False,
                 "help": "Outputs of the `IRamanSpectraWorkChain`.",
             },
+        )
+        spec.output(
+            "phonon_bands",
+            valid_type=orm.BandsData,
+            required=False,
+            help="Calculated phonon band structure.",
+        )
+        spec.output(
+            "phonon_pdos",
+            valid_type=orm.XyData,
+            required=False,
+            help="Calculated projected DOS.",
+        )
+        spec.output(
+            "phonon_thermo",
+            valid_type=orm.XyData,
+            required=False,
+            help="Calculated thermal properties.",
         )
         ###
         spec.exit_code(400, "ERROR_WORKCHAIN_FAILED", message="The workchain failed.")
@@ -195,6 +236,17 @@ class VibroWorkChain(WorkChain):
 
             builder.harmonic = builder_harmonic
 
+            # Adding the bands and pdos inputs.
+            builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
+            builder.phonopy_pdos_dict = Dict(
+                dict={
+                    "pdos": "auto",
+                    "mesh": 300,  # 1000 is too heavy
+                    "write_mesh": False,
+                }
+            )
+            builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
+
         elif simulation_mode == 2:
 
             builder_iraman = IRamanSpectraWorkChain.get_builder_from_protocol(
@@ -245,6 +297,17 @@ class VibroWorkChain(WorkChain):
             builder.phonon = builder_phonon
             builder.phonon.symmetry = symmetry
 
+            # Adding the bands and pdos inputs.
+            builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
+            builder.phonopy_pdos_dict = Dict(
+                dict={
+                    "pdos": "auto",
+                    "mesh": 300,  # 1000 is too heavy
+                    "write_mesh": False,
+                }
+            )
+            builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
+
         elif simulation_mode == 4:
 
             builder_dielectric = DielectricWorkChain.get_builder_from_protocol(
@@ -283,12 +346,17 @@ class VibroWorkChain(WorkChain):
         if "phonon" in self.inputs:
             self.ctx.key = "phonon"
             self.ctx.workchain = PhononWorkChain
-        elif "dielectric" in self.inputs:
+            self.ctx.phonopy = (
+                self.inputs.phonon.phonopy
+            )  # in the ctx, because then I will delete them in the workchain run
             self.ctx.key = "dielectric"
             self.ctx.workchain = DielectricWorkChain
         elif "harmonic" in self.inputs:
             self.ctx.key = "harmonic"
             self.ctx.workchain = HarmonicWorkChain
+            self.ctx.phonopy = (
+                self.inputs.harmonic.phonon.phonopy
+            )  # in the ctx, because then I will delete them in the workchain run
         elif "iraman" in self.inputs:
             self.ctx.key = "iraman"
             self.ctx.workchain = IRamanSpectraWorkChain
@@ -302,6 +370,7 @@ class VibroWorkChain(WorkChain):
             self.exposed_inputs(self.ctx.workchain, namespace=self.ctx.key)
         )
         inputs.metadata.call_link_label = self.ctx.key
+        inputs.pop("phonopy", None)  # I will run phonopy later in the outline.
         if self.ctx.key in ["phonon", "dielectric"]:
             inputs.scf.pw.structure = self.ctx.structure
         else:
@@ -311,6 +380,45 @@ class VibroWorkChain(WorkChain):
         self.report(f"submitting `WorkChain` <PK={future.pk}>")
         self.to_context(**{self.ctx.key: future})
 
+    def should_run_phonopy(self):
+        # Final phonopy is needed for modes 1 and 3;
+        # namely, we compute bands, pdos and thermo.
+        return "phonopy_bands_dict" in self.inputs
+
+    def run_phonopy(self):
+        """Run three `PhonopyCalculation` to get (after the calculations of force constants) bands, pdos, thermodynamic quantities."""
+
+        for calc_type in ["bands", "pdos", "thermo"]:
+            key = f"phonopy_{calc_type}_calculation"
+
+            # The following copy is done in order to be able to update the AttributesFrozenDict self.ctx.phonopy
+            # try in a verdi shell: from plumpy.utils import AttributesFrozendict
+            if self.ctx.key == "phonon":
+                # See how this works in PhononWorkChain
+                inputs = self.ctx.phonopy.copy(
+                    **{
+                        "phonopy_data": self.ctx[self.ctx.key].outputs.phonopy_data,
+                        "parameters": self.inputs[f"phonopy_{calc_type}_dict"],
+                    }
+                )
+            elif self.ctx.key == "harmonic":
+                # See how this works in HarmonicWorkChain
+                inputs = self.ctx.phonopy.copy(
+                    **{
+                        "force_constants": list(
+                            self.ctx[self.ctx.key].outputs["vibrational_data"].values()
+                        )[-1],
+                        "parameters": self.inputs[f"phonopy_{calc_type}_dict"],
+                    }
+                )
+
+            inputs.metadata.call_link_label = key
+            future = self.submit(PhonopyCalculation, **inputs)
+            self.report(
+                f"submitting `PhonopyCalculation` for {calc_type}, <PK={future.pk}>"
+            )
+            self.to_context(**{calc_type: future})
+
     def results(self):
         """Inspect all sub-processes."""
         workchain = self.ctx[self.ctx.key]
@@ -318,9 +426,21 @@ class VibroWorkChain(WorkChain):
         if not workchain.is_finished_ok:
             self.report(f"the child WorkChain with <PK={workchain.pk}> failed")
             return self.exit_codes.ERROR_WORKCHAIN_FAILED
-
-        self.out_many(
-            self.exposed_outputs(
-                self.ctx[self.ctx.key], self.ctx.workchain, namespace=self.ctx.key
+        else:
+            self.out_many(
+                self.exposed_outputs(
+                    self.ctx[self.ctx.key], self.ctx.workchain, namespace=self.ctx.key
+                )
             )
-        )
+
+        for calc_type in ["bands", "pdos", "thermo"]:
+            if calc_type in self.ctx.keys():
+                if not self.ctx[calc_type].is_finished_ok:
+                    self.report(
+                        f"the child PhonopyCalculation with <PK={workchain.pk}> failed"
+                    )
+                    return self.exit_codes.ERROR_WORKCHAIN_FAILED
+
+            self.out("phonon_bands", self.ctx["bands"].outputs.phonon_bands)
+            self.out("phonon_pdos", self.ctx["pdos"].outputs.projected_phonon_dos)
+            self.out("phonon_thermo", self.ctx["thermo"].outputs.thermal_properties)

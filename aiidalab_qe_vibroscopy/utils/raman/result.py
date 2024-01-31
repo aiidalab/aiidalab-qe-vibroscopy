@@ -92,8 +92,8 @@ def export_iramanworkchain_data(node):
                 spectra_data[
                     "Ir"
                 ] = "No IR modes detected."  # explanation added in the main results script of the app.
-
-            spectra_data["Ir"] = output_node
+            else:
+                spectra_data["Ir"] = output_node
 
         if "raman_tensors" in vibro.get_arraynames():
 
@@ -110,44 +110,12 @@ def export_iramanworkchain_data(node):
                 spectra_data[
                     "Raman"
                 ] = "No Raman modes detected."  # explanation added in the main results script of the app.
+            else:
+                spectra_data["Raman"] = output_node
 
-            spectra_data["Raman"] = output_node
         return spectra_data
     else:
         return None
-
-
-class Result(ResultPanel):
-
-    title = "Vibrational spectrum"
-    workchain_label = "iraman"
-
-    def _update_view(self):
-        bands_data = export_iramanworkchain_data(self.node)
-
-        if bands_data[3] in [
-            "Raman vibrational spectrum",
-            "Infrared vibrational spectrum",
-        ]:
-            import plotly.graph_objects as go
-
-            frequencies = bands_data[1]
-            total_intensities = bands_data[0]
-
-            g = go.FigureWidget(
-                layout=go.Layout(
-                    title=dict(text=bands_data[3]),
-                    barmode="overlay",
-                )
-            )
-            g.layout.xaxis.title = "Wavenumber (cm-1)"
-            g.layout.yaxis.title = "Intensity (arb. units)"
-            g.layout.xaxis.nticks = 0
-            g.add_scatter(x=frequencies, y=total_intensities, name=f"")
-
-            self.children = [
-                g,
-            ]
 
 
 class SpectrumPlotWidget(ipw.VBox):
