@@ -81,7 +81,7 @@ class Result(ResultPanel):
                 children_result_widget += (g,)
 
             # euphonic
-        if ins_data["fc"]:
+        if ins_data:
             intensity_map = IntensityFullWidget(fc=ins_data["fc"])
             powder_map = PowderFullWidget(fc=ins_data["fc"])
             children_result_widget += (intensity_map, powder_map)

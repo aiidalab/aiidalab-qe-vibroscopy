@@ -5,6 +5,7 @@
 from widget_bandsplot import BandsPlotWidget
 
 from aiidalab_qe.common.panel import ResultPanel
+from aiidalab_qe.plugins.pdos.result import cmap
 
 import numpy as np
 
@@ -53,23 +54,53 @@ def export_phononworkchain_data(node, fermi_energy=None):
 
         full_data["bands"] = [jsanitize(data), parameters]
 
-        if "total_phonon_dos" in node.outputs.vibronic:
-            (
-                what,
-                energy_dos,
-                units_omega,
-            ) = node.outputs.vibronic.phonon_dos.get_x()
-            (
-                dos_name,
-                dos_data,
-                units_dos,
-            ) = node.outputs.vibronic.phonon_dos.get_y()[0]
+        if "phonon_pdos" in node.outputs.vibronic:
+
+            phonopy_calc = node.outputs.vibronic.phonon_pdos.creator
+
+            kwargs = {}
+            if "settings" in phonopy_calc.inputs:
+                the_settings = phonopy_calc.inputs.settings.get_dict()
+                for key in ["symmetrize_nac", "factor_nac", "subtract_residual_forces"]:
+                    if key in the_settings:
+                        kwargs.update({key: the_settings[key]})
+
+            if "phonopy_data" in phonopy_calc.inputs:
+                instance = phonopy_calc.inputs.phonopy_data.get_phonopy_instance(
+                    **kwargs
+                )
+
+            elif "force_constants" in phonopy_calc.inputs:
+                instance = phonopy_calc.inputs.force_constants.get_phonopy_instance(
+                    **kwargs
+                )
+
+            symbols = instance.get_primitive().get_chemical_symbols()
+            pdos = node.outputs.vibronic.phonon_pdos
+
+            index_dict, dos_dict = {}, {
+                "total_dos": np.zeros(np.shape(pdos.get_y()[0][1]))
+            }
+            for atom in set(symbols):
+                # index lists
+                index_dict[atom] = [
+                    i for i in range(len(symbols)) if symbols[i] == atom
+                ]
+                # initialization of the pdos
+                dos_dict[atom] = np.zeros(
+                    np.shape(pdos.get_y()[index_dict[atom][0]][1])
+                )
+
+                for atom_contribution in index_dict[atom][:]:
+                    dos_dict[atom] += pdos.get_y()[atom_contribution][1]
+                    dos_dict["total_dos"] += pdos.get_y()[atom_contribution][1]
+
             dos = []
             # The total dos parsed
             tdos = {
                 "label": "Total DOS",
-                "x": energy_dos.tolist(),
-                "y": dos_data.tolist(),
+                "x": pdos.get_x()[1].tolist(),
+                "y": dos_dict.pop("total_dos").tolist(),
                 "borderColor": "#8A8A8A",  # dark gray
                 "backgroundColor": "#8A8A8A",  # light gray
                 "backgroundAlpha": "40%",
@@ -77,14 +108,29 @@ def export_phononworkchain_data(node, fermi_energy=None):
             }
             dos.append(tdos)
 
-            parameters["energy_range"] = {
-                "ymin": np.min(energy_dos) - 0.1,
-                "ymax": np.max(energy_dos) + 0.1,
-            }
+            t = 0
+            for atom in dos_dict.keys():
+                tdos = {
+                    "label": atom,
+                    "x": pdos.get_x()[1].tolist(),
+                    "y": dos_dict[atom].tolist(),
+                    "borderColor": cmap(atom),
+                    "backgroundColor": cmap(atom),
+                    "backgroundAlpha": "40%",
+                    "lineStyle": "solid",
+                }
+                t += 1
+                dos.append(tdos)
 
             data_dict = {
                 "fermi_energy": 0,  # I do not want it in my plot
                 "dos": dos,
+            }
+
+            parameters = {}
+            parameters["energy_range"] = {
+                "ymin": np.min(dos[0]["x"]),
+                "ymax": np.max(dos[0]["x"]),
             }
 
             full_data["pdos"] = [json.loads(json.dumps(data_dict)), parameters, "dos"]
