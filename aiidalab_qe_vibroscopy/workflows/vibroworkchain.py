@@ -128,7 +128,7 @@ def determine_symmetry_path(structure):
     # Tolerance for checking equality
     cell_lengths = structure.cell_lengths
     cell_angles = structure.cell_angles
-    tolerance = 1e-4
+    tolerance = 1e-3
 
     # Define symmetry conditions and their corresponding types in a dictionary
     symmetry_conditions = {
@@ -161,7 +161,7 @@ def determine_symmetry_path(structure):
     for condition, symmetry_type in symmetry_conditions.items():
         if condition:
             if symmetry_type == "rectangular_centered" or "oblique":
-                cos_gamma = structrure.cell[0].dot(structrure.cell[1]) / (
+                cos_gamma = np.array(structure.cell[0]).dot(structure.cell[1]) / (
                     cell_lengths[0] * cell_lengths[1]
                 )
                 gamma = np.arccos(cos_gamma)
@@ -414,19 +414,19 @@ class VibroWorkChain(WorkChain):
                     }
                 )
 
-                if structrure.pbc == (True, False, False):
+                if structure.pbc == (True, False, False):
                     builder.phonopy_bands_dict = Dict(
                         dict={
-                            "bands": [0, 0, 0, 1 / 2, 0, 0],
+                            "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
                             "labels": [GAMMA, "X"],
                         }
                     )
-                elif structrure.pbc == (True, True, False):
+                elif structure.pbc == (True, True, False):
                     symmetry_path = determine_symmetry_path(structure)
-                    builder.phonon_bands_dict = Dict(
+                    builder.phonopy_bands_dict = Dict(
                         dict={
-                            "bands": symmetry_path["band"],
+                            "band": symmetry_path["band"],
                             "band_points": 100,
                             "labels": symmetry_path["labels"],
                         }
@@ -512,7 +512,7 @@ class VibroWorkChain(WorkChain):
                     }
                 )
 
-                if structrure.pbc == (True, False, False):
+                if structure.pbc == (True, False, False):
                     builder.phonopy_bands_dict = Dict(
                         dict={
                             "bands": [0, 0, 0, 1 / 2, 0, 0],
@@ -520,7 +520,7 @@ class VibroWorkChain(WorkChain):
                             "labels": [GAMMA, "X"],
                         }
                     )
-                elif structrure.pbc == (True, True, False):
+                elif structure.pbc == (True, True, False):
                     symmetry_path = determine_symmetry_path(structure)
                     builder.phonon_bands_dict = Dict(
                         dict={
