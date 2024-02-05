@@ -398,6 +398,7 @@ class VibroWorkChain(WorkChain):
             # Adding the bands and pdos inputs.
             if structure.pbc != (True, True, True):
                 # Generate Mesh for 1D and 2D materials
+                builder.harmonic.dielectric.pop("kpoints_parallel_distance", None)
                 inputs = {
                     "structure": structure,
                     "distance": orm.Float(0.01),
@@ -429,6 +430,7 @@ class VibroWorkChain(WorkChain):
                             "band": symmetry_path["band"],
                             "band_points": 100,
                             "labels": symmetry_path["labels"],
+                            "band_connection": True,
                         }
                     )
             else:
@@ -509,6 +511,7 @@ class VibroWorkChain(WorkChain):
                         "pdos": "auto",
                         "mesh": kpoints.get_kpoints_mesh()[0],
                         "write_mesh": False,
+                        "band_connection": True,
                     }
                 )
 
@@ -522,7 +525,7 @@ class VibroWorkChain(WorkChain):
                     )
                 elif structure.pbc == (True, True, False):
                     symmetry_path = determine_symmetry_path(structure)
-                    builder.phonon_bands_dict = Dict(
+                    builder.phonopy_bands_dict = Dict(
                         dict={
                             "bands": symmetry_path["band"],
                             "band_points": 100,
