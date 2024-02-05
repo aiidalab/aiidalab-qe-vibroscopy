@@ -39,7 +39,7 @@ export_phononworkchain_data function, used then in the result.py panel.
 
 
 def generate_force_constant_instance(phonopy_calc):
-
+    blockPrint()
     ####### This is almost copied from PhonopyCalculation
     from phonopy.interface.phonopy_yaml import PhonopyYaml
 
@@ -91,16 +91,15 @@ def generate_force_constant_instance(phonopy_calc):
         )
 
         # Read force constants (fc.hdf5) and summary+NAC (phonopy.yaml)
-        old_stdout = sys.stdout  # backup current stdout
-        sys.stdout = open(os.devnull, "w")
+
         fc = euphonic.ForceConstants.from_phonopy(
             path=dirpath,
             summary_name="phonopy.yaml",
             fc_name="fc.hdf5",
         )
-        sys.stdout = old_stdout  # reset old stdout
         # print(filename)
         # print(dirpath)
+    enablePrint()
     return fc
 
 

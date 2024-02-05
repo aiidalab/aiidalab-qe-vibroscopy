@@ -349,6 +349,7 @@ class VibroWorkChain(WorkChain):
             self.ctx.phonopy = (
                 self.inputs.phonon.phonopy
             )  # in the ctx, because then I will delete them in the workchain run
+        elif "dielectric" in self.inputs:
             self.ctx.key = "dielectric"
             self.ctx.workchain = DielectricWorkChain
         elif "harmonic" in self.inputs:
