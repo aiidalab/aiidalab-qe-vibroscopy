@@ -8,13 +8,172 @@ from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida.engine import WorkChain, calcfunction, if_
 from aiida_vibroscopy.common.properties import PhononProperty
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
+    create_kpoints_from_distance,
+)
+import math
+import numpy as np
 
+
+GAMMA = "\u0393"
 
 IRamanSpectraWorkChain = WorkflowFactory("vibroscopy.spectra.iraman")
 HarmonicWorkChain = WorkflowFactory("vibroscopy.phonons.harmonic")
 DielectricWorkChain = WorkflowFactory("vibroscopy.dielectric")
 PhononWorkChain = WorkflowFactory("vibroscopy.phonons.phonon")
 PhonopyCalculation = CalculationFactory("phonopy.phonopy")
+
+
+def generate_2d_path(symmetry_type, eta=None, nu=None):
+    PATH_SYMMETRY_2D = {
+        "hexagonal": {
+            "band": [
+                0.0,
+                0.0,
+                0.0,
+                0.33333,
+                0.33333,
+                0.0,
+                0.5,
+                0.5,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+            ],
+            "labels": [GAMMA, "K", "M", GAMMA],
+        },
+        "square": {
+            "band": [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0],
+            "labels": [GAMMA, "X", "M", GAMMA],
+        },
+        "rectangular": {
+            "band": [
+                0.0,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                0.5,
+                0.5,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+            ],
+            "labels": [GAMMA, "X", "S", "Y", GAMMA],
+        },
+        "rectangular_centered": {
+            "band": [
+                0.0,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                1 - eta,
+                nu,
+                0,
+                0.5,
+                0.5,
+                0.0,
+                eta,
+                1 - nu,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+            ],
+            "labels": [GAMMA, "X", "H_1", "C", "H", GAMMA],
+        },
+        "oblique": {
+            "band": [
+                0.0,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                1 - eta,
+                nu,
+                0,
+                0.5,
+                0.5,
+                0.0,
+                eta,
+                1 - nu,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+            ],
+            "labels": [GAMMA, "X", "H_1", "C", "H", "Y", GAMMA],
+        },
+    }
+
+    if symmetry_type in PATH_SYMMETRY_2D:
+        return PATH_SYMMETRY_2D[symmetry_type]
+    else:
+        raise ValueError("Invalid symmetry type")
+
+
+def determine_symmetry_path(structure):
+    # Tolerance for checking equality
+    cell_lengths = structure.cell_lengths
+    cell_angles = structure.cell_angles
+    tolerance = 1e-4
+
+    # Define symmetry conditions and their corresponding types in a dictionary
+    symmetry_conditions = {
+        (
+            math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance)
+            and math.isclose(cell_angles[2], 120.0, abs_tol=tolerance)
+        ): "hexagonal",
+        (
+            math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance)
+            and math.isclose(cell_angles[2], 90.0, abs_tol=tolerance)
+        ): "square",
+        (
+            math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance) == False
+            and math.isclose(cell_angles[2], 90.0, abs_tol=tolerance)
+        ): "rectangular",
+        (
+            math.isclose(
+                cell_lengths[1] * math.cos(math.radians(cell_angles[2])),
+                cell_lengths[0] / 2,
+                abs_tol=tolerance,
+            )
+        ): "rectangular_centered",
+        (
+            math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance) == False
+            and math.isclose(cell_angles[2], 90.0, abs_tol=tolerance) == False
+        ): "oblique",
+    }
+
+    # Check for symmetry type based on conditions
+    for condition, symmetry_type in symmetry_conditions.items():
+        if condition:
+            if symmetry_type == "rectangular_centered" or "oblique":
+                cos_gamma = structrure.cell[0].dot(structrure.cell[1]) / (
+                    cell_lengths[0] * cell_lengths[1]
+                )
+                gamma = np.arccos(cos_gamma)
+                eta = (1 - (cell_lengths[0] / cell_lengths[1]) * cos_gamma) / (
+                    2 * np.power(np.sin(gamma), 2)
+                )
+                nu = 0.5 - (eta * cell_lengths[1] * cos_gamma) / cell_lengths[0]
+                return generate_2d_path(symmetry_type, eta, nu)
+
+            return generate_2d_path(symmetry_type)
+        else:
+            raise ValueError("Invalid symmetry type")
 
 
 class VibroWorkChain(WorkChain):
@@ -237,14 +396,51 @@ class VibroWorkChain(WorkChain):
             builder.harmonic = builder_harmonic
 
             # Adding the bands and pdos inputs.
-            builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
-            builder.phonopy_pdos_dict = Dict(
-                dict={
-                    "pdos": "auto",
-                    "mesh": 300,  # 1000 is too heavy
-                    "write_mesh": False,
+            if structure.pbc != (True, True, True):
+                # Generate Mesh for 1D and 2D materials
+                inputs = {
+                    "structure": structure,
+                    "distance": orm.Float(0.01),
+                    "force_parity": orm.Bool(False),
+                    "metadata": {"call_link_label": "create_kpoints_from_distance"},
                 }
-            )
+                kpoints = create_kpoints_from_distance(**inputs)
+
+                builder.phonopy_pdos_dict = Dict(
+                    dict={
+                        "pdos": "auto",
+                        "mesh": kpoints.get_kpoints_mesh()[0],
+                        "write_mesh": False,
+                    }
+                )
+
+                if structrure.pbc == (True, False, False):
+                    builder.phonopy_bands_dict = Dict(
+                        dict={
+                            "bands": [0, 0, 0, 1 / 2, 0, 0],
+                            "band_points": 100,
+                            "labels": [GAMMA, "X"],
+                        }
+                    )
+                elif structrure.pbc == (True, True, False):
+                    symmetry_path = determine_symmetry_path(structure)
+                    builder.phonon_bands_dict = Dict(
+                        dict={
+                            "bands": symmetry_path["band"],
+                            "band_points": 100,
+                            "labels": symmetry_path["labels"],
+                        }
+                    )
+            else:
+                builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
+                builder.phonopy_pdos_dict = Dict(
+                    dict={
+                        "pdos": "auto",
+                        "mesh": 300,  # 1000 is too heavy
+                        "write_mesh": False,
+                    }
+                )
+
             builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
 
         elif simulation_mode == 2:
@@ -298,14 +494,51 @@ class VibroWorkChain(WorkChain):
             builder.phonon.symmetry = symmetry
 
             # Adding the bands and pdos inputs.
-            builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
-            builder.phonopy_pdos_dict = Dict(
-                dict={
-                    "pdos": "auto",
-                    "mesh": 300,  # 1000 is too heavy
-                    "write_mesh": False,
+            if structure.pbc != (True, True, True):
+                # Generate Mesh for 1D and 2D materials
+                inputs = {
+                    "structure": structure,
+                    "distance": orm.Float(0.01),
+                    "force_parity": orm.Bool(False),
+                    "metadata": {"call_link_label": "create_kpoints_from_distance"},
                 }
-            )
+                kpoints = create_kpoints_from_distance(**inputs)
+
+                builder.phonopy_pdos_dict = Dict(
+                    dict={
+                        "pdos": "auto",
+                        "mesh": kpoints.get_kpoints_mesh()[0],
+                        "write_mesh": False,
+                    }
+                )
+
+                if structrure.pbc == (True, False, False):
+                    builder.phonopy_bands_dict = Dict(
+                        dict={
+                            "bands": [0, 0, 0, 1 / 2, 0, 0],
+                            "band_points": 100,
+                            "labels": [GAMMA, "X"],
+                        }
+                    )
+                elif structrure.pbc == (True, True, False):
+                    symmetry_path = determine_symmetry_path(structure)
+                    builder.phonon_bands_dict = Dict(
+                        dict={
+                            "bands": symmetry_path["band"],
+                            "band_points": 100,
+                            "labels": symmetry_path["labels"],
+                        }
+                    )
+            else:
+                builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
+                builder.phonopy_pdos_dict = Dict(
+                    dict={
+                        "pdos": "auto",
+                        "mesh": 300,  # 1000 is too heavy
+                        "write_mesh": False,
+                    }
+                )
+
             builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
 
         elif simulation_mode == 4:
