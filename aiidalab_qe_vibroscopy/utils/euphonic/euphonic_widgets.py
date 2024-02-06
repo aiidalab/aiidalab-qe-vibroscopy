@@ -116,9 +116,11 @@ def export_euphonic_data(node, fermi_energy=None):
 
     phonopy_calc = output_set.creator
     fc = generate_force_constant_instance(phonopy_calc)
-    bands = compute_bands(fc)
-    pdos = compute_pdos(fc)
-    return {"fc": fc, "bands": bands, "pdos": pdos, "thermal": None}
+    # bands = compute_bands(fc)
+    # pdos = compute_pdos(fc)
+    return {
+        "fc": fc,
+    }  # "bands": bands, "pdos": pdos, "thermal": None}
 
 
 def generated_curated_data(spectra):
