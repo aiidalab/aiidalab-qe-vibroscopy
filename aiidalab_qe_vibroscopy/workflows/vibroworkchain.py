@@ -430,7 +430,6 @@ class VibroWorkChain(WorkChain):
                             "band": symmetry_path["band"],
                             "band_points": 100,
                             "labels": symmetry_path["labels"],
-                            "band_connection": True,
                         }
                     )
             else:
@@ -511,14 +510,13 @@ class VibroWorkChain(WorkChain):
                         "pdos": "auto",
                         "mesh": kpoints.get_kpoints_mesh()[0],
                         "write_mesh": False,
-                        "band_connection": True,
                     }
                 )
 
                 if structure.pbc == (True, False, False):
                     builder.phonopy_bands_dict = Dict(
                         dict={
-                            "bands": [0, 0, 0, 1 / 2, 0, 0],
+                            "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
                             "labels": [GAMMA, "X"],
                         }
@@ -527,7 +525,7 @@ class VibroWorkChain(WorkChain):
                     symmetry_path = determine_symmetry_path(structure)
                     builder.phonopy_bands_dict = Dict(
                         dict={
-                            "bands": symmetry_path["band"],
+                            "band": symmetry_path["band"],
                             "band_points": 100,
                             "labels": symmetry_path["labels"],
                         }
