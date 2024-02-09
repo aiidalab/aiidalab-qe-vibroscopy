@@ -65,17 +65,7 @@ def export_phononworkchain_data(node, fermi_energy=None):
                     if key in the_settings:
                         kwargs.update({key: the_settings[key]})
 
-            if "phonopy_data" in phonopy_calc.inputs:
-                instance = phonopy_calc.inputs.phonopy_data.get_phonopy_instance(
-                    **kwargs
-                )
-
-            elif "force_constants" in phonopy_calc.inputs:
-                instance = phonopy_calc.inputs.force_constants.get_phonopy_instance(
-                    **kwargs
-                )
-
-            symbols = instance.get_primitive().get_chemical_symbols()
+            symbols = node.inputs.structure.get_ase().get_chemical_symbols()
             pdos = node.outputs.vibronic.phonon_pdos
 
             index_dict, dos_dict = {}, {
