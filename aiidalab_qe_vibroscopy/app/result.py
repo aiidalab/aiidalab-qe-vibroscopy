@@ -35,7 +35,6 @@ class PhononBandPdosPlotly(BandPdosPlotly):
             showgrid=True,
             showline=True,
             zeroline=True,
-            range=self.SETTINGS["vertical_range_bands"],
             fixedrange=False,
             automargin=True,
             ticks="inside",
@@ -93,16 +92,6 @@ class Result(ResultPanel):
                     _bands_plot_view_class._create_combined_plot(),
                 )
 
-            """if phonon_data["pdos"]:
-                _pdos_plot_view = BandsPlotWidget(
-                    dos=phonon_data["pdos"][0],
-                    plot_fermilevel=False,
-                    show_legend=False,
-                    **phonon_data["pdos"][1],
-                )
-                children_result_widget += (_pdos_plot_view,)
-            """
-
             if phonon_data["thermo"]:
                 import plotly.graph_objects as go
 
@@ -120,7 +109,16 @@ class Result(ResultPanel):
                         barmode="overlay",
                     )
                 )
-                g.layout.xaxis.title = "Temperature (K)"
+                g.update_layout(
+                    xaxis=dict(
+                        title="Temperature (K)",
+                        linecolor="black",
+                        linewidth=2,
+                        showline=True,
+                    ),
+                    yaxis=dict(linecolor="black", linewidth=2, showline=True),
+                    plot_bgcolor="white",
+                )
                 g.add_scatter(x=T, y=F, name=f"Helmoltz Free Energy ({F_units})")
                 g.add_scatter(x=T, y=E, name=f"Entropy ({E_units})")
                 g.add_scatter(x=T, y=Cv, name=f"Specific Heat-V=const ({Cv_units})")

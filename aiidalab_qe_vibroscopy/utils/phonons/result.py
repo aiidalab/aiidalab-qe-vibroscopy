@@ -11,6 +11,22 @@ import numpy as np
 import json
 
 
+def replace_symbols_with_uppercase(data):
+    symbols_mapping = {
+        "$\Gamma$": "\u0393",
+        "$\\Gamma$": "\u0393",
+        "$\\Delta$": "\u0394",
+        "$\\Lambda$": "\u039B",
+        "$\\Sigma$": "\u03A3",
+        "$\\Epsilon$": "\u0395",
+    }
+
+    for sublist in data:
+        for i, element in enumerate(sublist):
+            if element in symbols_mapping:
+                sublist[i] = symbols_mapping[element]
+
+
 def export_phononworkchain_data(node, fermi_energy=None):
 
     """
@@ -44,6 +60,7 @@ def export_phononworkchain_data(node, fermi_energy=None):
         # The fermi energy from band calculation is not robust.
         data["fermi_energy"] = 0
         data["pathlabels"] = get_bands_labeling(data)
+        replace_symbols_with_uppercase(data["pathlabels"])
         data["Y_label"] = "Dispersion (THz)"
 
         # it does work now.
