@@ -15,7 +15,7 @@ import math
 import numpy as np
 
 
-GAMMA = "\u0393"
+GAMMA = "$\Gamma$"
 
 IRamanSpectraWorkChain = WorkflowFactory("vibroscopy.spectra.iraman")
 HarmonicWorkChain = WorkflowFactory("vibroscopy.phonons.harmonic")
@@ -27,25 +27,12 @@ PhonopyCalculation = CalculationFactory("phonopy.phonopy")
 def generate_2d_path(symmetry_type, eta=None, nu=None):
     PATH_SYMMETRY_2D = {
         "hexagonal": {
-            "band": [
-                0.0,
-                0.0,
-                0.0,
-                0.33333,
-                0.33333,
-                0.0,
-                0.5,
-                0.5,
-                0.0,
-                1.0,
-                0.0,
-                0.0,
-            ],
-            "labels": [GAMMA, "K", "M", GAMMA],
+            "band": [0.0, 0.0, 0.0 ,0.5, 0.0 ,0.0 , 0.3333, 0.3333, 0.0 , 0.0 ,0.0, 0.0],
+            "labels": [GAMMA, "$\\mathrm{M}$", "$\\mathrm{K}$", GAMMA],
         },
         "square": {
-            "band": [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0],
-            "labels": [GAMMA, "X", "M", GAMMA],
+            "band": [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0],
+            "labels": [GAMMA, "$\\mathrm{X}$", "$\\mathrm{M}$", GAMMA],
         },
         "rectangular": {
             "band": [
@@ -65,7 +52,7 @@ def generate_2d_path(symmetry_type, eta=None, nu=None):
                 0.0,
                 0.0,
             ],
-            "labels": [GAMMA, "X", "S", "Y", GAMMA],
+            "labels": [GAMMA, "$\\mathrm{X}$", "$\\mathrm{S}$", "$\\mathrm{Y}$", GAMMA],
         },
         "rectangular_centered": {
             "band": [
@@ -88,7 +75,7 @@ def generate_2d_path(symmetry_type, eta=None, nu=None):
                 0.0,
                 0.0,
             ],
-            "labels": [GAMMA, "X", "H_1", "C", "H", GAMMA],
+            "labels": [GAMMA, "$\\mathrm{X}$", "$\\mathrm{H_1}$", "$\\mathrm{C}$", "$\\mathrm{H}$", GAMMA],
         },
         "oblique": {
             "band": [
@@ -114,7 +101,7 @@ def generate_2d_path(symmetry_type, eta=None, nu=None):
                 0.0,
                 0.0,
             ],
-            "labels": [GAMMA, "X", "H_1", "C", "H", "Y", GAMMA],
+            "labels": [GAMMA, "$\\mathrm{X}$", "$\\mathrm{H_1}$", "$\\mathrm{C}$", "$\\mathrm{H}$", "$\\mathrm{Y}$", GAMMA],
         },
     }
 
@@ -420,7 +407,8 @@ class VibroWorkChain(WorkChain):
                         dict={
                             "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
-                            "labels": [GAMMA, "X"],
+                            "band_labels": [GAMMA, "$\\mathrm{X}$"],
+                           
                         }
                     )
                 elif structure.pbc == (True, True, False):
@@ -429,7 +417,8 @@ class VibroWorkChain(WorkChain):
                         dict={
                             "band": symmetry_path["band"],
                             "band_points": 100,
-                            "labels": symmetry_path["labels"],
+                            "band_labels": symmetry_path["labels"],
+                            "primitive_axes": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],                            
                         }
                     )
             else:
@@ -518,7 +507,8 @@ class VibroWorkChain(WorkChain):
                         dict={
                             "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
-                            "labels": [GAMMA, "X"],
+                            "band_labels": [GAMMA, "$\\mathrm{X}$"],
+                           
                         }
                     )
                 elif structure.pbc == (True, True, False):
@@ -527,7 +517,9 @@ class VibroWorkChain(WorkChain):
                         dict={
                             "band": symmetry_path["band"],
                             "band_points": 100,
-                            "labels": symmetry_path["labels"],
+                            "band_labels": symmetry_path["labels"],
+                            "primitive_axes": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+                           
                         }
                     )
             else:
