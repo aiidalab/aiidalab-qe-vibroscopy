@@ -21,6 +21,8 @@ from aiida import orm
 In this module we have the functions used to obtain the phonon bands and pdos
 (from euphonic, using the force constants instances as obtained from phonopy.yaml).
 These are then used in the widgets to plot the corresponding quantities.
+
+NB: no more used in the QE-app. We use phonopy instead.
 """
 
 ########################
