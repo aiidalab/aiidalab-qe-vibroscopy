@@ -4,7 +4,7 @@ import euphonic as eu
 import euphonic.util as util
 import euphonic.plot as plt
 
-from aiidalab_qe.plugins.pdos.result import cmap
+from aiidalab_qe.common.bandpdoswidget import cmap
 
 import json
 from monty.json import jsanitize

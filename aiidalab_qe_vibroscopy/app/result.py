@@ -7,6 +7,7 @@ from __future__ import annotations
 from widget_bandsplot import BandsPlotWidget
 
 from aiidalab_qe.common.panel import ResultPanel
+from aiidalab_qe.common.bandpdoswidget import BandPdosPlotly
 
 import numpy as np
 
@@ -19,9 +20,52 @@ from ..utils.euphonic.euphonic_widgets import (
     IntensityFullWidget,
     PowderFullWidget,
 )
-
+import plotly.graph_objects as go
 import ipywidgets as ipw
+
 from ..utils.raman.result import SpectrumPlotWidget, ActiveModesWidget
+
+
+class PhononBandPdosPlotly(BandPdosPlotly):
+    def __init__(self, bands_data=None, pdos_data=None):
+        super().__init__(bands_data, pdos_data)
+        self._bands_yaxis = go.layout.YAxis(
+            title=dict(text="Phonon Bands (THz)", standoff=1),
+            side="left",
+            showgrid=True,
+            showline=True,
+            zeroline=True,
+            range=self.SETTINGS["vertical_range_bands"],
+            fixedrange=False,
+            automargin=True,
+            ticks="inside",
+            linewidth=2,
+            linecolor=self.SETTINGS["axis_linecolor"],
+            tickwidth=2,
+            zerolinewidth=2,
+        )
+
+        paths = self.bands_data.get("paths")
+        slider_bands = go.layout.xaxis.Rangeslider(
+            thickness=0.08,
+            range=[0, paths[-1]["x"][-1]],
+        )
+        self._bands_xaxis = go.layout.XAxis(
+            title="q-points",
+            range=[0, paths[-1]["x"][-1]],
+            showgrid=True,
+            showline=True,
+            tickmode="array",
+            rangeslider=slider_bands,
+            fixedrange=False,
+            tickvals=self.bands_data["pathlabels"][1],  # ,self.band_labels[1],
+            ticktext=self.bands_data["pathlabels"][0],  # self.band_labels[0],
+            showticklabels=True,
+            linecolor=self.SETTINGS["axis_linecolor"],
+            mirror=True,
+            linewidth=2,
+            type="linear",
+        )
 
 
 class Result(ResultPanel):
@@ -40,14 +84,16 @@ class Result(ResultPanel):
 
         if phonon_data:
 
-            if phonon_data["bands"]:
-                _bands_plot_view = BandsPlotWidget(
-                    bands=[phonon_data["bands"][0]],
-                    **phonon_data["bands"][1],
+            if phonon_data["bands"] or phonon_data["pdos"]:
+                _bands_plot_view_class = PhononBandPdosPlotly(
+                    bands_data=phonon_data["bands"][0],
+                    pdos_data=phonon_data["pdos"][0],
                 )
-                children_result_widget += (_bands_plot_view,)
+                children_result_widget += (
+                    _bands_plot_view_class._create_combined_plot(),
+                )
 
-            if phonon_data["pdos"]:
+            """if phonon_data["pdos"]:
                 _pdos_plot_view = BandsPlotWidget(
                     dos=phonon_data["pdos"][0],
                     plot_fermilevel=False,
@@ -55,6 +101,7 @@ class Result(ResultPanel):
                     **phonon_data["pdos"][1],
                 )
                 children_result_widget += (_pdos_plot_view,)
+            """
 
             if phonon_data["thermo"]:
                 import plotly.graph_objects as go
@@ -81,7 +128,7 @@ class Result(ResultPanel):
                 children_result_widget += (g,)
 
             # euphonic
-        #if ins_data:
+        # if ins_data:
         #    intensity_map = IntensityFullWidget(fc=ins_data["fc"])
         #    powder_map = PowderFullWidget(fc=ins_data["fc"])
         #    children_result_widget += (intensity_map, powder_map)

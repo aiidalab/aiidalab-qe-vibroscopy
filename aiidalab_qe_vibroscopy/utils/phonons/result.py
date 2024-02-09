@@ -5,9 +5,10 @@
 from widget_bandsplot import BandsPlotWidget
 
 from aiidalab_qe.common.panel import ResultPanel
-from aiidalab_qe.plugins.pdos.result import cmap
+from aiidalab_qe.common.bandpdoswidget import cmap, get_bands_labeling
 
 import numpy as np
+import json
 
 
 def export_phononworkchain_data(node, fermi_energy=None):
@@ -32,25 +33,25 @@ def export_phononworkchain_data(node, fermi_energy=None):
 
     if "phonon_bands" in node.outputs.vibronic:
 
+        """
+        copied and pasted from aiidalab_qe.common.bandsplotwidget.
+        adapted for phonon outputs
+        """
+
         data = json.loads(
             node.outputs.vibronic.phonon_bands._exportcontent("json", comments=False)[0]
         )
         # The fermi energy from band calculation is not robust.
-        """data["fermi_level"] = (
-            fermi_energy or node.outputs.phonons.band_parameters["fermi_energy"]
-        )"""
-        # to be optimized: use the above results!!!
-        bands = node.outputs.vibronic.phonon_bands.get_bands()
-        data["fermi_level"] = 0
+        data["fermi_energy"] = 0
+        data["pathlabels"] = get_bands_labeling(data)
         data["Y_label"] = "Dispersion (THz)"
 
         # it does work now.
+        bands = node.outputs.vibronic.phonon_bands.get_bands()
         parameters["energy_range"] = {
             "ymin": np.min(bands) - 0.1,
             "ymax": np.max(bands) + 0.1,
         }
-
-        # TODO: THERMOD, FORCES; minors: bands-labels, done: no-fermi-in-dos.
 
         full_data["bands"] = [jsanitize(data), parameters]
 
