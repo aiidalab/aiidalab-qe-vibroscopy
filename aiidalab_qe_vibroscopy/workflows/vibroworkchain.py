@@ -578,6 +578,8 @@ class VibroWorkChain(WorkChain):
 
             # MBO: I do not understand why I have to do this, but it works. maybe related with excludes.
             symmetry = builder_dielectric.pop("symmetry")
+            if structure.pbc != (True, True, True):
+                builder_dielectric.dielectric.pop("kpoints_parallel_distance", None)
             builder.dielectric = builder_dielectric
             builder.dielectric.symmetry = symmetry
             builder.dielectric.property = dielectric_property
