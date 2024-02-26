@@ -27,7 +27,7 @@ PhonopyCalculation = CalculationFactory("phonopy.phonopy")
 def generate_2d_path(symmetry_type, eta=None, nu=None):
     PATH_SYMMETRY_2D = {
         "hexagonal": {
-            "band": [0.0, 0.0, 0.0 ,0.5, 0.0 ,0.0 , 0.3333, 0.3333, 0.0 , 0.0 ,0.0, 0.0],
+            "band": [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.3333, 0.3333, 0.0, 0.0, 0.0, 0.0],
             "labels": [GAMMA, "$\\mathrm{M}$", "$\\mathrm{K}$", GAMMA],
         },
         "square": {
@@ -75,7 +75,14 @@ def generate_2d_path(symmetry_type, eta=None, nu=None):
                 0.0,
                 0.0,
             ],
-            "labels": [GAMMA, "$\\mathrm{X}$", "$\\mathrm{H_1}$", "$\\mathrm{C}$", "$\\mathrm{H}$", GAMMA],
+            "labels": [
+                GAMMA,
+                "$\\mathrm{X}$",
+                "$\\mathrm{H_1}$",
+                "$\\mathrm{C}$",
+                "$\\mathrm{H}$",
+                GAMMA,
+            ],
         },
         "oblique": {
             "band": [
@@ -101,7 +108,15 @@ def generate_2d_path(symmetry_type, eta=None, nu=None):
                 0.0,
                 0.0,
             ],
-            "labels": [GAMMA, "$\\mathrm{X}$", "$\\mathrm{H_1}$", "$\\mathrm{C}$", "$\\mathrm{H}$", "$\\mathrm{Y}$", GAMMA],
+            "labels": [
+                GAMMA,
+                "$\\mathrm{X}$",
+                "$\\mathrm{H_1}$",
+                "$\\mathrm{C}$",
+                "$\\mathrm{H}$",
+                "$\\mathrm{Y}$",
+                GAMMA,
+            ],
         },
     }
 
@@ -408,7 +423,6 @@ class VibroWorkChain(WorkChain):
                             "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
                             "band_labels": [GAMMA, "$\\mathrm{X}$"],
-                           
                         }
                     )
                 elif structure.pbc == (True, True, False):
@@ -418,7 +432,17 @@ class VibroWorkChain(WorkChain):
                             "band": symmetry_path["band"],
                             "band_points": 100,
                             "band_labels": symmetry_path["labels"],
-                            "primitive_axes": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],                            
+                            "primitive_axes": [
+                                1.0,
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0,
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0,
+                            ],
                         }
                     )
             else:
@@ -508,7 +532,6 @@ class VibroWorkChain(WorkChain):
                             "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
                             "band_labels": [GAMMA, "$\\mathrm{X}$"],
-                           
                         }
                     )
                 elif structure.pbc == (True, True, False):
@@ -518,8 +541,17 @@ class VibroWorkChain(WorkChain):
                             "band": symmetry_path["band"],
                             "band_points": 100,
                             "band_labels": symmetry_path["labels"],
-                            "primitive_axes": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-                           
+                            "primitive_axes": [
+                                1.0,
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0,
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0,
+                            ],
                         }
                     )
             else:
@@ -546,6 +578,8 @@ class VibroWorkChain(WorkChain):
 
             # MBO: I do not understand why I have to do this, but it works. maybe related with excludes.
             symmetry = builder_dielectric.pop("symmetry")
+            if structure.pbc != (True, True, True):
+                builder_dielectric.dielectric.pop("kpoints_parallel_distance", None)
             builder.dielectric = builder_dielectric
             builder.dielectric.symmetry = symmetry
             builder.dielectric.property = dielectric_property

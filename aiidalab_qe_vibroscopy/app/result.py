@@ -120,7 +120,16 @@ class Result(ResultPanel):
                         barmode="overlay",
                     )
                 )
-                g.layout.xaxis.title = "Temperature (K)"
+                g.update_layout(
+                    xaxis=dict(
+                        title="Temperature (K)",
+                        linecolor="black",
+                        linewidth=2,
+                        showline=True,
+                    ),
+                    yaxis=dict(linecolor="black", linewidth=2, showline=True),
+                    plot_bgcolor="white",
+                )
                 g.add_scatter(x=T, y=F, name=f"Helmoltz Free Energy ({F_units})")
                 g.add_scatter(x=T, y=E, name=f"Entropy ({E_units})")
                 g.add_scatter(x=T, y=Cv, name=f"Specific Heat-V=const ({Cv_units})")
