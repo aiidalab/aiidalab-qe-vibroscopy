@@ -6,6 +6,7 @@ import tempfile
 
 import matplotlib.style
 import numpy as np
+import copy
 
 from math import ceil
 
@@ -135,7 +136,7 @@ parameters = AttrDict(par_dict)
 
 
 def produce_bands_weigthed_data(
-    params: Optional[List[str]] = None, fc: ForceConstants = None, plot=False
+    params: Optional[List[str]] = parameters, fc: ForceConstants = None, plot=False
 ) -> None:
     blockPrint()
     """
@@ -145,7 +146,7 @@ def produce_bands_weigthed_data(
     and will call the calculate_sqw_map or the calculate_dos_map functions, respectively.
     """
     # args = get_args(get_parser(), params)
-    args = parameters
+    args = params
     calc_modes_kwargs = _calc_modes_kwargs(args)
 
     frequencies_only = args.weighting != "coherent"
@@ -242,7 +243,7 @@ def produce_bands_weigthed_data(
             matplotlib_save_or_show(save_filename=args.save_to)
 
     enablePrint()
-    return spectra, parameters
+    return spectra, copy.deepcopy(params)
 
 
 ########################
@@ -295,11 +296,13 @@ parameters_powder = AttrDict(par_dict_powder)
 
 
 def produce_powder_data(
-    params: Optional[List[str]] = None, fc: ForceConstants = None, plot=False
+    params: Optional[List[str]] = parameters_powder,
+    fc: ForceConstants = None,
+    plot=False,
 ) -> None:
     blockPrint()
     # args = get_args(get_parser(), params)
-    args = parameters_powder
+    args = params
     calc_modes_kwargs = _calc_modes_kwargs(args)
 
     # Make sure we get an error if accessing NPTS inappropriately
@@ -500,5 +503,5 @@ def produce_powder_data(
                 maxbox.on_submit(update_max)
 
     enablePrint()
-    return spectrum, parameters_powder
+    return spectrum, copy.deepcopy(params)
     matplotlib_save_or_show(save_filename=args.save_to)
