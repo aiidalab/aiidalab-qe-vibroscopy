@@ -7,7 +7,7 @@ import tempfile
 import matplotlib.style
 import numpy as np
 import copy
-
+import seekpath
 from math import ceil
 
 """"
@@ -99,7 +99,87 @@ These are then used in the widgets to plot the corresponding quantities.
 ########################
 
 ########################
-################################ START INTENSITY
+################################ START custom q path routine
+########################
+
+
+def join_q_paths(coordinates: list, labels: list, delta_q=0.1, G=[0, 0, 0]):
+    from euphonic.cli.utils import _get_tick_labels, _get_break_points
+
+    """
+    Join list of q points and labels.
+
+    Inputs:
+
+    coordinates (list): list of tuples with the coordinates of path: [(kxi,kyi,kzi),(kxf,kyf,kzf)].
+                        Coordinates should be in reciprocal lattice units, as euphonic want.
+    labels (list): list of tuples with the labels: [("Gamma", "M")].
+    delta_q (float): q spacing in Angstrom^-1.
+    G (list): the modulus of the three reciprocal lattice vectors. Used to convert back and forth into RLU
+
+    Outputs:
+
+    final_path [list]: list of q points with labels.
+    refined_labels, split_args: list needed for the produce_bands_weigthed_data method.
+    """
+    list_of_paths = []
+    Nq_tot = 0
+
+    new_labels_index = (
+        []
+    )  # here we store the index to then set the labels list as in seekpath, to be refined in the produce_curated_data routine.
+    for path in coordinates:
+        kxi, kyi, kzi = path[0]  # starting point
+        kxf, kyf, kzf = path[1]  # end point
+
+        Nq = int(
+            np.linalg.norm(
+                np.array([(kxf - kxi) * G[0], (kyf - kyi) * G[1], (kzf - kzi) * G[2]])
+            )
+            / delta_q
+        )
+
+        kpath = np.array(
+            [
+                np.linspace(kxi, kxf, Nq),
+                np.linspace(kyi, kyf, Nq),
+                np.linspace(kzi, kzf, Nq),
+            ]
+        )
+        list_of_paths.append(kpath.T.reshape(Nq, 3))
+
+        Nq_tot += Nq
+        print(Nq_tot, Nq)
+        new_labels_index.append(Nq_tot - Nq)
+        new_labels_index.append(Nq_tot - 1)
+
+    print(new_labels_index, labels)
+    final_path = list_of_paths[0]
+    for linear_path in list_of_paths[1:]:
+        final_path = np.vstack([final_path, linear_path])
+
+    # final_path = final_path.reshape(len(list_of_paths)*Nq,3)
+
+    # like in _get_tick_labels(bandpath: dict) -> List[Tuple[int, str]] of Euphonic
+    new_labels = [""] * len(final_path)
+    for ind, label in list(zip(new_labels_index, labels)):
+        new_labels[ind] = label
+        # print(ind,label)
+
+    bandpath = {"explicit_kpoints_labels": new_labels}
+    refined_labels = _get_tick_labels(bandpath={"explicit_kpoints_labels": new_labels})
+    split_args = {"indices": _get_break_points(bandpath)}
+
+    return final_path, refined_labels, split_args
+
+
+########################
+################################ END custom q path routine
+########################
+
+
+########################
+################################ START INTENSITY PLOT GENERATOR
 ########################
 
 par_dict = {
@@ -136,7 +216,10 @@ parameters = AttrDict(par_dict)
 
 
 def produce_bands_weigthed_data(
-    params: Optional[List[str]] = parameters, fc: ForceConstants = None, plot=False
+    params: Optional[List[str]] = parameters,
+    fc: ForceConstants = None,
+    linear_path=None,
+    plot=False,
 ) -> None:
     blockPrint()
     """
@@ -144,6 +227,13 @@ def produce_bands_weigthed_data(
     for the cli plotting of the weighted bands. For weighted bands I means or the dynamical structure
     factor or the DOS-weighted one. This can be triggered in inputs,
     and will call the calculate_sqw_map or the calculate_dos_map functions, respectively.
+
+    linear_path is for custom path in the app:
+    linear_path = {
+        'coordinates':[[(0,0,0),(0.5,0.5,0.5)],[(0.5,0.5,0.5),(1,1,1)]],
+        'labels' : ["$\Gamma$","X","X","(1,1,1)"],
+        'delta_q':0.1, # A^-1
+    }
     """
     # args = get_args(get_parser(), params)
     args = params
@@ -171,13 +261,41 @@ def produce_bands_weigthed_data(
 
     if isinstance(data, ForceConstants):
         # print("Getting band path...")
-        (modes, x_tick_labels, split_args) = _bands_from_force_constants(
-            data,
-            q_distance=q_spacing,
-            insert_gamma=False,
-            frequencies_only=frequencies_only,
-            **calc_modes_kwargs,
-        )
+        # HERE we add the custom path generation:
+        if linear_path:
+
+            # 1. get the rl_norm list for conversion delta_q ==> Nq in the join_q_paths
+            structure = fc.crystal.to_spglib_cell()
+            bandpath = seekpath.get_explicit_k_path(structure)
+
+            rl = bandpath["reciprocal_primitive_lattice"]
+            rl_norm = []
+            for G in range(3):
+                rl_norm.append(np.linalg.norm(np.array(rl[G])))
+
+            # 2. compute the path via delta_q
+            (qpts, x_tick_labels, split_args) = join_q_paths(
+                coordinates=linear_path["coordinates"],
+                labels=linear_path["labels"],
+                delta_q=linear_path["delta_q"],
+                G=rl_norm,
+            )
+
+            # 3. compute the corresponding phonons
+            modes = fc.calculate_qpoint_phonon_modes(
+                qpts,
+                reduce_qpts=False,
+            )
+
+        else:
+            # Use seekpath.
+            (modes, x_tick_labels, split_args) = _bands_from_force_constants(
+                data,
+                q_distance=q_spacing,
+                insert_gamma=False,
+                frequencies_only=frequencies_only,
+                **calc_modes_kwargs,
+            )
     else:
         modes = data
         split_args = {"btol": args.btol}
@@ -243,6 +361,7 @@ def produce_bands_weigthed_data(
             matplotlib_save_or_show(save_filename=args.save_to)
 
     enablePrint()
+
     return spectra, copy.deepcopy(params)
 
 
