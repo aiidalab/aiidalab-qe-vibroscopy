@@ -68,6 +68,10 @@ class PhononBandPdosPlotly(BandPdosPlotly):
 
 
 class Result(ResultPanel):
+    """
+    The idea is that this Panel should be divided in sub panels,
+    one for each section of properties: phonons, spectroscopies, inelastic neutron scattering.
+    """
 
     title = "Vibrational Structure"
     workchain_label = "iraman"
@@ -76,6 +80,7 @@ class Result(ResultPanel):
     def _update_view(self):
 
         children_result_widget = ()
+        tab_titles = []  # this is needed to name the sub panels
 
         spectra_data = export_iramanworkchain_data(self.node)
         phonon_data = export_phononworkchain_data(self.node)
@@ -83,14 +88,13 @@ class Result(ResultPanel):
 
         if phonon_data:
 
+            phonon_children = ()
             if phonon_data["bands"] or phonon_data["pdos"]:
                 _bands_plot_view_class = PhononBandPdosPlotly(
                     bands_data=phonon_data["bands"][0],
                     pdos_data=phonon_data["pdos"][0],
                 )
-                children_result_widget += (
-                    _bands_plot_view_class._create_combined_plot(),
-                )
+                phonon_children += (_bands_plot_view_class._create_combined_plot(),)
 
             if phonon_data["thermo"]:
                 import plotly.graph_objects as go
@@ -123,20 +127,26 @@ class Result(ResultPanel):
                 g.add_scatter(x=T, y=E, name=f"Entropy ({E_units})")
                 g.add_scatter(x=T, y=Cv, name=f"Specific Heat-V=const ({Cv_units})")
 
-                children_result_widget += (g,)
+                phonon_children += (g,)
 
+            tab_titles.append("Phonon properties")
+
+            children_result_widget += (
+                ipw.VBox(children=phonon_children),
+            )  # the comma is required! otherwise the tuple is not detected.
             # euphonic
         # if ins_data:
         #    intensity_map = IntensityFullWidget(fc=ins_data["fc"])
         #    powder_map = PowderFullWidget(fc=ins_data["fc"])
         #    children_result_widget += (intensity_map, powder_map)
+        #    tab_titles.append("Inelastic Neutron Scattering")
 
         if spectra_data:
 
             # Here we should provide the possibility to have both IR and Raman,
             # as the new logic can provide both at the same time.
             # We are gonna use the same widget, providing the correct spectrum_type: "Raman" or "Ir".
-
+            children_spectra = ()
             for spectrum, data in spectra_data.items():
 
                 if not data:
@@ -162,8 +172,15 @@ class Result(ResultPanel):
                         node=self.node, output_node=data, spectrum_type=spectrum
                     )
 
-                    children_result_widget += (
+                    children_spectra += (
                         ipw.VBox([subwidget_title, spectrum_widget, modes_animation]),
                     )
+            children_result_widget += (ipw.VBox(children=children_spectra),)
+            tab_titles.append(f"Raman/IR spectra")
 
-        self.children = children_result_widget
+        self.result_tabs = ipw.Tab(children=children_result_widget)
+
+        for title_index in range(len(tab_titles)):
+            self.result_tabs.set_title(title_index, tab_titles[title_index])
+
+        self.children = [self.result_tabs]
