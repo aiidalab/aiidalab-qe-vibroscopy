@@ -17,8 +17,7 @@ from ..utils.phonons.result import export_phononworkchain_data
 
 from ..utils.euphonic.euphonic_widgets import (
     export_euphonic_data,
-    IntensityFullWidget,
-    PowderFullWidget,
+    EuphonicSuperWidget,
 )
 import plotly.graph_objects as go
 import ipywidgets as ipw
@@ -145,11 +144,10 @@ class Result(ResultPanel):
             children_result_widget += (
                 ipw.VBox(children=phonon_children),
             )  # the comma is required! otherwise the tuple is not detected.
-            # euphonic
+        # euphonic
         # if ins_data:
-        #    intensity_map = IntensityFullWidget(fc=ins_data["fc"])
-        #    powder_map = PowderFullWidget(fc=ins_data["fc"])
-        #    children_result_widget += (intensity_map, powder_map)
+        #    intensity_maps =  EuphonicSuperWidget(fc=ins_data["fc"])
+        #    children_result_widget += (intensity_maps,)
         #    tab_titles.append("Inelastic Neutron Scattering")
 
         if spectra_data:

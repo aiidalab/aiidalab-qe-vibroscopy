@@ -92,6 +92,8 @@ class AttrDict(dict):
 In this module we have the functions used to obtain the intensity maps (dynamical structure factor)
 and the powder maps(from euphonic, using the force constants instances as obtained from phonopy.yaml).
 These are then used in the widgets to plot the corresponding quantities.
+
+PLEASE NOTE: the scattering lengths are tabulated (Euphonic/euphonic/data/sears-1992.json) and are from Sears (1992) Neutron News 3(3) pp26--37.
 """
 
 ########################
@@ -183,18 +185,18 @@ def join_q_paths(coordinates: list, labels: list, delta_q=0.1, G=[0, 0, 0]):
 ########################
 
 par_dict = {
-    "weighting": "coherent",
-    "grid": None,
-    "grid_spacing": 0.1,
+    "weighting": "coherent",  # Spectral weighting to plot: DOS, coherent inelastic neutron scattering (default: dos)
+    "grid": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
+    "grid_spacing": 0.1,  # q-point spacing of Monkhorst-Pack grid. (default: 0.1)
     "energy_unit": "THz",
-    "temperature": 0,
+    "temperature": 0,  # Temperature in K; enable Debye-Waller factor calculation. (Only applicable when --weighting=coherent). (default: None)
     #'btol':,
-    "shape": "gauss",
+    "shape": "gauss",  # The broadening shape (default: gauss)
     "length_unit": "angstrom",
-    "q_spacing": 0.01,
+    "q_spacing": 0.01,  # Target distance between q-point samples in 1/LENGTH_UNIT (default: 0.025)
     "energy_broadening": 1,
-    "q_broadening": None,
-    "ebins": 1000,
+    "q_broadening": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
+    "ebins": 1000,  # Number of energy bins (default: 200)
     "e_min": 0,
     "e_max": None,
     "title": None,
@@ -206,8 +208,8 @@ par_dict = {
     "vmin": None,
     "vmax": None,
     "save_to": None,
-    "asr": None,
-    "dipole_parameter": 1.0,
+    "asr": None,  # Apply an acoustic-sum-rule (ASR) correction to the data: "realspace" applies the correction to the force constant matrix in real space. "reciprocal" applies the correction to the dynamical matrix at each q-point. (default: None)
+    "dipole_parameter": 1.0,  # Set the cutoff in real/reciprocal space for the dipole Ewald sum; higher values use more reciprocal terms. If tuned correctly this can result in performance improvements. See euphonic-optimise-dipole-parameter program for help on choosing a good DIPOLE_PARAMETER. (default: 1.0)
     "use_c": None,
     "n_threads": None,
 }
@@ -370,23 +372,22 @@ def produce_bands_weigthed_data(
 ########################
 
 par_dict_powder = {
-    "weighting": "coherent",
-    "grid": None,
-    "grid_spacing": 0.1,
+    "weighting": "coherent",  # Spectral weighting to plot: DOS, coherent inelastic neutron scattering (default: dos)
+    "grid": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
+    "grid_spacing": 0.1,  # q-point spacing of Monkhorst-Pack grid. (default: 0.1)
     "q_min": 0,
     "q_max": 1,
-    "temperature": None,
-    "ebins": 1000,
-    "q_spacing": 0.01,
+    "temperature": None,  # Temperature in K; enable Debye-Waller factor calculation. (Only applicable when --weighting=coherent). (default: None)
+    "ebins": 1000,  # Number of energy bins (default: 200)
+    "q_spacing": 0.01,  # Target distance between q-point samples in 1/LENGTH_UNIT (default: 0.025)
     "energy_broadening": 1,
-    "npts": 100,
+    "npts": 150,
     #'grid':,
     "energy_unit": "THz",
-    #'temperature':,
     #'btol':,
-    "shape": "gauss",
+    "shape": "gauss",  # The broadening shape (default: gauss)
     "length_unit": "angstrom",
-    "q_broadening": None,
+    "q_broadening": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
     "e_min": 0,
     "e_max": None,
     "title": None,
