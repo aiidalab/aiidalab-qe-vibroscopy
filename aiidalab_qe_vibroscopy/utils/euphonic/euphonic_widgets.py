@@ -1,5 +1,6 @@
 import pathlib
 import tempfile
+import io
 
 import base64
 from IPython.display import HTML, clear_output, display
@@ -10,7 +11,7 @@ from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
 import ipywidgets as ipw
 import plotly.graph_objects as go
 
-from ..euphonic.bands_pdos import *
+# from ..euphonic.bands_pdos import *
 from ..euphonic.intensity_maps import *
 
 import json
@@ -958,8 +959,10 @@ class EuphonicSuperWidget(ipw.VBox):
         if mode == "aiidalab-qe app plugin":
             self.upload_widget.layout.display = "none"
 
-            self.tab_widget.children.append(SingleCrystalFullWidget(fc))
-            self.tab_widget.children.append(PowderFullWidget(fc))
+            self.tab_widget.children = (
+                SingleCrystalFullWidget(fc),
+                PowderFullWidget(fc),
+            )
 
             self.tab_widget.layout.display = "block"
         else:
@@ -978,10 +981,13 @@ class EuphonicSuperWidget(ipw.VBox):
 
             self.tab_widget.children = ()
 
-            fc = self.upload_widget._read_phonopy_files(
-                "phonopy.yaml",
-                self.upload_widget.children[0].value["phonopy.yaml"]["content"],
-            )
+            for fname in self.upload_widget.children[
+                0
+            ].value.keys():  # always one key because I allow only one file at the time.
+                fc = self.upload_widget._read_phonopy_files(
+                    fname,
+                    self.upload_widget.children[0].value[fname]["content"],
+                )
 
             self.tab_widget.children = (
                 SingleCrystalFullWidget(fc),

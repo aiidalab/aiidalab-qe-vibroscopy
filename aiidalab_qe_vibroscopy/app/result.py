@@ -145,10 +145,10 @@ class Result(ResultPanel):
                 ipw.VBox(children=phonon_children),
             )  # the comma is required! otherwise the tuple is not detected.
         # euphonic
-        # if ins_data:
-        #    intensity_maps =  EuphonicSuperWidget(fc=ins_data["fc"])
-        #    children_result_widget += (intensity_maps,)
-        #    tab_titles.append("Inelastic Neutron Scattering")
+        if ins_data:
+            intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"])
+            children_result_widget += (intensity_maps,)
+            tab_titles.append("Inelastic Neutron Scattering")
 
         if spectra_data:
 
