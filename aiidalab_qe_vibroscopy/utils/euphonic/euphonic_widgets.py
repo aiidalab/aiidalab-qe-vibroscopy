@@ -10,6 +10,7 @@ from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
 
 import ipywidgets as ipw
 import plotly.graph_objects as go
+import plotly.io as pio
 
 # from ..euphonic.bands_pdos import *
 from ..euphonic.intensity_maps import *
@@ -350,7 +351,7 @@ class StructureFactorPlotWidget(ipw.VBox):
         # Also decise less than what, 30%, 50%...?
         visible_points = len(np.where(final_zspectra.T / intensity_ref_0K > 0.5)[0])
         if visible_points < 1000:
-            message = f"Only {visible_points} points have intensity higher than 50%"
+            message = f"Only {visible_points}/{len(final_zspectra.T)} points have intensity higher than 50%"
             self.message_fig.value = message
             self.message_fig.layout.display = "block"
         else:
@@ -443,7 +444,7 @@ class SingleCrystalFullWidget(ipw.VBox):
         """
         Download both the ForceConstants and the spectra json files.
         """
-        force_constants_dict = fc.to_dict()
+        force_constants_dict = self.fc.to_dict()
 
         filename = "single_crystal.json"
         my_dict = {}
@@ -474,7 +475,7 @@ class SingleCrystalFullWidget(ipw.VBox):
         # Plot download:
         ## Convert the FigureWidget to an image in base64 format
         image_bytes = pio.to_image(
-            self.map_widget.children[1], format="png", width=800, height=600
+            self.map_widget.children[1].children[0], format="png", width=800, height=600
         )
         b64_str = base64.b64encode(image_bytes).decode()
         self._download(payload=b64_str, filename=filename + ".png")
@@ -581,7 +582,7 @@ class PowderFullWidget(ipw.VBox):
         """
         Download both the ForceConstants and the spectra json files.
         """
-        force_constants_dict = fc.to_dict()
+        force_constants_dict = self.fc.to_dict()
 
         filename = "powder"
         my_dict = self.spectra.to_dict()
@@ -613,7 +614,7 @@ class PowderFullWidget(ipw.VBox):
         # Plot download:
         ## Convert the FigureWidget to an image in base64 format
         image_bytes = pio.to_image(
-            self.map_widget.children[1], format="png", width=800, height=600
+            self.map_widget.children[1].children[0], format="png", width=800, height=600
         )
         b64_str = base64.b64encode(image_bytes).decode()
         self._download(payload=b64_str, filename=filename + ".png")
@@ -840,6 +841,7 @@ class StructureFactorSettingsWidget(ipw.VBox):
                         [
                             ipw.VBox(
                                 [
+                                    self.specification_intensity,
                                     self.slider_q_spacing,
                                     self.slider_qmin,
                                     self.slider_qmax,

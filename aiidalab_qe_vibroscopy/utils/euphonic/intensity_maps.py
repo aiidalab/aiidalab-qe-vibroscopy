@@ -101,7 +101,7 @@ PLEASE NOTE: the scattering lengths are tabulated (Euphonic/euphonic/data/sears-
 ########################
 
 ########################
-################################ START custom q path routine
+################################ START custom lin q path routine
 ########################
 
 
@@ -114,7 +114,7 @@ def join_q_paths(coordinates: list, labels: list, delta_q=0.1, G=[0, 0, 0]):
     Inputs:
 
     coordinates (list): list of tuples with the coordinates of path: [(kxi,kyi,kzi),(kxf,kyf,kzf)].
-                        Coordinates should be in reciprocal lattice units, as euphonic want.
+                        Coordinates should be in reciprocal lattice units, as euphonic wants.
     labels (list): list of tuples with the labels: [("Gamma", "M")].
     delta_q (float): q spacing in Angstrom^-1.
     G (list): the modulus of the three reciprocal lattice vectors. Used to convert back and forth into RLU
@@ -294,7 +294,8 @@ def produce_bands_weigthed_data(
             (modes, x_tick_labels, split_args) = _bands_from_force_constants(
                 data,
                 q_distance=q_spacing,
-                insert_gamma=False,
+                # insert_gamma=False,
+                insert_gamma=True,
                 frequencies_only=frequencies_only,
                 **calc_modes_kwargs,
             )
