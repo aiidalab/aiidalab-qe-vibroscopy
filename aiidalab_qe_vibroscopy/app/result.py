@@ -18,6 +18,7 @@ from ..utils.phonons.result import export_phononworkchain_data
 from ..utils.euphonic.euphonic_widgets import (
     export_euphonic_data,
     EuphonicSuperWidget,
+    DowloadYamlHdf5Widget,
 )
 import plotly.graph_objects as go
 import ipywidgets as ipw
@@ -94,7 +95,15 @@ class Result(ResultPanel):
                     bands_data=phonon_data["bands"][0],
                     pdos_data=phonon_data["pdos"][0],
                 )
-                phonon_children += (_bands_plot_view_class._create_combined_plot(),)
+
+                download_widget = DowloadYamlHdf5Widget(
+                    phonopy_node=self.node.outputs.vibronic.phonon_pdos.creator
+                )
+
+                phonon_children += (
+                    _bands_plot_view_class._create_combined_plot(),
+                    download_widget,
+                )
 
             """if phonon_data["pdos"]:
                 _pdos_plot_view = BandsPlotWidget(

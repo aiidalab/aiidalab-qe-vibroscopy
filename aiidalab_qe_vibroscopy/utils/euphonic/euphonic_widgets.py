@@ -945,7 +945,7 @@ class UploadPhonopyWidget(ipw.HBox):
         self.reset_uploads = ipw.Button(
             description="Discard uploaded files",
             icon="pencil",
-            button_style="primary",
+            button_style="warning",
             disabled=False,
             layout=ipw.Layout(width="auto"),
         )
@@ -972,12 +972,22 @@ class UploadPhonopyWidget(ipw.HBox):
                     temp_file.flush()
                     temp_hdf5_name = temp_file.name
 
-                    if 1:
+                    try:
                         fc = generate_force_constant_instance(
                             path=pathlib.Path(fname),
                             summary_name=temp_yaml.name,
                             fc_name=temp_hdf5_name,
                         )
+                    except ValueError as e:
+                        self._status_message.message = f"""
+                                    <div class="alert alert-danger">ERROR: {e}</div>
+                                    """
+                        return None
+                    except KeyError:
+                        self._status_message.message = f"""
+                                    <div class="alert alert-danger">ERROR: Could not parse file {temp_yaml.name}</div>
+                                    """
+                        return None
 
                     return fc
             else:
@@ -1018,6 +1028,8 @@ class EuphonicSuperWidget(ipw.VBox):
 
     def __init__(self, mode="aiidalab-qe app plugin", fc=None):
 
+        self.mode = mode
+
         self.upload_widget = UploadPhonopyWidget()
         self.upload_widget.reset_uploads.on_click(self._on_reset_uploads_button_clicked)
         self.fc_hdf5_content = None
@@ -1040,14 +1052,8 @@ class EuphonicSuperWidget(ipw.VBox):
         )
         self.plot_button.on_click(self._on_first_plot_button_clicked)
 
-        if mode == "aiidalab-qe app plugin":
+        if self.mode == "aiidalab-qe app plugin":
             self.upload_widget.layout.display = "none"
-
-            self.tab_widget.children = (
-                SingleCrystalFullWidget(fc),
-                PowderFullWidget(fc),
-            )
-            self.tab_widget.layout.display = "block"
         else:
             self.upload_widget.children[0].observe(self._on_upload_yaml, "value")
             self.upload_widget.children[1].observe(self._on_upload_hdf5, "value")
@@ -1092,14 +1098,17 @@ class EuphonicSuperWidget(ipw.VBox):
     def _generate_force_constants(
         self,
     ):
+        if self.mode == "aiidalab-qe app plugin":
+            return self.fc
 
-        fc = self.upload_widget._read_phonopy_files(
-            fname=self.fname,
-            phonopy_yaml_content=self.phonopy_yaml_content,
-            fc_hdf5_content=self.fc_hdf5_content,
-        )
+        else:
+            fc = self.upload_widget._read_phonopy_files(
+                fname=self.fname,
+                phonopy_yaml_content=self.phonopy_yaml_content,
+                fc_hdf5_content=self.fc_hdf5_content,
+            )
 
-        return fc
+            return fc
 
     def _on_first_plot_button_clicked(self, change=None):
         # It creates the widgets
@@ -1112,3 +1121,51 @@ class EuphonicSuperWidget(ipw.VBox):
         )
 
         self.tab_widget.layout.display = "block"
+
+
+class DowloadYamlHdf5Widget(ipw.HBox):
+    def __init__(self, phonopy_node, **kwargs):
+
+        self.download_button = ipw.Button(
+            description="Download phonopy data",
+            icon="pencil",
+            button_style="primary",
+            disabled=False,
+            layout=ipw.Layout(width="auto"),
+        )
+        self.download_button.on_click(self.download_data)
+        self.node = phonopy_node
+
+        super().__init__(
+            children=[
+                self.download_button,
+            ],
+        )
+
+    def download_data(self, _=None):
+        """
+        Download both the phonopy.yaml and fc.hdf5 files.
+        """
+        phonopy_yaml, fc_hdf5 = generate_force_constant_instance(
+            self.node, mode="download"
+        )
+        self._download(payload=phonopy_yaml, filename="phonopy" + ".yaml")
+        self._download(payload=fc_hdf5, filename="fc" + ".hdf5")
+
+    @staticmethod
+    def _download(payload, filename):
+        from IPython.display import Javascript
+
+        javas = Javascript(
+            """
+            var link = document.createElement('a');
+            link.href = 'data:text/json;charset=utf-8;base64,{payload}'
+            link.download = "{filename}"
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            """.format(
+                payload=payload, filename=filename
+            )
+        )
+        display(javas)
