@@ -47,6 +47,7 @@ def generate_force_constant_instance(
     born_name: Optional[str] = None,
     fc_name: str = "FORCE_CONSTANTS",
     fc_format: Optional[str] = None,
+    mode="stream",  # "download" to have the download of phonopy.yaml and fc.hdf5 . TOBE IMPLEMENTED.
 ):
     """
     Basically allows to obtain the ForceConstants instance from phonopy, both via files (from the second
@@ -119,6 +120,25 @@ def generate_force_constant_instance(
             filename=pathlib.Path(dirpath) / "fc.hdf5",
             p2s_map=p2s_map,
         )
+
+        # Here below we trigger the download mode. Can be improved avoiding the repetitions of lines
+        if mode == "download":
+            with open(
+                pathlib.Path(dirpath) / "phonopy.yaml", "r", encoding="utf8"
+            ) as handle:
+                file_content = handle.read()
+                phonopy_yaml_bitstream = base64.b64encode(file_content.encode()).decode(
+                    "utf-8"
+                )
+
+            with open(
+                pathlib.Path(dirpath) / "fc.hdf5",
+                "rb",
+            ) as handle:
+                file_content = handle.read()
+                fc_hdf5_bitstream = base64.b64encode(file_content).decode()
+
+            return phonopy_yaml_bitstream, fc_hdf5_bitstream
 
         # Read force constants (fc.hdf5) and summary+NAC (phonopy.yaml)
 
@@ -898,43 +918,89 @@ class StructureFactorSettingsWidget(ipw.VBox):
 ###### START for detached app:
 
 # Upload buttons
-class UploadPhonopyDataWidget(ipw.VBox):
+class UploadPhonopyYamlWidget(ipw.FileUpload):
     def __init__(self, **kwargs):
-
-        self.upload_phonopy_button = ipw.FileUpload(
+        super().__init__(
             description="upload phonopy YAML file",
             multiple=False,
             layout={"width": "initial"},
         )
 
-        super().__init__(children=[self.upload_phonopy_button], **kwargs)
 
-    def _read_phonopy_files(self, fname, content):
+class UploadForceConstantsHdf5Widget(ipw.FileUpload):
+    def __init__(self, **kwargs):
+        super().__init__(
+            description="upload force constants HDF5 file",
+            multiple=False,
+            layout={"width": "initial"},
+        )
+
+
+class UploadPhonopyWidget(ipw.HBox):
+    def __init__(self, **kwargs):
+
+        self.upload_phonopy_yaml = UploadPhonopyYamlWidget(**kwargs)
+        self.upload_phonopy_hdf5 = UploadForceConstantsHdf5Widget(**kwargs)
+
+        self.reset_uploads = ipw.Button(
+            description="Discard uploaded files",
+            icon="pencil",
+            button_style="primary",
+            disabled=False,
+            layout=ipw.Layout(width="auto"),
+        )
+
+        super().__init__(
+            children=[
+                self.upload_phonopy_yaml,
+                self.upload_phonopy_hdf5,
+                self.reset_uploads,
+            ],
+            **kwargs,
+        )
+
+    def _read_phonopy_files(self, fname, phonopy_yaml_content, fc_hdf5_content=None):
         suffix = "".join(pathlib.Path(fname).suffixes)
 
-        with tempfile.NamedTemporaryFile(suffix=suffix) as temp_file:
-            temp_file.write(content)
-            temp_file.flush()
-            try:
-                if suffix == ".yaml":
+        with tempfile.NamedTemporaryFile(suffix=suffix) as temp_yaml:
+            temp_yaml.write(phonopy_yaml_content)
+            temp_yaml.flush()
+
+            if fc_hdf5_content:
+                with tempfile.NamedTemporaryFile(suffix=".hdf5") as temp_file:
+                    temp_file.write(fc_hdf5_content)
+                    temp_file.flush()
+                    temp_hdf5_name = temp_file.name
+
+                    if 1:
+                        fc = generate_force_constant_instance(
+                            path=pathlib.Path(fname),
+                            summary_name=temp_yaml.name,
+                            fc_name=temp_hdf5_name,
+                        )
+
+                    return fc
+            else:
+                temp_hdf5_name = None
+
+                try:
                     fc = generate_force_constant_instance(
                         path=pathlib.Path(fname),
-                        summary_name=temp_file.name,
+                        summary_name=temp_yaml.name,
+                        # fc_name=temp_hdf5_name,
                     )
-                # else:
-                #    structures = get_ase_from_file(temp_file.name)
-            except ValueError as e:
-                self._status_message.message = f"""
-                    <div class="alert alert-danger">ERROR: {e}</div>
-                    """
-                return None
-            except KeyError:
-                self._status_message.message = f"""
-                    <div class="alert alert-danger">ERROR: Could not parse file {fname}</div>
-                    """
-                return None
+                except ValueError as e:
+                    self._status_message.message = f"""
+                                <div class="alert alert-danger">ERROR: {e}</div>
+                                """
+                    return None
+                except KeyError:
+                    self._status_message.message = f"""
+                                <div class="alert alert-danger">ERROR: Could not parse file {temp_yaml.name}</div>
+                                """
+                    return None
 
-            return fc
+                return fc
 
 
 #### END for detached app
@@ -947,16 +1013,32 @@ class EuphonicSuperWidget(ipw.VBox):
     """
     Widget that will include everything,
     from the upload widget to the tabs with single crystal and powder predictions.
+    In between, we trigger the initialization of plots via a button.
     """
 
     def __init__(self, mode="aiidalab-qe app plugin", fc=None):
 
-        self.upload_widget = UploadPhonopyDataWidget()
+        self.upload_widget = UploadPhonopyWidget()
+        self.upload_widget.reset_uploads.on_click(self._on_reset_uploads_button_clicked)
+        self.fc_hdf5_content = None
 
         self.tab_widget = ipw.Tab()
         self.tab_widget.layout.display = "none"
         self.tab_widget.set_title(0, "Single crystal")
         self.tab_widget.set_title(1, "Powder sample")
+        self.tab_widget.children = ()
+
+        if fc:
+            self.fc = fc
+
+        self.plot_button = ipw.Button(
+            description="Initialise INS data",
+            icon="pencil",
+            button_style="primary",
+            disabled=False,
+            layout=ipw.Layout(width="auto"),
+        )
+        self.plot_button.on_click(self._on_first_plot_button_clicked)
 
         if mode == "aiidalab-qe app plugin":
             self.upload_widget.layout.display = "none"
@@ -965,35 +1047,68 @@ class EuphonicSuperWidget(ipw.VBox):
                 SingleCrystalFullWidget(fc),
                 PowderFullWidget(fc),
             )
-
             self.tab_widget.layout.display = "block"
         else:
-            self.upload_widget.children[0].observe(self._on_upload_files, "value")
+            self.upload_widget.children[0].observe(self._on_upload_yaml, "value")
+            self.upload_widget.children[1].observe(self._on_upload_hdf5, "value")
 
         super().__init__(
             children=[
                 self.upload_widget,
+                self.plot_button,
                 self.tab_widget,
             ],
         )
 
-    def _on_upload_files(self, change):
+    def _on_reset_uploads_button_clicked(self, change):
+        self.upload_widget.upload_phonopy_yaml.value.clear()
+        self.upload_widget.upload_phonopy_yaml._counter = 0
+        self.upload_widget.upload_phonopy_hdf5.value.clear()
+        self.upload_widget.upload_phonopy_hdf5._counter = 0
 
+        self.plot_button.layout.display = "block"
+
+        self.tab_widget.children = ()
+
+        self.tab_widget.layout.display = "none"
+
+    def _on_upload_yaml(self, change):
         if change["new"] != change["old"]:
-
-            self.tab_widget.children = ()
-
             for fname in self.upload_widget.children[
                 0
             ].value.keys():  # always one key because I allow only one file at the time.
-                fc = self.upload_widget._read_phonopy_files(
-                    fname,
-                    self.upload_widget.children[0].value[fname]["content"],
-                )
+                self.fname = fname
+                self.phonopy_yaml_content = self.upload_widget.children[0].value[fname][
+                    "content"
+                ]
 
-            self.tab_widget.children = (
-                SingleCrystalFullWidget(fc),
-                PowderFullWidget(fc),
-            )
+    def _on_upload_hdf5(self, change):
+        if change["new"] != change["old"]:
+            for fname in self.upload_widget.children[1].value.keys():
+                self.fc_hdf5_content = self.upload_widget.children[1].value[fname][
+                    "content"
+                ]
 
-            self.tab_widget.layout.display = "block"
+    def _generate_force_constants(
+        self,
+    ):
+
+        fc = self.upload_widget._read_phonopy_files(
+            fname=self.fname,
+            phonopy_yaml_content=self.phonopy_yaml_content,
+            fc_hdf5_content=self.fc_hdf5_content,
+        )
+
+        return fc
+
+    def _on_first_plot_button_clicked(self, change=None):
+        # It creates the widgets
+        self.plot_button.layout.display = "none"
+        self.fc = self._generate_force_constants()
+
+        self.tab_widget.children = (
+            SingleCrystalFullWidget(self.fc),
+            PowderFullWidget(self.fc),
+        )
+
+        self.tab_widget.layout.display = "block"
