@@ -166,6 +166,7 @@ class EuphonicSuperWidget(ipw.VBox):
 
         if self.mode == "aiidalab-qe app plugin":
             self.upload_widget.layout.display = "none"
+            self.plot_button.disabled = False
         else:
             self.upload_widget.children[0].observe(self._on_upload_yaml, "value")
             self.upload_widget.children[1].observe(self._on_upload_hdf5, "value")

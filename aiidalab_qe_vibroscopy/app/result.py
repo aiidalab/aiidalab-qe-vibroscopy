@@ -15,7 +15,7 @@ from ..utils.raman.result import export_iramanworkchain_data
 
 from ..utils.phonons.result import export_phononworkchain_data
 
-from ..utils.euphonic.euphonic_base_widgets import (
+from ..utils.euphonic import (
     export_euphonic_data,
     EuphonicSuperWidget,
     DowloadYamlHdf5Widget,

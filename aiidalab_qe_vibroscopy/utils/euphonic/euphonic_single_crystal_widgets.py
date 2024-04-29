@@ -158,7 +158,7 @@ class SingleCrystalSettingsWidget(StructureFactorSettingsBaseWidget):
                             self.weight_button,
                         ],
                         layout=ipw.Layout(
-                            width="50%",
+                            width="60%",
                         ),
                     ),
                     ipw.VBox(
@@ -167,7 +167,7 @@ class SingleCrystalSettingsWidget(StructureFactorSettingsBaseWidget):
                             self.custom_kpath_text,
                         ],
                         layout=ipw.Layout(
-                            width="80%",
+                            width="70%",
                         ),
                     ),
                 ],  # end of HBox children
