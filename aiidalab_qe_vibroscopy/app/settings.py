@@ -36,8 +36,8 @@ class Setting(Panel):
         self.settings_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
             Calculations are performed using the <b><a href="https://aiida-vibroscopy.readthedocs.io/en/latest/"
-        target="_blank">aiida-vibroscopy</b></a> plugin (L. Bastonero and N. Marzari, <a href="https://arxiv.org/abs/2308.04308"
-        target="_blank">Automated all-functionals infrared and Raman spectra</a>).
+        target="_blank">aiida-vibroscopy</b></a> plugin (L. Bastonero and N. Marzari, <a href="https://www.nature.com/articles/s41524-024-01236-3"
+        target="_blank">npj Comput. Mater. <b>10</b>, 55, 2024</a>).
             The plugin employes the finite-displacement and finite-field approach. Raman spectra are simulated in the first-order non-resonant regime.
             </div>""",
             layout=ipw.Layout(width="400"),

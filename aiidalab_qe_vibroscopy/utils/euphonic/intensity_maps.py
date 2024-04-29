@@ -3,6 +3,7 @@ from typing import List, Optional
 
 import pathlib
 import tempfile
+import base64
 
 import matplotlib.style
 import numpy as np
@@ -53,6 +54,8 @@ from euphonic.powder import (
 from euphonic.spectra import apply_kinematic_constraints
 from euphonic.styles import base_style, intensity_widget_style
 import euphonic.util
+
+from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
 
 # Dummy tqdm function if tqdm progress bars unavailable
 try:
@@ -196,7 +199,7 @@ par_dict = {
     "q_spacing": 0.01,  # Target distance between q-point samples in 1/LENGTH_UNIT (default: 0.025)
     "energy_broadening": 1,
     "q_broadening": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
-    "ebins": 1000,  # Number of energy bins (default: 200)
+    "ebins": 200,  # Number of energy bins (default: 200)
     "e_min": 0,
     "e_max": None,
     "title": None,
@@ -214,7 +217,7 @@ par_dict = {
     "n_threads": None,
 }
 
-parameters = AttrDict(par_dict)
+parameters = par_dict
 
 
 def produce_bands_weigthed_data(
@@ -238,7 +241,12 @@ def produce_bands_weigthed_data(
     }
     """
     # args = get_args(get_parser(), params)
-    args = params
+    if not params:
+        args = AttrDict(copy.deepcopy(parameters))
+    else:
+        args = AttrDict(copy.deepcopy(params))
+
+    # redundancy with args...
     calc_modes_kwargs = _calc_modes_kwargs(args)
 
     frequencies_only = args.weighting != "coherent"
@@ -379,7 +387,7 @@ par_dict_powder = {
     "q_min": 0,
     "q_max": 1,
     "temperature": None,  # Temperature in K; enable Debye-Waller factor calculation. (Only applicable when --weighting=coherent). (default: None)
-    "ebins": 1000,  # Number of energy bins (default: 200)
+    "ebins": 200,  # Number of energy bins (default: 200)
     "q_spacing": 0.01,  # Target distance between q-point samples in 1/LENGTH_UNIT (default: 0.025)
     "energy_broadening": 1,
     "npts": 150,
@@ -422,8 +430,14 @@ def produce_powder_data(
     plot=False,
 ) -> None:
     blockPrint()
+
     # args = get_args(get_parser(), params)
-    args = params
+    if not params:
+        args = AttrDict(copy.deepcopy(parameters_powder))
+    else:
+        args = AttrDict(copy.deepcopy(params))
+
+    # redundancy with args
     calc_modes_kwargs = _calc_modes_kwargs(args)
 
     # Make sure we get an error if accessing NPTS inappropriately
@@ -626,3 +640,186 @@ def produce_powder_data(
     enablePrint()
     return spectrum, copy.deepcopy(params)
     matplotlib_save_or_show(save_filename=args.save_to)
+
+
+def generate_force_constant_instance(
+    phonopy_calc=None,
+    path: str = None,
+    summary_name: str = None,
+    born_name: Optional[str] = None,
+    fc_name: str = "FORCE_CONSTANTS",
+    fc_format: Optional[str] = None,
+    mode="stream",  # "download" to have the download of phonopy.yaml and fc.hdf5 . TOBE IMPLEMENTED.
+):
+    """
+    Basically allows to obtain the ForceConstants instance from phonopy, both via files (from the second
+    input parameters we have the same one of `euphonic.ForceConstants.from_phonopy`), or via a
+    PhonopyCalculation instance. Respectively, the two ways will support independent euphonic app and integration
+    of Euphonic into aiidalab.
+    """
+    blockPrint()
+
+    ####### This is done to support the detached app (from aiidalab) with the same code:
+    if path and summary_name:
+        fc = euphonic.ForceConstants.from_phonopy(
+            path=path,
+            summary_name=summary_name,
+            fc_name=fc_name,
+        )
+        return fc
+    elif not phonopy_calc:
+        raise NotImplementedError(
+            "Please provide or the files or the phonopy calculation node."
+        )
+
+    ####### This is almost copied from PhonopyCalculation and is done to support functionalities in aiidalab env:
+    from phonopy.interface.phonopy_yaml import PhonopyYaml
+
+    kwargs = {}
+
+    if "settings" in phonopy_calc.inputs:
+        the_settings = phonopy_calc.inputs.settings.get_dict()
+        for key in ["symmetrize_nac", "factor_nac", "subtract_residual_forces"]:
+            if key in the_settings:
+                kwargs.update({key: the_settings[key]})
+
+    if "phonopy_data" in phonopy_calc.inputs:
+        ph = phonopy_calc.inputs.phonopy_data.get_phonopy_instance(**kwargs)
+        p2s_map = phonopy_calc.inputs.phonopy_data.get_cells_mappings()["primitive"][
+            "p2s_map"
+        ]
+        ph.produce_force_constants()
+    elif "force_constants" in phonopy_calc.inputs:
+        ph = phonopy_calc.inputs.force_constants.get_phonopy_instance(**kwargs)
+        p2s_map = phonopy_calc.inputs.force_constants.get_cells_mappings()["primitive"][
+            "p2s_map"
+        ]
+        ph.force_constants = phonopy_calc.inputs.force_constants.get_array(
+            "force_constants"
+        )
+
+    #######
+
+    # Create temporary directory
+    #
+    with tempfile.TemporaryDirectory() as dirpath:
+        # phonopy.yaml generation:
+        phpy_yaml = PhonopyYaml()
+        phpy_yaml.set_phonon_info(ph)
+        phpy_yaml_txt = str(phpy_yaml)
+
+        with open(
+            pathlib.Path(dirpath) / "phonopy.yaml", "w", encoding="utf8"
+        ) as handle:
+            handle.write(phpy_yaml_txt)
+
+        # Force constants hdf5 file generation:
+        # all this is needed to load the euphonic instance, in case no FC are written in phonopy.yaml
+        # which is the case
+
+        write_force_constants_to_hdf5(
+            force_constants=ph.force_constants,
+            filename=pathlib.Path(dirpath) / "fc.hdf5",
+            p2s_map=p2s_map,
+        )
+
+        # Here below we trigger the download mode. Can be improved avoiding the repetitions of lines
+        if mode == "download":
+            with open(
+                pathlib.Path(dirpath) / "phonopy.yaml", "r", encoding="utf8"
+            ) as handle:
+                file_content = handle.read()
+                phonopy_yaml_bitstream = base64.b64encode(file_content.encode()).decode(
+                    "utf-8"
+                )
+
+            with open(
+                pathlib.Path(dirpath) / "fc.hdf5",
+                "rb",
+            ) as handle:
+                file_content = handle.read()
+                fc_hdf5_bitstream = base64.b64encode(file_content).decode()
+
+            return phonopy_yaml_bitstream, fc_hdf5_bitstream
+
+        # Read force constants (fc.hdf5) and summary+NAC (phonopy.yaml)
+
+        fc = euphonic.ForceConstants.from_phonopy(
+            path=dirpath,
+            summary_name="phonopy.yaml",
+            fc_name="fc.hdf5",
+        )
+        # print(filename)
+        # print(dirpath)
+    enablePrint()
+    return fc
+
+
+def export_euphonic_data(node, fermi_energy=None):
+
+    if not "vibronic" in node.outputs:
+        # Not a phonon calculation
+        return None
+    else:
+        if not "phonon_bands" in node.outputs.vibronic:
+            return None
+
+    output_set = node.outputs.vibronic.phonon_bands
+
+    phonopy_calc = output_set.creator
+    fc = generate_force_constant_instance(phonopy_calc)
+    # bands = compute_bands(fc)
+    # pdos = compute_pdos(fc)
+    return {
+        "fc": fc,
+    }  # "bands": bands, "pdos": pdos, "thermal": None}
+
+
+def generated_curated_data(spectra):
+    # here we concatenate the bands groups and create the ticks and labels.
+
+    ticks_positions = []
+    ticks_labels = []
+
+    final_xspectra = spectra[0].x_data.magnitude
+    final_zspectra = spectra[0].z_data.magnitude
+    for i in spectra[1:]:
+        final_xspectra = np.concatenate((final_xspectra, i.x_data.magnitude), axis=0)
+        final_zspectra = np.concatenate((final_zspectra, i.z_data.magnitude), axis=0)
+
+    for j in spectra[:]:
+        # each spectra has the .x_tick_labels attribute, for the bands.
+        shift = False
+        for k in j.x_tick_labels:
+            ticks_positions.append(k[0])
+            # ticks_labels.append("Gamma") if k[1] == '$\\Gamma$' else ticks_labels.append(k[1])
+            ticks_labels.append(k[1])
+
+            # Here below we check if we are starting a new group,
+            # i.e. if the xticks count is starting again from 0
+            # I also need to shift correctly the next index, which
+            # refers to the zero of the ticks_positions[-1].
+            if len(ticks_positions) > 1:
+                if ticks_positions[-1] < ticks_positions[-2] or shift:
+                    if ticks_positions[-1] == 0:  # new linear path
+
+                        ticks_positions.pop()
+                        last = ticks_labels.pop().strip()
+
+                        # if the same index, do not join, just write once
+                        if ticks_labels[-1].strip() != last:
+                            ticks_labels[-1] = ticks_labels[-1].strip() + "|" + last
+                        # the shift is needed because if this index was zero,
+                        # the next one has to be shifted because it means that
+                        # the index counting was restarted from zero,
+                        # i.e. this is a new linear path.
+
+                        shift = True
+                    else:
+                        ticks_positions[-1] = ticks_positions[-1] + ticks_positions[-2]
+
+                if ticks_labels[-1] == ticks_labels[-2]:
+                    ticks_positions.pop()
+                    ticks_labels.pop()
+
+    return final_xspectra, final_zspectra, ticks_positions, ticks_labels

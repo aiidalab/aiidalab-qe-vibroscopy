@@ -12,7 +12,9 @@
   The <a href="https://github.com/mikibonacci/aiidalab-qe-vibroscopy" target="_blank">aiidalab-qe-vibroscopy</a> app (or Vibro-app for short) is a graphical front end for neutron dynamic structure factors using
   the <a href="https://github.com/pace-neutrons/Euphonic" target="_blank">Euphonic</a> code and starting from already computed force constants via phonopy. <br>
 
-  Phonopy results can be achieved using also the aiidalab-qe-vibroscopy as plugin in the <a href="https://aiidalab-qe.readthedocs.io/" target="_blank">aiidalab Quantum ESPRESSO app</a>.
+  Phonopy results can be achieved using also the <b><a href="https://aiida-vibroscopy.readthedocs.io/en/latest/"
+        target="_blank">aiida-vibroscopy</b></a> plugin (L. Bastonero and N. Marzari, <a href="https://www.nature.com/articles/s41524-024-01236-3"
+        target="_blank">npj Comput. Mater. <b>10</b>, 55, 2024</a>) in the <a href="https://aiidalab-qe.readthedocs.io/" target="_blank">aiidalab Quantum ESPRESSO app</a>.
   There, each property is calculated by workflows powered by the <a href="https://www.aiida.net/" target="_bland"> AiiDA engine</a>, and maintained in the <a href="https://aiida-quantumespresso.readthedocs.io/en/latest/" target="_blank"> Quantum ESPRESSO plugin</a> for AiiDA.
 
   <p style="padding-top: 10px; padding-bottom: 10px;">The app allows you to calculate INS spectra in a simple 2-step process:</p>
@@ -25,7 +27,7 @@
   <p style="padding-top: 5px; padding-bottom: 5px;">Note that the <i>phonopy.yaml</i> file should already contain:</p>
   <ol style="list-style-type:none">
     <li style="padding-top: 2px; padding-bottom: 2px;">(i) the force constants;</li>
-    <li style="padding-top: 2px; padding-bottom: 2px;">(ii) dielectric function and Born charges, if needed to compute the non-analytic (NAC) corrections.</li>
+    <li style="padding-top: 2px; padding-bottom: 2px;">(ii) dielectric tensor and Born charges, if needed to compute the non-analytic (NAC) corrections.</li>
   </ol>
     <p style="padding-top: 5px; padding-bottom: 5px;">If the <i>phonopy.yaml</i> file does not contain the force constants, you should also upload the related HDF5 file.</p>
     <p style="padding-top: 5px; padding-bottom: 5px;">In case of some error in the initialisation of the INS data, please reload the page and try again.</p>
