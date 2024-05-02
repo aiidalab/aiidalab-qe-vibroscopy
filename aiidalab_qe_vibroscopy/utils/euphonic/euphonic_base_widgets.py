@@ -38,6 +38,8 @@ export_phononworkchain_data function, used then in the result.py panel.
 ################################ END DESCRIPTION
 ########################
 
+COLORSCALE = "Viridis"
+COLORBAR_DICT = dict(orientation="v", showticklabels=False, x=1, thickness=10, len=0.4)
 
 # # Intensity map widget
 class StructureFactorBasePlotWidget(ipw.VBox):
@@ -49,7 +51,7 @@ class StructureFactorBasePlotWidget(ipw.VBox):
 
     NB: Intensity is relative to the maximum intensity at T=0K.
 
-    I think we should split in three sub widgets: intensity, powder and q-sections.
+    We use this as base for three sub widgets: intensity, powder and q-sections.
     """
 
     THz_to_meV = 4.13566553853599  # conversion factor.
@@ -75,9 +77,9 @@ class StructureFactorBasePlotWidget(ipw.VBox):
         self.fig["layout"]["yaxis"].update(title="meV")
 
         self.fig.update_layout(
-            height=450,
-            width=650,
-            margin=dict(l=20, r=20, t=20, b=20),
+            height=500,
+            width=700,
+            margin=dict(l=15, r=15, t=15, b=15),
         )
         # Update x-axis and y-axis to enable autoscaling
         self.fig.update_xaxes(autorange=True)
@@ -100,6 +102,10 @@ class StructureFactorBasePlotWidget(ipw.VBox):
         )
         self.slider_intensity.observe(self._update_intensity_filter, "value")
 
+        self.specification_intensity = ipw.HTML(
+            "(Intensity is relative to the maximum intensity at T=0K)"
+        )
+
         self.E_units_button = ipw.ToggleButtons(
             options=[
                 ("meV", "meV"),
@@ -121,6 +127,7 @@ class StructureFactorBasePlotWidget(ipw.VBox):
                 self.message_fig,
                 self.fig,
                 ipw.HBox([ipw.HTML("Intensity window (%):"), self.slider_intensity]),
+                self.specification_intensity,
                 self.E_units_button,
             ],
             layout=ipw.Layout(
@@ -140,8 +147,9 @@ class StructureFactorBasePlotWidget(ipw.VBox):
         # We should do a check, if we have few points (<200?) provide like a warning..
         # Also decise less than what, 30%, 50%...?
 
+        """
         visible_points = len(
-            np.where(self.fig.data[0].z / self.intensity_ref_0K > 0.5)[0]
+            np.where(self.fig.data[0].z > 0.5)[0]
         )
         if visible_points < 1000:
             message = f"Only {visible_points}/{len(final_zspectra.T)} points have intensity higher than 50%"
@@ -149,6 +157,7 @@ class StructureFactorBasePlotWidget(ipw.VBox):
             self.message_fig.layout.display = "block"
         else:
             self.message_fig.layout.display = "none"
+        """
 
         # I have also to update the energy window. or better, to set the intensity to respect the current intensity window selected:
         self.fig.data[0].zmax = (
@@ -193,10 +202,6 @@ class StructureFactorSettingsBaseWidget(ipw.VBox):
     def __init__(self, **kwargs):
 
         super().__init__()
-
-        self.specification_intensity = ipw.HTML(
-            "(Intensity is relative to the maximum intensity at T=0K)"
-        )
 
         self.float_q_spacing = ipw.FloatText(
             value=0.01,

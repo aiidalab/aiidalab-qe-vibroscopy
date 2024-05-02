@@ -41,14 +41,21 @@ class SingleCrystalPlotWidget(StructureFactorBasePlotWidget):
 
         self.fig = go.FigureWidget()
 
-        self.fig.add_trace(
-            go.Heatmap(
-                z=final_zspectra.T / self.intensity_ref_0K,
-                y=y[:, 0] * self.THz_to_meV,
-                x=None,
-                showscale=False,
-            )
+        heatmap_trace = go.Heatmap(
+            z=final_zspectra.T,
+            y=y[:, 0] * self.THz_to_meV,
+            x=None,
+            colorbar=COLORBAR_DICT,
+            colorscale=COLORSCALE,  # imported from euphonic_base_widgets
         )
+
+        # Add colorbar
+        colorbar = heatmap_trace.colorbar
+        colorbar.x = 1.05  # Move colorbar to the right
+        colorbar.y = 0.5  # Center colorbar vertically
+
+        # Add heatmap trace to figure
+        self.fig.add_trace(heatmap_trace)
 
         self.fig.update_layout(
             xaxis=dict(
@@ -83,12 +90,13 @@ class SingleCrystalPlotWidget(StructureFactorBasePlotWidget):
         x = None  # if mode == "intensity" else x[0]
         self.fig.add_trace(
             go.Heatmap(
-                z=final_zspectra.T / self.intensity_ref_0K,
+                z=final_zspectra.T,
                 y=y[:, 0] * self.THz_to_meV
                 if self.E_units_button.value == "meV"
                 else y[:, 0],
                 x=x,
-                showscale=False,
+                colorbar=COLORBAR_DICT,
+                colorscale=COLORSCALE,  # imported from euphonic_base_widgets
             )
         )
 
@@ -150,7 +158,6 @@ class SingleCrystalSettingsWidget(StructureFactorSettingsBaseWidget):
                                     self.download_button,
                                 ]
                             ),
-                            self.specification_intensity,
                             self.float_q_spacing,
                             self.float_energy_broadening,
                             self.int_energy_bins,

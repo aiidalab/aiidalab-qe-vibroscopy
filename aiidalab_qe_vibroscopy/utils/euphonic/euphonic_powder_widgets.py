@@ -33,16 +33,17 @@ class PowderPlotWidget(StructureFactorBasePlotWidget):
         # Data to contour is the sum of two Gaussian functions.
         x, y = np.meshgrid(spectra.x_data.magnitude, spectra.y_data.magnitude)
 
-        self.intensity_ref_0K = (intensity_ref_0K,)
+        self.intensity_ref_0K = intensity_ref_0K
 
         self.fig = go.FigureWidget()
 
         self.fig.add_trace(
             go.Heatmap(
-                z=final_zspectra.T / self.intensity_ref_0K,
+                z=final_zspectra.T,
                 y=y[:, 0] * self.THz_to_meV,
                 x=x[0],
-                showscale=False,
+                colorbar=COLORBAR_DICT,
+                colorscale=COLORSCALE,  # imported from euphonic_base_widgets
             )
         )
 
@@ -71,12 +72,13 @@ class PowderPlotWidget(StructureFactorBasePlotWidget):
         x = x[0]
         self.fig.add_trace(
             go.Heatmap(
-                z=final_zspectra.T / self.intensity_ref_0K,
+                z=final_zspectra.T,
                 y=y[:, 0] * self.THz_to_meV
                 if self.E_units_button.value == "meV"
                 else y[:, 0],
                 x=x,
-                showscale=False,
+                colorbar=COLORBAR_DICT,
+                colorscale=COLORSCALE,  # imported from euphonic_base_widgets
             )
         )
 
@@ -129,7 +131,6 @@ class PowderSettingsWidget(StructureFactorSettingsBaseWidget):
                                     self.download_button,
                                 ]
                             ),
-                            self.specification_intensity,
                             self.float_q_spacing,
                             self.float_qmin,
                             self.float_qmax,
@@ -171,7 +172,7 @@ class PowderFullWidget(ipw.VBox):
     and are from Sears (1992) Neutron News 3(3) pp26--37.
     """
 
-    def __init__(self, fc, **kwargs):
+    def __init__(self, fc, intensity_ref_0K=1, **kwargs):
 
         self.fc = fc
 
@@ -187,8 +188,8 @@ class PowderFullWidget(ipw.VBox):
         self.settings_intensity.plot_button.on_click(self._on_plot_button_clicked)
         self.settings_intensity.download_button.on_click(self.download_data)
 
-        # This is used in order to have an overall intensity scale.
-        self.intensity_ref_0K = np.max(self.spectra.z_data.magnitude)  # CHANGED
+        # This is used in order to have an overall intensity scale. Inherithed from the SingleCrystal
+        self.intensity_ref_0K = intensity_ref_0K  # CHANGED
 
         self.map_widget = PowderPlotWidget(
             self.spectra, mode="powder", intensity_ref_0K=self.intensity_ref_0K

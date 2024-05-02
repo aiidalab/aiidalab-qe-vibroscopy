@@ -157,7 +157,7 @@ class Result(ResultPanel):
         if ins_data:
             intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"])
             children_result_widget += (intensity_maps,)
-            tab_titles.append("Inelastic Neutron Scattering")
+            tab_titles.append(f"Inelastic Neutrons")
 
         if spectra_data:
 

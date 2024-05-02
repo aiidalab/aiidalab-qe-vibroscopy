@@ -129,6 +129,8 @@ def produce_Q_section_spectrum(
 class QSectionPlotWidget(StructureFactorBasePlotWidget):
     def __init__(self, h_array, k_array, av_spec, labels, intensity_ref_0K=1, **kwargs):
 
+        self.intensity_ref_0K = intensity_ref_0K
+
         self.fig = go.FigureWidget()
 
         self.fig.add_trace(
@@ -136,7 +138,8 @@ class QSectionPlotWidget(StructureFactorBasePlotWidget):
                 z=av_spec,
                 x=h_array,
                 y=k_array,
-                showscale=False,
+                colorbar=COLORBAR_DICT,
+                colorscale=COLORSCALE,  # imported from euphonic_base_widgets
             )
         )
 
@@ -144,6 +147,12 @@ class QSectionPlotWidget(StructureFactorBasePlotWidget):
         super().__init__(
             h_array,
             **kwargs,
+        )
+
+        self.fig.update_layout(
+            height=625,
+            width=650,
+            margin=dict(l=15, r=15, t=15, b=15),
         )
 
         # self.children.insert(0, ipw.HTML(labels["q"]))
@@ -177,10 +186,16 @@ class QSectionPlotWidget(StructureFactorBasePlotWidget):
                 z=av_spec,
                 x=h_array,
                 y=k_array,
-                showscale=False,
+                colorbar=COLORBAR_DICT,
+                colorscale=COLORSCALE,  # imported from euphonic_base_widgets
             )
         )
 
+        self.fig.update_layout(
+            height=625,
+            width=650,
+            margin=dict(l=15, r=15, t=15, b=15),
+        )
         # self.fig.update_layout(title=labels["q"])
         self.fig["layout"]["xaxis"].update(
             range=[np.min(h_array), np.max(h_array)],
@@ -211,10 +226,9 @@ class QSectionSettingsWidget(StructureFactorSettingsBaseWidget):
             """
             <div style="padding-top: 0px; padding-bottom: 0px; line-height: 140%;">
                 <b>Q-plane definition</b>: <br>
-                To define a section of the reciprocal space, <br>
+                To define a plane in the reciprocal space, <br>
                 you should define a point in the reciprocal space, Q<sub>0</sub>,
-                and two vectors h and k, in such a way to define a plane in q-space,
-                in which every Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h + &beta;*k. <br>
+                and two vectors h&#8407; and k&#8407;. Then, each Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h&#8407; + &beta;*k&#8407;. <br>
                 Then you can select the number of q points in both directions and the &alpha; and &beta; parameters. <br>
                 Coordinates are reciprocal lattice units (rlu).
             </div>
@@ -310,7 +324,7 @@ class QSectionSettingsWidget(StructureFactorSettingsBaseWidget):
                             self.k_widget,
                         ],
                         layout=ipw.Layout(
-                            width="80%",
+                            width="50%",
                         ),
                     ),
                 ],
@@ -336,7 +350,7 @@ class QSectionFullWidget(ipw.VBox):
     and are from Sears (1992) Neutron News 3(3) pp26--37.
     """
 
-    def __init__(self, fc, **kwargs):
+    def __init__(self, fc, intensity_ref_0K=1, **kwargs):
 
         self.fc = fc
 
@@ -348,9 +362,8 @@ class QSectionFullWidget(ipw.VBox):
         self.settings_intensity.plot_button.on_click(self._on_plot_button_clicked)
         self.settings_intensity.download_button.on_click(self.download_data)
 
-        # self.map_widget = QSectionPlotWidget(
-        #    self.spectra, intensity_ref_0K=self.intensity_ref_0K
-        # )  # CHANGED
+        # This is used in order to have an overall intensity scale. Inherithed from the SingleCrystal
+        self.intensity_ref_0K = intensity_ref_0K  # CHANGED
 
         super().__init__(
             children=[

@@ -89,15 +89,7 @@ class UploadPhonopyWidget(ipw.HBox):
                             summary_name=temp_yaml.name,
                             fc_name=temp_hdf5_name,
                         )
-                    except ValueError as e:
-                        self._status_message.message = f"""
-                                    <div class="alert alert-danger">ERROR: {e}</div>
-                                    """
-                        return None
-                    except KeyError:
-                        self._status_message.message = f"""
-                                    <div class="alert alert-danger">ERROR: Could not parse file {temp_yaml.name}</div>
-                                    """
+                    except ValueError:
                         return None
 
                     return fc
@@ -110,15 +102,7 @@ class UploadPhonopyWidget(ipw.HBox):
                         summary_name=temp_yaml.name,
                         # fc_name=temp_hdf5_name,
                     )
-                except ValueError as e:
-                    self._status_message.message = f"""
-                                <div class="alert alert-danger">ERROR: {e}</div>
-                                """
-                    return None
-                except KeyError:
-                    self._status_message.message = f"""
-                                <div class="alert alert-danger">ERROR: Could not parse file {temp_yaml.name}</div>
-                                """
+                except ValueError:
                     return None
 
                 return fc
@@ -202,7 +186,8 @@ class EuphonicSuperWidget(ipw.VBox):
                     "content"
                 ]
 
-            self.plot_button.disabled = False
+            if self.plot_button.disabled:
+                self.plot_button.disabled = False
 
     def _on_upload_hdf5(self, change):
         if change["new"] != change["old"]:
@@ -231,10 +216,17 @@ class EuphonicSuperWidget(ipw.VBox):
         self.plot_button.layout.display = "none"
         self.fc = self._generate_force_constants()
 
+        # I first initialise this widget, to then have the 0K ref for the other two.
+        singlecrystalwidget = SingleCrystalFullWidget(self.fc)
+
         self.tab_widget.children = (
-            SingleCrystalFullWidget(self.fc),
-            PowderFullWidget(self.fc),
-            QSectionFullWidget(self.fc),
+            singlecrystalwidget,
+            PowderFullWidget(
+                self.fc, intensity_ref_0K=singlecrystalwidget.intensity_ref_0K
+            ),
+            QSectionFullWidget(
+                self.fc, intensity_ref_0K=singlecrystalwidget.intensity_ref_0K
+            ),
         )
 
         self.tab_widget.layout.display = "block"
