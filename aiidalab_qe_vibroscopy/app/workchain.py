@@ -77,9 +77,13 @@ def get_builder(codes, structure, parameters):
 
     return builder
 
+def update_inputs(inputs, ctx):
+    """Update the inputs using context."""
+    inputs.structure = ctx.current_structure
 
 workchain_and_builder = {
     "workchain": VibroWorkChain,
     "exclude": ("clean_workdir",),
     "get_builder": get_builder,
+    "update_inputs": update_inputs,
 }
