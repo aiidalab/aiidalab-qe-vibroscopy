@@ -2,6 +2,7 @@ from aiida.common.exceptions import NotExistent
 import subprocess
 from aiida.orm import load_code
 from aiida import load_profile
+import shutil
 
 """
 Automatic installation of the phonopy code.
@@ -17,6 +18,8 @@ def install_phonopy():
     try:
         load_code("phonopy@localhost")
     except NotExistent:
+        # Use shutil.which to find the path of the phonopy executable
+        phonopy_path = shutil.which("phonopy")
         # Construct the command as a list of arguments
         command = [
             "verdi",
@@ -31,7 +34,7 @@ def install_phonopy():
             "--computer",
             "localhost",
             "--filepath-executable",
-            "/opt/conda/bin/phonopy",
+            phonopy_path,
         ]
 
         # Use subprocess.run to run the command

@@ -4,8 +4,6 @@
 from __future__ import annotations
 
 
-from widget_bandsplot import BandsPlotWidget
-
 from aiidalab_qe.common.panel import ResultPanel
 import ipywidgets as ipw
 import numpy as np

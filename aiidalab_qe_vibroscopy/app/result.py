@@ -4,8 +4,6 @@
 from __future__ import annotations
 
 
-from widget_bandsplot import BandsPlotWidget
-
 from aiidalab_qe.common.panel import ResultPanel
 from aiidalab_qe.common.bandpdoswidget import BandPdosPlotly
 
@@ -101,19 +99,9 @@ class Result(ResultPanel):
                 )
 
                 phonon_children += (
-                    _bands_plot_view_class._create_combined_plot(),
+                    _bands_plot_view_class.bandspdosfigure,
                     download_widget,
                 )
-
-            """if phonon_data["pdos"]:
-                _pdos_plot_view = BandsPlotWidget(
-                    dos=phonon_data["pdos"][0],
-                    plot_fermilevel=False,
-                    show_legend=False,
-                    **phonon_data["pdos"][1],
-                )
-                children_result_widget += (_pdos_plot_view,)
-            """
 
             if phonon_data["thermo"]:
                 import plotly.graph_objects as go
@@ -151,7 +139,12 @@ class Result(ResultPanel):
             tab_titles.append("Phonon properties")
 
             children_result_widget += (
-                ipw.VBox(children=phonon_children),
+                ipw.VBox(
+                    children=phonon_children,
+                    layout=ipw.Layout(
+                        width="100%",
+                    ),
+                ),
             )  # the comma is required! otherwise the tuple is not detected.
         # euphonic
         if ins_data:
@@ -177,7 +170,7 @@ class Result(ResultPanel):
                         "This may be due to the fact that the current implementation of aiida-vibroscopy plugin only considers first-order effects."
                     )
 
-                    children_result_widget += (
+                    children_spectra += (
                         ipw.VBox([no_mode_widget, explanation_widget]),
                     )
 
@@ -193,7 +186,14 @@ class Result(ResultPanel):
                     children_spectra += (
                         ipw.VBox([subwidget_title, spectrum_widget, modes_animation]),
                     )
-            children_result_widget += (ipw.VBox(children=children_spectra),)
+            children_result_widget += (
+                ipw.VBox(
+                    children=children_spectra,
+                    layout=ipw.Layout(
+                        width="100%",
+                    ),
+                ),
+            )
             tab_titles.append(f"Raman/IR spectra")
 
         self.result_tabs = ipw.Tab(children=children_result_widget)

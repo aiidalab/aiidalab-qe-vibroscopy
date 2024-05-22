@@ -1,16 +1,36 @@
 from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBaseWorkChain
-
+from aiida import orm
 VibroWorkChain = WorkflowFactory("vibroscopy_app.vibro")
+
+def create_resource_config(code_details):
+    """
+    Create a dictionary with resource configuration based on codes for 'pw'.
+    
+    Parameters:
+        codes (dict): A dictionary containing the code configuration.
+        
+    Returns:
+        dict: A nested dictionary with structured resource configurations.
+    """
+    return  {
+        "options": {
+            "resources": {
+                "num_machines": code_details["nodes"],
+                "num_mpiprocs_per_machine": code_details["ntasks_per_node"],
+                "num_cores_per_mpiproc": code_details["cpus_per_task"],
+            }
+        }
+    }
 
 
 def get_builder(codes, structure, parameters):
     from copy import deepcopy
 
     protocol = parameters["workchain"].pop("protocol", "fast")
-    pw_code = codes.get("pw")
-    phonopy_code = codes.get("phonopy")
+    pw_code = codes.get("pw")["code"]
+    phonopy_code = codes.get("phonopy")["code"]
 
     simulation_mode = parameters["vibronic"].pop("simulation_mode", 1)
 
@@ -27,6 +47,14 @@ def get_builder(codes, structure, parameters):
         },
         "dielectric": {"scf": scf_overrides},
     }
+
+    # Update code information with resource configurations
+    overrides["dielectric"]["scf"]["pw"] = {"metadata": create_resource_config(codes.get("pw"))}
+    overrides["phonon"]["scf"]["pw"] = {"metadata": create_resource_config(codes.get("pw"))}
+
+    #Parallelization for phonon calculation
+    if "parallelization" in codes.get("pw"):
+        overrides["phonon"]["scf"]["pw"]["parallelization"] = orm.Dict(codes.get("pw")["parallelization"])
 
     # Only for 2D and 1D materials
     if structure.pbc != (True, True, True):
@@ -49,9 +77,13 @@ def get_builder(codes, structure, parameters):
 
     return builder
 
+def update_inputs(inputs, ctx):
+    """Update the inputs using context."""
+    inputs.structure = ctx.current_structure
 
 workchain_and_builder = {
     "workchain": VibroWorkChain,
     "exclude": ("clean_workdir",),
     "get_builder": get_builder,
+    "update_inputs": update_inputs,
 }

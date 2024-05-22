@@ -2,7 +2,7 @@
 
 """
 
-from widget_bandsplot import BandsPlotWidget
+
 
 from aiidalab_qe.common.panel import ResultPanel
 
