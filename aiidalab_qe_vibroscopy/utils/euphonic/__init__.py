@@ -196,6 +196,9 @@ class EuphonicSuperWidget(ipw.VBox):
                     "content"
                 ]
 
+            if self.plot_button.disabled:
+                self.plot_button.disabled = False
+
     def _generate_force_constants(
         self,
     ):
