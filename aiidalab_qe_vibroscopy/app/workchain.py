@@ -2,19 +2,21 @@ from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBaseWorkChain
 from aiida import orm
+
 VibroWorkChain = WorkflowFactory("vibroscopy_app.vibro")
+
 
 def create_resource_config(code_details):
     """
     Create a dictionary with resource configuration based on codes for 'pw'.
-    
+
     Parameters:
         codes (dict): A dictionary containing the code configuration.
-        
+
     Returns:
         dict: A nested dictionary with structured resource configurations.
     """
-    return  {
+    return {
         "options": {
             "resources": {
                 "num_machines": code_details["nodes"],
@@ -49,12 +51,18 @@ def get_builder(codes, structure, parameters):
     }
 
     # Update code information with resource configurations
-    overrides["dielectric"]["scf"]["pw"] = {"metadata": create_resource_config(codes.get("pw"))}
-    overrides["phonon"]["scf"]["pw"] = {"metadata": create_resource_config(codes.get("pw"))}
+    overrides["dielectric"]["scf"]["pw"]["metadata"] = create_resource_config(
+        codes.get("pw")
+    )
+    overrides["phonon"]["scf"]["pw"]["metadata"] = create_resource_config(
+        codes.get("pw")
+    )
 
-    #Parallelization for phonon calculation
+    # Parallelization for phonon calculation
     if "parallelization" in codes.get("pw"):
-        overrides["phonon"]["scf"]["pw"]["parallelization"] = orm.Dict(codes.get("pw")["parallelization"])
+        overrides["phonon"]["scf"]["pw"]["parallelization"] = orm.Dict(
+            codes.get("pw")["parallelization"]
+        )
 
     # Only for 2D and 1D materials
     if structure.pbc != (True, True, True):
@@ -77,9 +85,11 @@ def get_builder(codes, structure, parameters):
 
     return builder
 
+
 def update_inputs(inputs, ctx):
     """Update the inputs using context."""
     inputs.structure = ctx.current_structure
+
 
 workchain_and_builder = {
     "workchain": VibroWorkChain,
