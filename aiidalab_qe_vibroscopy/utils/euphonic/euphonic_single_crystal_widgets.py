@@ -123,7 +123,7 @@ class SingleCrystalSettingsWidget(StructureFactorSettingsBaseWidget):
                 we can provide it via a specific format: <br>
                 (1) each linear path should be divided by '|'; <br>
                 (2) each path is composed of 'qxi qyi qzi - qxf qyf qzf' where qxi and qxf are, respectively,
-                the start and end x-coordinate of the q direction, in reciprocal lattice units (rlu).<br>
+                the start and end x-coordinate of the q direction, in crystal coordinates.<br>
                 An example path is: '0 0 0 - 1 1 1 | 1 1 1 - 0.5 0.5 0.5'. <br>
                 For now, we do not support fractions (i.e. we accept 0.5 but not 1/2).
             </div>
