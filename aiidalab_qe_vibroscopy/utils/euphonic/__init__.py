@@ -152,8 +152,8 @@ class EuphonicSuperWidget(ipw.VBox):
             self.upload_widget.layout.display = "none"
             self.plot_button.disabled = False
         else:
-            self.upload_widget.children[0].observe(self._on_upload_yaml, "value")
-            self.upload_widget.children[1].observe(self._on_upload_hdf5, "value")
+            self.upload_widget.children[0].observe(self._on_upload_yaml, "_counter")
+            self.upload_widget.children[1].observe(self._on_upload_hdf5, "_counter")
 
         super().__init__(
             children=[
@@ -186,8 +186,8 @@ class EuphonicSuperWidget(ipw.VBox):
                     "content"
                 ]
 
-            if self.plot_button.disabled:
-                self.plot_button.disabled = False
+        if self.plot_button.disabled:
+            self.plot_button.disabled = False
 
     def _on_upload_hdf5(self, change):
         if change["new"] != change["old"]:
@@ -195,9 +195,6 @@ class EuphonicSuperWidget(ipw.VBox):
                 self.fc_hdf5_content = self.upload_widget.children[1].value[fname][
                     "content"
                 ]
-
-            if self.plot_button.disabled:
-                self.plot_button.disabled = False
 
     def _generate_force_constants(
         self,
