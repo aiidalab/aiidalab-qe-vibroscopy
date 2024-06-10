@@ -9,7 +9,7 @@ Automatic installation of the phonopy code.
 
 (1) if not already installed: pip install phonopy --user
 (2) if it doesn't already exist, create a symbolic link for Phonopy: ln -s <phonopy path> /opt/conda/bin/phonopy (try which phonopy to see the phonopy path)
-(3) run phonopy_setup
+(3) invoke phonopy_setup
 """
 
 

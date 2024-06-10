@@ -11,7 +11,7 @@ Then, install this plugin by:
 pip install -e .
 pip install phonopy --user # if phonopy is not installed in your machine
 ln -s <phonopy path> /opt/conda/bin/phonopy # if it doesn't already exist, create a symbolic link for phonopy
-python phonopy_setup.py # setup phonopy in AiiDA
+phonopy_setup.py # setup phonopy in AiiDA
 ```
 
 ### h5py installation for arm64 architectures
