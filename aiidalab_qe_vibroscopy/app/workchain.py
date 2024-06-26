@@ -25,7 +25,6 @@ def create_resource_config(code_details):
                 "num_mpiprocs_per_machine": code_details["ntasks_per_node"],
                 "num_cores_per_mpiproc": code_details["cpus_per_task"],
             }, 
-            
         }
     }
     
