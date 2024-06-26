@@ -3,17 +3,21 @@ import subprocess
 from aiida.orm import load_code
 from aiida import load_profile
 import shutil
+import click
 
 """
 Automatic installation of the phonopy code.
 
-(1) if not already installed: pip install phonopy --user
-(2) if it doesn't already exist, create a symbolic link for Phonopy: ln -s <phonopy path> /opt/conda/bin/phonopy (try which phonopy to see the phonopy path)
-(3) invoke phonopy_setup
+we suppose phonopy is already installed (pip install phonopy).
+So we only setup in AiiDA.
 """
 
+@click.group()
+def cli():
+    pass
 
-def install_phonopy():
+@cli.command()
+def setup_phonopy():
     load_profile()
     try:
         load_code("phonopy@localhost")
@@ -42,7 +46,5 @@ def install_phonopy():
     else:
         raise Warning("Code phonopy@localhost already installed!")
 
-
-# Called when the script is run directly
 if __name__ == "__main__":
-    install_phonopy()
+    cli()
