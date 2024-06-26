@@ -27,12 +27,8 @@ dependencies = [
     "kaleido",
 ]
 
-[project.scripts]
-aiidalab-qe-vibroscopy-post_install = "aiidalab_qe_vibroscopy.utils.phonopy_setup:install_phonopy"
-
 [project.urls]
 Source = "https://github.com/mikibonacci/aiidalab-qe-vibroscopy"
-
 
 [project.entry-points.'aiida.workflows']
 "vibroscopy_app.vibro" = "aiidalab_qe_vibroscopy.workflows.vibroworkchain:VibroWorkChain"
