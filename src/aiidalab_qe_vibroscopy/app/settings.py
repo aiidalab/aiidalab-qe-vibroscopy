@@ -141,6 +141,7 @@ class Setting(Panel):
                 ),
             ]
         )
+        self.supercell_widget.layout.display = "block"
         # end Supercell.
 
         self.children = [
@@ -205,11 +206,6 @@ class Setting(Panel):
 
     def get_panel_value(self):
         """Return a dictionary with the input parameters for the plugin."""
-        if isinstance(self.calc_options, str):
-            return {
-                "simulation_mode": self.calc_options,
-                "supercell_selector": self.supercell,
-            }
         return {
             "simulation_mode": self.calc_options.value,
             "supercell_selector": self.supercell,
@@ -222,8 +218,5 @@ class Setting(Panel):
 
     def reset(self):
         """Reset the panel"""
-        if isinstance(self.calc_options, str):
-            self.calc_options = "IR/Raman, Phonon, Dielectric, INS properties"
-        else:
-            self.calc_options.value = 1
-            self.supercell = [2, 2, 2]
+        self.calc_options.value = 1
+        self.supercell = [2, 2, 2]
