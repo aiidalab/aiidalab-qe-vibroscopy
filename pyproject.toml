@@ -35,3 +35,6 @@ Source = "https://github.com/mikibonacci/aiidalab-qe-vibroscopy"
 
 [project.entry-points.'aiidalab_qe.properties']
 "vibronic" = "aiidalab_qe_vibroscopy.app:property"
+
+[project.scripts]
+"aiidalab-qe-vibroscopy" = "aiidalab_qe_vibroscopy.__main__:cli"
