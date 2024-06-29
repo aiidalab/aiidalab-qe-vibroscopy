@@ -3,15 +3,17 @@ Plugin to compute vibrational properties of materials via the aiida-vibroscopy A
 
 ## Installation
 
-In order to load this plugin into QeApp, you need to switch to the `features/phonopy` branch for your `aiidalab-qe`.
-
-Then, install this plugin by:
+Once cloned the repository, `cd` into it and:
 
 ```shell
-pip install -e .
-pip install phonopy --user # if phonopy is not installed in your machine
-ln -s <phonopy path> /opt/conda/bin/phonopy # if it doesn't already exist, create a symbolic link for phonopy
-phonopy_setup.py # setup phonopy in AiiDA
+pip install -e 
+```
+
+If you want to easily set up phonopy, use the CLI of this package (inspect it via `aiidalab-qe-vibroscopy --help`):
+
+```shell.
+pip install phonopy --user # if phonopy is not installed in your machine; it should be already installed as it is a dependency of the package.
+aiidalab-qe-vibroscopy setup-phonopy # setup phonopy@localhost in AiiDA; this post-install command is automatically triggered if you install the plugin from the aiidalab-qe interface.
 ```
 
 ### h5py installation for arm64 architectures
@@ -24,7 +26,6 @@ conda install h5py==3.11.0
 ```
 
 this will install also the `hdf5` library as dependency.
-
 
 ## License
 
