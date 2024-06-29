@@ -25,11 +25,13 @@ def create_resource_config(code_details):
                 "num_mpiprocs_per_machine": code_details["ntasks_per_node"],
                 "num_cores_per_mpiproc": code_details["cpus_per_task"],
             }, 
+
         }
     }
     
     if "max_wallclock_seconds" in code_details:
-        options["max_wallclock_seconds"] = code_details["max_wallclock_seconds"]
+        options["options"]["max_wallclock_seconds"] = code_details["max_wallclock_seconds"]
+
         
     return options
 
