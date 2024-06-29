@@ -11,6 +11,7 @@ from aiidalab_qe.common.setup_pseudos import SSSP_VERSION
 
 pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]
 
+# TODO: import this from the aiidalab-qe app. For now it is copied. 
 
 @pytest.fixture
 def fixture_localhost(aiida_localhost):
