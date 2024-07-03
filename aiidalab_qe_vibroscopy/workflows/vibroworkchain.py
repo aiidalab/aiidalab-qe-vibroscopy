@@ -468,7 +468,7 @@ class VibroWorkChain(WorkChain):
                 builder.phonopy_pdos_dict = Dict(
                     dict={
                         "pdos": "auto",
-                        "mesh": 300,  # 1000 is too heavy
+                        "mesh": 150,  # 1000 is too heavy
                         "write_mesh": False,
                     }
                 )
@@ -590,7 +590,7 @@ class VibroWorkChain(WorkChain):
                 builder.phonopy_pdos_dict = Dict(
                     dict={
                         "pdos": "auto",
-                        "mesh": 300,  # 1000 is too heavy
+                        "mesh": 150,  # 1000 is too heavy
                         "write_mesh": False,
                     }
                 )
