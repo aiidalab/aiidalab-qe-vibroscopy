@@ -473,7 +473,13 @@ class VibroWorkChain(WorkChain):
                     }
                 )
 
-                builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
+            builder.phonopy_thermo_dict = Dict(
+                dict= {
+                    'tprop': True, 
+                    'mesh': 200,    # 1000 is too heavy
+                     'write_mesh': False,
+                     }
+                )
 
         elif simulation_mode == 2:
 
@@ -595,7 +601,13 @@ class VibroWorkChain(WorkChain):
                     }
                 )
 
-                builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
+            builder.phonopy_thermo_dict = Dict(
+                dict= {
+                    'tprop': True, 
+                    'mesh': 200,    # 1000 is too heavy
+                     'write_mesh': False,
+                     }
+                )
 
         elif simulation_mode == 4:
 
