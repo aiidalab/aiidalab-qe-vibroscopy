@@ -10,7 +10,7 @@ from aiidalab_qe.common.bandpdoswidget import BandPdosPlotly
 import numpy as np
 
 from ..utils.raman.result import export_iramanworkchain_data
-
+from ..utils.dielectric.result import export_dielectric_data, DielectricResults
 from ..utils.phonons.result import export_phononworkchain_data
 
 from ..utils.euphonic import (
@@ -23,6 +23,21 @@ import ipywidgets as ipw
 
 from ..utils.raman.result import SpectrumPlotWidget, ActiveModesWidget
 
+def create_html_table(matrix):
+    """
+    Create an HTML table representation of a 3x3 matrix.
+
+    :param matrix: List of lists representing a 3x3 matrix
+    :return: HTML table string
+    """
+    html = '<table border="1" style="border-collapse: collapse;">'
+    for row in matrix:
+        html += '<tr>'
+        for cell in row:
+            html += f'<td style="padding: 5px; text-align: center;">{cell}</td>'
+        html += '</tr>'
+    html += '</table>'
+    return html
 
 class PhononBandPdosPlotly(BandPdosPlotly):
     def __init__(self, bands_data=None, pdos_data=None):
@@ -84,6 +99,7 @@ class Result(ResultPanel):
         spectra_data = export_iramanworkchain_data(self.node)
         phonon_data = export_phononworkchain_data(self.node)
         ins_data = export_euphonic_data(self.node)
+        dielectric_data = export_dielectric_data(self.node)
 
         if phonon_data:
 
@@ -195,6 +211,17 @@ class Result(ResultPanel):
                 ),
             )
             tab_titles.append(f"Raman/IR spectra")
+
+            #create and VBox
+            my_VBox = ipw.VBox(children=children_spectra, layout=ipw.Layout(width="100%"))
+
+        if dielectric_data:
+            
+            dielectric_results = DielectricResults(dielectric_data)
+            children_result_widget += (dielectric_results,)
+            tab_titles.append("Dielectric properties")
+
+        
 
         self.result_tabs = ipw.Tab(children=children_result_widget)
 
