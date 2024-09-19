@@ -290,6 +290,13 @@ def projwfc_code(aiida_local_code_factory):
         entry_point="quantumespresso.projwfc",
     )
 
+@pytest.fixture
+def phonopy_code(aiida_local_code_factory):
+    """Return a `Code` configured for the pw.x executable."""
+
+    return aiida_local_code_factory(
+        label="phonopy", executable="bash", entry_point="phonopy.phonopy"
+    )
 
 @pytest.fixture()
 def workchain_settings_generator():

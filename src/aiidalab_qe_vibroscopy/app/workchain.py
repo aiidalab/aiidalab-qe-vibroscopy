@@ -18,7 +18,7 @@ def create_resource_config(code_details):
     Returns:
         dict: A nested dictionary with structured resource configurations.
     """
-    options =  {
+    metadata =  {
         "options": {
             "resources": {
                 "num_machines": code_details["nodes"],
@@ -30,10 +30,10 @@ def create_resource_config(code_details):
     }
     
     if "max_wallclock_seconds" in code_details:
-        options["options"]["max_wallclock_seconds"] = code_details["max_wallclock_seconds"]
+        metadata["options"]["max_wallclock_seconds"] = code_details["max_wallclock_seconds"]
 
         
-    return options
+    return metadata
 
 
 def get_builder(codes, structure, parameters):
@@ -41,6 +41,8 @@ def get_builder(codes, structure, parameters):
 
     protocol = parameters["workchain"].pop("protocol", "fast")
     pw_code = codes.get("pw")["code"]
+    pw_phonon_code = codes.get("phonon")["code"]
+    pw_dielectric_code = codes.get("dielectric")["code"]
     phonopy_code = codes.get("phonopy")["code"]
 
     simulation_mode = parameters["vibronic"].pop("simulation_mode", 1)
@@ -48,29 +50,29 @@ def get_builder(codes, structure, parameters):
     # Define the supercell matrix
     supercell_matrix = parameters["vibronic"].pop("supercell_selector", None)
 
-    scf_overrides = deepcopy(parameters["advanced"])
-
     # The following include_all is needed to have forces written
     overrides = {
         "phonon": {
-            "scf": scf_overrides,
+            "scf": deepcopy(parameters["advanced"]),
             "supercell_matrix": supercell_matrix,
         },
-        "dielectric": {"scf": scf_overrides},
+        "dielectric": {"scf": deepcopy(parameters["advanced"])},
     }
 
     # Update code information with resource configurations
     overrides["dielectric"]["scf"]["pw"]["metadata"] = create_resource_config(
-        codes.get("pw")
+        codes.get("dielectric")
     )
+    
     overrides["phonon"]["scf"]["pw"]["metadata"] = create_resource_config(
-        codes.get("pw")
+        codes.get("phonon")
     )
+    
 
     # Parallelization for phonon calculation
-    if "parallelization" in codes.get("pw"):
+    if "parallelization" in codes.get("phonon"):
         overrides["phonon"]["scf"]["pw"]["parallelization"] = orm.Dict(
-            codes.get("pw")["parallelization"]
+            codes.get("phonon")["parallelization"]
         )
 
     # Only for 2D and 1D materials
@@ -81,7 +83,8 @@ def get_builder(codes, structure, parameters):
             ] = PwBaseWorkChain.get_protocol_inputs(protocol)["kpoints_distance"]
 
     builder = VibroWorkChain.get_builder_from_protocol(
-        pw_code=pw_code,
+        phonon_code=pw_phonon_code,
+        dielectric_code=pw_dielectric_code,
         phonopy_code=phonopy_code,
         structure=structure,
         protocol=protocol,

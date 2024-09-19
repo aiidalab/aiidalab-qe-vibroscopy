@@ -1,0 +1,61 @@
+advanced:
+  clean_workdir: false
+  initial_magnetic_moments: null
+  kpoints_distance: 0.12
+  pseudo_family: SSSP/1.3/PBEsol/efficiency
+  pw:
+    parameters:
+      CONTROL:
+        etot_conv_thr: 2.0e-05
+        forc_conv_thr: 0.0001
+      ELECTRONS:
+        conv_thr: 4.0e-10
+      SYSTEM:
+        degauss: 0.015
+        ecutrho: 240.0
+        ecutwfc: 30.0
+        smearing: methfessel-paxton
+        tot_charge: 0.0
+        vdw_corr: none
+    pseudos: {}
+codes:
+  dielectric:
+    cpus: 3
+    cpus_per_task: 1
+    max_wallclock_seconds: 43200
+    nodes: 1
+    ntasks_per_node: 3
+  phonon:
+    cpus: 2
+    cpus_per_task: 1
+    max_wallclock_seconds: 43200
+    nodes: 1
+    ntasks_per_node: 2
+    parallelization: {}
+  phonopy:
+    cpus: 1
+    cpus_per_task: 1
+    max_wallclock_seconds: 43200
+    nodes: 1
+    ntasks_per_node: 1
+  pw:
+    cpus: 10
+    cpus_per_task: 1
+    max_wallclock_seconds: 43200
+    nodes: 1
+    ntasks_per_node: 10
+    parallelization: {}
+vibronic:
+  simulation_mode: 1
+  supercell_selector:
+  - 2
+  - 2
+  - 2
+workchain:
+  electronic_type: metal
+  properties:
+  - vibronic
+  - relax
+  protocol: moderate
+  relax_type: positions_cell
+  spin_type: none
