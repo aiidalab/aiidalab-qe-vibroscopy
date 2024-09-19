@@ -57,6 +57,7 @@ def get_builder(codes, structure, parameters):
             "supercell_matrix": supercell_matrix,
         },
         "dielectric": {"scf": scf_overrides},
+        "symmetry:": {"symprec": parameters["vibronic"]["symmetry_symprec"]},
     }
 
     # Update code information with resource configurations

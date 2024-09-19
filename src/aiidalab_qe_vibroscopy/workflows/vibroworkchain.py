@@ -431,17 +431,17 @@ class VibroWorkChain(WorkChain):
                 if structure.pbc == (True, False, False):
                     builder.phonopy_bands_dict = Dict(
                         dict={
-                            "symmetry_tolerance": 1e-3,
+                            "symmetry_tolerance": overrides["symmetry"]["symprec"],
                             "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
                             "band_labels": [GAMMA, "$\\mathrm{X}$"],
                         }
                     )
                     #change symprec for 1D materials to 1e-3
-                    builder.phonopy_pdos_dict["symmetry_tolerance"] = 1e-3
-                    builder.phonopy_thermo_dict["symmetry_tolerance"] = 1e-3
-                    builder.harmonic.symmetry.symprec = orm.Float(1e-3)
-                    builder.harmonic.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
+                    builder.phonopy_pdos_dict["symmetry_tolerance"] = overrides["symmetry"]["symprec"]   #1e-3
+                    builder.phonopy_thermo_dict["symmetry_tolerance"] = overrides["symmetry"]["symprec"] # 1e-3
+                    builder.harmonic.symmetry.symprec = orm.Float(overrides["symmetry"]["symprec"])
+                    builder.harmonic.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": overrides["symmetry"]["symprec"]})
 
                 elif structure.pbc == (True, True, False):
                     symmetry_path = determine_symmetry_path(structure)
@@ -499,8 +499,8 @@ class VibroWorkChain(WorkChain):
                 builder_iraman.dielectric.pop("kpoints_parallel_distance", None)
 
                 if structure.pbc == (True, False, False):
-                    builder_iraman.symmetry.symprec = orm.Float(1e-3)
-                    builder_iraman.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
+                    builder_iraman.symmetry.symprec = orm.Float(overrides["symmetry"]["symprec"])
+                    builder_iraman.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": overrides["symmetry"]["symprec"]})
 
             builder.iraman = builder_iraman
 
@@ -553,17 +553,17 @@ class VibroWorkChain(WorkChain):
                 if structure.pbc == (True, False, False):
                     builder.phonopy_bands_dict = Dict(
                         dict={
-                            "symmetry_tolerance": 1e-3,
+                            "symmetry_tolerance": overrides["symmetry"]["symprec"],
                             "band": [0, 0, 0, 1 / 2, 0, 0],
                             "band_points": 100,
                             "band_labels": [GAMMA, "$\\mathrm{X}$"],
                         }
                     )
                     #change symprec for 1D materials to 1e-3
-                    builder.phonopy_pdos_dict["symmetry_tolerance"] = 1e-3
-                    builder.phonopy_thermo_dict["symmetry_tolerance"] = 1e-3
-                    builder.phonon.symmetry.symprec = orm.Float(1e-3)
-                    builder.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
+                    builder.phonopy_pdos_dict["symmetry_tolerance"] = overrides["symmetry"]["symprec"]
+                    builder.phonopy_thermo_dict["symmetry_tolerance"] = overrides["symmetry"]["symprec"]
+                    builder.phonon.symmetry.symprec = orm.Float(overrides["symmetry"]["symprec"])
+                    builder.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": overrides["symmetry"]["symprec"]})
 
                 elif structure.pbc == (True, True, False):
                     symmetry_path = determine_symmetry_path(structure)
@@ -631,7 +631,7 @@ class VibroWorkChain(WorkChain):
                 "num_mpiprocs_per_machine": 1,
             }
         if structure.pbc == (True, False, False):
-            builder.phonopy_calc.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
+            builder.phonopy_calc.parameters = orm.Dict({"symmetry_tolerance": overrides["symmetry"]["symprec"]})
         builder.structure = structure
 
         return builder
