@@ -16,7 +16,7 @@ from ..utils.phonons.result import export_phononworkchain_data
 from ..utils.euphonic import (
     export_euphonic_data,
     EuphonicSuperWidget,
-    DowloadYamlHdf5Widget,
+    DownloadYamlHdf5Widget,
 )
 import plotly.graph_objects as go
 import ipywidgets as ipw
@@ -94,13 +94,20 @@ class Result(ResultPanel):
                     pdos_data=phonon_data["pdos"][0],
                 )
 
-                download_widget = DowloadYamlHdf5Widget(
+                # the data (bands and pdos) are the first element of the lists phonon_data["bands"] and phonon_data["pdos"]! 
+                downloadBandsPdos_widget = DownloadBandsPdosWidget(
+                    data=phonon_data,
+                )
+                downloadYamlHdf5_widget = DownloadYamlHdf5Widget(
                     phonopy_node=self.node.outputs.vibronic.phonon_pdos.creator
                 )
 
                 phonon_children += (
                     _bands_plot_view_class.bandspdosfigure,
-                    download_widget,
+                    ipw.HBox(children=[
+                        downloadBandsPdos_widget,
+                        downloadYamlHdf5_widget,
+                        ]),
                 )
 
             if phonon_data["thermo"]:
@@ -134,7 +141,13 @@ class Result(ResultPanel):
                 g.add_scatter(x=T, y=E, name=f"Entropy ({E_units})")
                 g.add_scatter(x=T, y=Cv, name=f"Specific Heat-V=const ({Cv_units})")
 
-                phonon_children += (g,)
+                downloadThermo_widget = DownloadThermoWidget(
+                    T,F,E,Cv)
+                    
+                phonon_children += (
+                    g,
+                    downloadThermo_widget,
+                )
 
             tab_titles.append("Phonon properties")
 
@@ -202,3 +215,127 @@ class Result(ResultPanel):
             self.result_tabs.set_title(title_index, tab_titles[title_index])
 
         self.children = [self.result_tabs]
+
+class DownloadBandsPdosWidget(ipw.HBox):
+    def __init__(self, data, **kwargs):
+
+        self.download_button = ipw.Button(
+            description="Download phonon bands and pdos data",
+            icon="pencil",
+            button_style="primary",
+            disabled=False,
+            layout=ipw.Layout(width="auto"),
+        )
+        self.download_button.on_click(self.download_data)
+        self.bands_data = data["bands"]
+        self.pdos_data = data["pdos"]
+
+        super().__init__(
+            children=[
+                self.download_button,
+            ],
+        )
+
+    def download_data(self, _=None):
+        """Function to download the phonon data."""
+        import json
+        from monty.json import jsanitize
+        import base64
+        file_name_bands = "phonon_bands_data.json"
+        file_name_pdos = "phonon_dos_data.json"
+        if self.bands_data[0]:
+            bands_data_export = {}
+            for key, value in self.bands_data[0].items():
+                if isinstance(value, np.ndarray):
+                    bands_data_export[key] = value.tolist()
+                else:
+                    bands_data_export[key] = value
+
+            json_str = json.dumps(jsanitize(bands_data_export))
+            b64_str = base64.b64encode(json_str.encode()).decode()
+            self._download(payload=b64_str, filename=file_name_bands)
+        if self.pdos_data:
+            json_str = json.dumps(jsanitize(self.pdos_data[0]))
+            b64_str = base64.b64encode(json_str.encode()).decode()
+            self._download(payload=b64_str, filename=file_name_pdos)
+
+    @staticmethod
+    def _download(payload, filename):
+        from IPython.display import Javascript
+
+        javas = Javascript(
+            """
+            var link = document.createElement('a');
+            link.href = 'data:text/json;charset=utf-8;base64,{payload}'
+            link.download = "{filename}"
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            """.format(
+                payload=payload, filename=filename
+            )
+        )
+        display(javas)
+        
+class DownloadThermoWidget(ipw.HBox):
+    
+    def __init__(self, T,F,E,Cv, **kwargs):
+
+        self.download_button = ipw.Button(
+            description="Download thermal properties data",
+            icon="pencil",
+            button_style="primary",
+            disabled=False,
+            layout=ipw.Layout(width="auto"),
+        )
+        self.download_button.on_click(self.download_data)
+        
+        self.temperature = T
+        self.free_E = F
+        self.entropy = E
+        self.Cv = Cv
+
+        super().__init__(
+            children=[
+                self.download_button,
+            ],
+        )
+
+    def download_data(self, _=None):
+        """Function to download the phonon data."""
+        import json
+        from monty.json import jsanitize
+        import base64
+        file_name = "phonon_thermo_data.json"
+        data_export = {}
+        for key, value in zip(
+            ["Temperature (K)","Helmoltz Free Energy (kJ/mol)",
+             "Entropy (J/K/mol)","Specific Heat-V=const (J/K/mol)"],
+            [self.temperature, self.free_E,self.entropy, self.Cv]):
+            if isinstance(value, np.ndarray):
+                data_export[key] = value.tolist()
+            else:
+                data_export[key] = value
+
+        json_str = json.dumps(data_export)
+        b64_str = base64.b64encode(json_str.encode()).decode()
+        self._download(payload=b64_str, filename=file_name)
+        
+
+    @staticmethod
+    def _download(payload, filename):
+        from IPython.display import Javascript
+
+        javas = Javascript(
+            """
+            var link = document.createElement('a');
+            link.href = 'data:text/json;charset=utf-8;base64,{payload}'
+            link.download = "{filename}"
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            """.format(
+                payload=payload, filename=filename
+            )
+        )
+        display(javas)
