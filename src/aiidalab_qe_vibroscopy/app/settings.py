@@ -211,12 +211,15 @@ class Setting(Panel):
             "supercell_selector": self.supercell,
         }
 
-    def load_panel_value(self, input_dict):
+    def set_panel_value(self, input_dict):
         """Load a dictionary with the input parameters for the plugin."""
         self.calc_options.value = input_dict.get("simulation_mode", 1)
         self.supercell = input_dict.get("supercell_selector", [2, 2, 2])
+        self._sc_x.value, self._sc_y.value, self._sc_z.value = self.supercell
+        
 
     def reset(self):
         """Reset the panel"""
         self.calc_options.value = 1
         self.supercell = [2, 2, 2]
+        self._sc_x.value, self._sc_y.value, self._sc_z.value = self.supercell
