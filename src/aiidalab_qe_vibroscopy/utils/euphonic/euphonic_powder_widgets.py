@@ -1,33 +1,30 @@
-import pathlib
-import tempfile
-import io
-
 import base64
-from IPython.display import HTML, clear_output, display
+from IPython.display import display
 
-import euphonic
-from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
 
 import ipywidgets as ipw
 import plotly.graph_objects as go
 import plotly.io as pio
+import numpy as np
 
 # from ..euphonic.bands_pdos import *
-from ..euphonic.intensity_maps import *
+from ..euphonic.intensity_maps import produce_powder_data, parameters_powder, AttrDict
 
 import json
 from monty.json import jsanitize
 
 # sys and os used to prevent euphonic to print in the stdout.
-import sys
-import os
 
-from aiidalab_qe_vibroscopy.utils.euphonic.euphonic_base_widgets import *
+from aiidalab_qe_vibroscopy.utils.euphonic.euphonic_base_widgets import (
+    StructureFactorBasePlotWidget,
+    StructureFactorSettingsBaseWidget,
+    COLORBAR_DICT,
+    COLORSCALE,
+)
 
 
 class PowderPlotWidget(StructureFactorBasePlotWidget):
     def __init__(self, spectra, intensity_ref_0K=1, **kwargs):
-
         final_zspectra = spectra.z_data.magnitude
         final_xspectra = spectra.x_data.magnitude
         # Data to contour is the sum of two Gaussian functions.
@@ -57,9 +54,8 @@ class PowderPlotWidget(StructureFactorBasePlotWidget):
         )
 
     def _update_spectra(self, spectra):
-
         final_zspectra = spectra.z_data.magnitude
-        final_xspectra = spectra.x_data.magnitude
+        final_xspectra = spectra.x_data.magnitude  # noqa: F841
         # Data to contour is the sum of two Gaussian functions.
         x, y = np.meshgrid(spectra.x_data.magnitude, spectra.y_data.magnitude)
 
@@ -73,9 +69,11 @@ class PowderPlotWidget(StructureFactorBasePlotWidget):
         self.fig.add_trace(
             go.Heatmap(
                 z=final_zspectra.T,
-                y=y[:, 0] * self.THz_to_meV
-                if self.E_units_button.value == "meV"
-                else y[:, 0],
+                y=(
+                    y[:, 0] * self.THz_to_meV
+                    if self.E_units_button.value == "meV"
+                    else y[:, 0]
+                ),
                 x=x,
                 colorbar=COLORBAR_DICT,
                 colorscale=COLORSCALE,  # imported from euphonic_base_widgets
@@ -93,7 +91,6 @@ class PowderPlotWidget(StructureFactorBasePlotWidget):
 
 class PowderSettingsWidget(StructureFactorSettingsBaseWidget):
     def __init__(self, **kwargs):
-
         self.float_qmin = ipw.FloatText(
             value=0,
             description="|q|<sub>min</sub> (1/A)",
@@ -173,7 +170,6 @@ class PowderFullWidget(ipw.VBox):
     """
 
     def __init__(self, fc, intensity_ref_0K=1, **kwargs):
-
         self.fc = fc
 
         self.spectra, self.parameters = produce_powder_data(
@@ -278,8 +274,6 @@ class PowderFullWidget(ipw.VBox):
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            """.format(
-                payload=payload, filename=filename
-            )
+            """.format(payload=payload, filename=filename)
         )
         display(javas)

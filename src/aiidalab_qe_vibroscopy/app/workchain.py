@@ -18,21 +18,21 @@ def create_resource_config(code_details):
     Returns:
         dict: A nested dictionary with structured resource configurations.
     """
-    metadata =  {
+    metadata = {
         "options": {
             "resources": {
                 "num_machines": code_details["nodes"],
                 "num_mpiprocs_per_machine": code_details["ntasks_per_node"],
                 "num_cores_per_mpiproc": code_details["cpus_per_task"],
-            }, 
-
+            },
         }
     }
-    
-    if "max_wallclock_seconds" in code_details:
-        metadata["options"]["max_wallclock_seconds"] = code_details["max_wallclock_seconds"]
 
-        
+    if "max_wallclock_seconds" in code_details:
+        metadata["options"]["max_wallclock_seconds"] = code_details[
+            "max_wallclock_seconds"
+        ]
+
     return metadata
 
 
@@ -40,7 +40,6 @@ def get_builder(codes, structure, parameters):
     from copy import deepcopy
 
     protocol = parameters["workchain"].pop("protocol", "fast")
-    pw_code = codes.get("pw")["code"]
     pw_phonon_code = codes.get("phonon")["code"]
     pw_dielectric_code = codes.get("dielectric")["code"]
     phonopy_code = codes.get("phonopy")["code"]
@@ -63,11 +62,10 @@ def get_builder(codes, structure, parameters):
     overrides["dielectric"]["scf"]["pw"]["metadata"] = create_resource_config(
         codes.get("dielectric")
     )
-    
+
     overrides["phonon"]["scf"]["pw"]["metadata"] = create_resource_config(
         codes.get("phonon")
     )
-    
 
     # Parallelization for phonon calculation
     if "parallelization" in codes.get("phonon"):
@@ -78,9 +76,9 @@ def get_builder(codes, structure, parameters):
     # Only for 2D and 1D materials
     if structure.pbc != (True, True, True):
         if "kpoints_distance" not in parameters["advanced"]:
-            overrides["dielectric"]["scf"][
-                "kpoints_distance"
-            ] = PwBaseWorkChain.get_protocol_inputs(protocol)["kpoints_distance"]
+            overrides["dielectric"]["scf"]["kpoints_distance"] = (
+                PwBaseWorkChain.get_protocol_inputs(protocol)["kpoints_distance"]
+            )
 
     builder = VibroWorkChain.get_builder_from_protocol(
         phonon_code=pw_phonon_code,

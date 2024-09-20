@@ -1,6 +1,4 @@
-"""Bands results view widgets
-
-"""
+"""Bands results view widgets"""
 
 from aiidalab_qe.common.bandpdoswidget import cmap, get_bands_labeling
 
@@ -11,10 +9,10 @@ import json
 def replace_symbols_with_uppercase(data):
     symbols_mapping = {
         "$\Gamma$": "\u0393",
-        "$\\Gamma$": "\u0393",
+        "$\\Gamma$": "\u0393",  # noqa: F601
         "$\\Delta$": "\u0394",
-        "$\\Lambda$": "\u039B",
-        "$\\Sigma$": "\u03A3",
+        "$\\Lambda$": "\u039b",
+        "$\\Sigma$": "\u03a3",
         "$\\Epsilon$": "\u0395",
     }
 
@@ -25,14 +23,9 @@ def replace_symbols_with_uppercase(data):
 
 
 def export_phononworkchain_data(node, fermi_energy=None):
-
     """
     We have multiple choices: BANDS, DOS, THERMODYNAMIC.
     """
-
-    import json
-
-    from monty.json import jsanitize
 
     full_data = {
         "bands": None,
@@ -41,11 +34,10 @@ def export_phononworkchain_data(node, fermi_energy=None):
     }
     parameters = {}
 
-    if not "vibronic" in node.outputs:
+    if "vibronic" not in node.outputs:
         return None
 
     if "phonon_bands" in node.outputs.vibronic:
-
         """
         copied and pasted from aiidalab_qe.common.bandsplotwidget.
         adapted for phonon outputs
@@ -60,7 +52,9 @@ def export_phononworkchain_data(node, fermi_energy=None):
         replace_symbols_with_uppercase(data["pathlabels"])
         data["Y_label"] = "Dispersion (THz)"
 
-        bands = node.outputs.vibronic.phonon_bands._get_bandplot_data(cartesian=True, prettify_format=None, join_symbol=None, get_segments=True)
+        bands = node.outputs.vibronic.phonon_bands._get_bandplot_data(
+            cartesian=True, prettify_format=None, join_symbol=None, get_segments=True
+        )
         parameters["energy_range"] = {
             "ymin": np.min(bands["y"]) - 0.1,
             "ymax": np.max(bands["y"]) + 0.1,
@@ -71,7 +65,6 @@ def export_phononworkchain_data(node, fermi_energy=None):
         full_data["bands"] = [data, parameters]
 
         if "phonon_pdos" in node.outputs.vibronic:
-
             phonopy_calc = node.outputs.vibronic.phonon_pdos.creator
 
             kwargs = {}
@@ -84,9 +77,10 @@ def export_phononworkchain_data(node, fermi_energy=None):
             symbols = node.inputs.structure.get_ase().get_chemical_symbols()
             pdos = node.outputs.vibronic.phonon_pdos
 
-            index_dict, dos_dict = {}, {
-                "total_dos": np.zeros(np.shape(pdos.get_y()[0][1]))
-            }
+            index_dict, dos_dict = (
+                {},
+                {"total_dos": np.zeros(np.shape(pdos.get_y()[0][1]))},
+            )
             for atom in set(symbols):
                 # index lists
                 index_dict[atom] = [

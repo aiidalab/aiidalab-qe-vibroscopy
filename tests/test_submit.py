@@ -1,7 +1,11 @@
 import pytest
-from aiidalab_qe.common.widgets import QEAppComputationalResourcesWidget, PwCodeResourceSetupWidget
+from aiidalab_qe.common.widgets import (
+    QEAppComputationalResourcesWidget,
+    PwCodeResourceSetupWidget,
+)
 
-#@pytest.mark.skip(reason="Skipping this test for now")
+
+# @pytest.mark.skip(reason="Skipping this test for now")
 @pytest.mark.usefixtures("sssp")
 def test_create_builder_default(
     data_regression,
@@ -13,30 +17,30 @@ def test_create_builder_default(
 
     metal, non-magnetic
     """
-    
+
     app = submit_app_generator(properties=["vibronic"])
-    
+
     configure_step = app.configure_step
-    assert configure_step.settings["vibronic"].calc_options.value == 1 
-    
+    assert configure_step.settings["vibronic"].calc_options.value == 1
+
     submit_step = app.submit_step
-    for step in ["phonopy","dielectric"]:
-        assert isinstance(submit_step.codes[step],QEAppComputationalResourcesWidget)
-    assert isinstance(submit_step.codes["phonon"],PwCodeResourceSetupWidget)
-    
+    for step in ["phonopy", "dielectric"]:
+        assert isinstance(submit_step.codes[step], QEAppComputationalResourcesWidget)
+    assert isinstance(submit_step.codes["phonon"], PwCodeResourceSetupWidget)
+
     submit_step.codes["phonon"].code_selection.refresh()
     submit_step.codes["dielectric"].code_selection.refresh()
     submit_step.codes["phonopy"].code_selection.refresh()
-    
+
     submit_step.codes["pw"].value = pw_code.uuid
     submit_step.codes["phonon"].value = pw_code.uuid
     submit_step.codes["dielectric"].value = pw_code.uuid
     submit_step.codes["phonopy"].value = phonopy_code.uuid
-    
+
     submit_step.codes["pw"].num_cpus.value = 10
     submit_step.codes["phonon"].num_cpus.value = 2
     submit_step.codes["dielectric"].num_cpus.value = 3
-    
+
     submit_step._create_builder()
     # since uuid is specific to each run, we remove it from the output
     ui_parameters = remove_uuid_fields(submit_step.ui_parameters)
@@ -45,12 +49,23 @@ def test_create_builder_default(
     data_regression.check(ui_parameters)
     # test if create builder successfully
     builder = submit_step._create_builder()
-    # In the future, we will check the builder parameters using regresion test    
-    
+    # In the future, we will check the builder parameters using regresion test
+
     # Check that the resources are indeed different for phonon and dielectric workflows.
-    assert builder.vibronic.harmonic.phonon.scf.pw.metadata.options.resources['num_mpiprocs_per_machine'] == 2
-    assert builder.vibronic.harmonic.dielectric.scf.pw.metadata.options.resources['num_mpiprocs_per_machine'] == 3
-    
+    assert (
+        builder.vibronic.harmonic.phonon.scf.pw.metadata.options.resources[
+            "num_mpiprocs_per_machine"
+        ]
+        == 2
+    )
+    assert (
+        builder.vibronic.harmonic.dielectric.scf.pw.metadata.options.resources[
+            "num_mpiprocs_per_machine"
+        ]
+        == 3
+    )
+
+
 def remove_uuid_fields(data):
     """
     Recursively remove fields that contain UUID values from a dictionary.

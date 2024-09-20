@@ -1,18 +1,31 @@
+import ipywidgets as ipw
+import base64
+import json
+import numpy as np
+import plotly.io as pio
+
+from IPython.display import display
+
 from euphonic.cli.utils import (
-    _bands_from_force_constants,
-    _calc_modes_kwargs,
-    _compose_style,
-    _plot_label_kwargs,
-    get_args,
     _get_debye_waller,
     _get_energy_bins,
-    _get_q_distance,
-    _get_cli_parser,
-    load_data_from_file,
-    matplotlib_save_or_show,
 )
 
-from aiidalab_qe_vibroscopy.utils.euphonic.euphonic_base_widgets import *
+from aiidalab_qe_vibroscopy.utils.euphonic.euphonic_base_widgets import (
+    StructureFactorSettingsBaseWidget,
+    COLORSCALE,
+    COLORBAR_DICT,
+    StructureFactorBasePlotWidget,
+)
+
+from monty.json import jsanitize
+import plotly.graph_objects as go
+
+from aiidalab_qe_vibroscopy.utils.euphonic.intensity_maps import (
+    blockPrint,
+    enablePrint,
+    AttrDict,
+)
 
 
 def produce_Q_section_modes(
@@ -26,12 +39,7 @@ def produce_Q_section_modes(
     k_extension=1,
     temperature=0,
 ):
-
     from euphonic import ureg
-    from aiidalab_qe_vibroscopy.utils.euphonic.intensity_maps import (
-        blockPrint,
-        enablePrint,
-    )
 
     # see get_Q_section
     # h: array vector
@@ -94,7 +102,6 @@ def produce_Q_section_spectrum(
     dw=None,
     labels=None,
 ):
-
     from aiidalab_qe_vibroscopy.utils.euphonic.intensity_maps import (
         blockPrint,
         enablePrint,
@@ -117,9 +124,9 @@ def produce_Q_section_spectrum(
     sigma = (deltaE) / 2
 
     # Gaussian weights.
-    weights = np.exp(
-        -((spectrum.y_data.magnitude - mu) ** 2) / 2 * sigma**2
-    ) / np.sqrt(2 * np.pi * sigma**2)
+    weights = np.exp(-((spectrum.y_data.magnitude - mu) ** 2) / 2 * sigma**2) / np.sqrt(
+        2 * np.pi * sigma**2
+    )
     av_spec = np.average(spectrum.z_data.magnitude, axis=1, weights=weights[:-1])
     enablePrint()
 
@@ -128,7 +135,6 @@ def produce_Q_section_spectrum(
 
 class QSectionPlotWidget(StructureFactorBasePlotWidget):
     def __init__(self, h_array, k_array, av_spec, labels, intensity_ref_0K=1, **kwargs):
-
         self.intensity_ref_0K = intensity_ref_0K
 
         self.fig = go.FigureWidget()
@@ -174,7 +180,6 @@ class QSectionPlotWidget(StructureFactorBasePlotWidget):
         av_spec,
         labels,
     ):
-
         # If I do this
         #   self.data = ()
         # I have a delay in the plotting, I have blank plot while it
@@ -213,7 +218,6 @@ class QSectionPlotWidget(StructureFactorBasePlotWidget):
 
 class QSectionSettingsWidget(StructureFactorSettingsBaseWidget):
     def __init__(self, **kwargs):
-
         super().__init__()
 
         self.float_ecenter = ipw.FloatText(
@@ -351,7 +355,6 @@ class QSectionFullWidget(ipw.VBox):
     """
 
     def __init__(self, fc, intensity_ref_0K=1, **kwargs):
-
         self.fc = fc
 
         self.title_intensity = ipw.HTML(
@@ -502,8 +505,6 @@ class QSectionFullWidget(ipw.VBox):
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            """.format(
-                payload=payload, filename=filename
-            )
+            """.format(payload=payload, filename=filename)
         )
         display(javas)

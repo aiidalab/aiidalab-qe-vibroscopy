@@ -11,7 +11,8 @@ from aiidalab_qe.common.setup_pseudos import SSSP_VERSION
 
 pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]
 
-# TODO: import this from the aiidalab-qe app. For now it is copied. 
+# TODO: import this from the aiidalab-qe app. For now it is copied.
+
 
 @pytest.fixture
 def fixture_localhost(aiida_localhost):
@@ -290,6 +291,7 @@ def projwfc_code(aiida_local_code_factory):
         entry_point="quantumespresso.projwfc",
     )
 
+
 @pytest.fixture
 def phonopy_code(aiida_local_code_factory):
     """Return a `Code` configured for the pw.x executable."""
@@ -297,6 +299,7 @@ def phonopy_code(aiida_local_code_factory):
     return aiida_local_code_factory(
         label="phonopy", executable="bash", entry_point="phonopy.phonopy"
     )
+
 
 @pytest.fixture()
 def workchain_settings_generator():
@@ -674,10 +677,14 @@ def generate_qeapp_workchain(
                 if magnetization_type == "starting_magnetization"
                 else tot_magnetization
             )
-            s2.advanced_settings.magnetization._set_tot_magnetization(
-                tot_magnetization
-            ) if electronic_type == "insulator" else s2.advanced_settings.magnetization._set_magnetization_values(
-                magnetization_values
+            (
+                s2.advanced_settings.magnetization._set_tot_magnetization(
+                    tot_magnetization
+                )
+                if electronic_type == "insulator"
+                else s2.advanced_settings.magnetization._set_magnetization_values(
+                    magnetization_values
+                )
             )
 
         s2.confirm()

@@ -1,12 +1,11 @@
 """Implementation of the VibroWorkchain for managing the aiida-vibroscopy workchains."""
+
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import ToContext, WorkChain, calcfunction
-from aiida.orm import AbstractCode, Int, Float, Dict, Code, StructureData, load_code
+from aiida.engine import WorkChain
+from aiida.orm import Dict, StructureData
 from aiida.plugins import WorkflowFactory, CalculationFactory
-from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-from aiida_quantumespresso.common.types import ElectronicType, SpinType
-from aiida.engine import WorkChain, calcfunction, if_
+from aiida.engine import if_
 from aiida_vibroscopy.common.properties import PhononProperty
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
     create_kpoints_from_distance,
@@ -143,7 +142,7 @@ def determine_symmetry_path(structure):
             and math.isclose(cell_angles[2], 90.0, abs_tol=tolerance)
         ): "square",
         (
-            math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance) == False
+            not math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance)
             and math.isclose(cell_angles[2], 90.0, abs_tol=tolerance)
         ): "rectangular",
         (
@@ -154,8 +153,8 @@ def determine_symmetry_path(structure):
             )
         ): "rectangular_centered",
         (
-            math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance) == False
-            and math.isclose(cell_angles[2], 90.0, abs_tol=tolerance) == False
+            not math.isclose(cell_lengths[0], cell_lengths[1], abs_tol=tolerance)
+            and not math.isclose(cell_angles[2], 90.0, abs_tol=tolerance)
         ): "oblique",
     }
 
@@ -180,6 +179,7 @@ def determine_symmetry_path(structure):
 
 class VibroWorkChain(WorkChain):
     "WorkChain to compute vibrational property of a crystal."
+
     label = "vibro"
 
     @classmethod
@@ -235,15 +235,17 @@ class VibroWorkChain(WorkChain):
             },
         )
         spec.expose_inputs(
-            PhonopyCalculation, namespace='phonopy_calc',
+            PhonopyCalculation,
+            namespace="phonopy_calc",
             namespace_options={
-                'required': False, 'populate_defaults': False,
-                'help': (
-                    'Inputs for the `PhonopyCalculation` that will'
-                    'be used to calculate the inter-atomic force constants, or for post-processing.'
-                )
+                "required": False,
+                "populate_defaults": False,
+                "help": (
+                    "Inputs for the `PhonopyCalculation` that will"
+                    "be used to calculate the inter-atomic force constants, or for post-processing."
+                ),
             },
-            exclude=['phonopy_data', 'force_constants', 'parameters'],
+            exclude=["phonopy_data", "force_constants", "parameters"],
         )
         spec.input(
             "phonopy_bands_dict",
@@ -358,7 +360,6 @@ class VibroWorkChain(WorkChain):
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
 
         if simulation_mode not in range(1, 5):
             raise ValueError("simulation_mode not in [1,2,3,4]")
@@ -394,8 +395,10 @@ class VibroWorkChain(WorkChain):
             builder_harmonic.phonopy.parameters = (
                 builder_harmonic.phonon.phonopy.parameters
             )
-            
-            builder_harmonic.dielectric.scf.pw.code = dielectric_code # we have a specific code for DielectricWorkChain
+
+            builder_harmonic.dielectric.scf.pw.code = (
+                dielectric_code  # we have a specific code for DielectricWorkChain
+            )
             builder_harmonic.phonon.phonopy.code = builder_harmonic.phonopy.code
 
             builder_harmonic.phonopy.parameters = Dict(dict=phonon_property.value)
@@ -429,7 +432,9 @@ class VibroWorkChain(WorkChain):
                         "write_mesh": False,
                     }
                 )
-                builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
+                builder.phonopy_thermo_dict = Dict(
+                    dict=PhononProperty.THERMODYNAMIC.value
+                )
 
                 if structure.pbc == (True, False, False):
                     builder.phonopy_bands_dict = Dict(
@@ -440,11 +445,13 @@ class VibroWorkChain(WorkChain):
                             "band_labels": [GAMMA, "$\\mathrm{X}$"],
                         }
                     )
-                    #change symprec for 1D materials to 1e-3
+                    # change symprec for 1D materials to 1e-3
                     builder.phonopy_pdos_dict["symmetry_tolerance"] = 1e-3
                     builder.phonopy_thermo_dict["symmetry_tolerance"] = 1e-3
                     builder.harmonic.symmetry.symprec = orm.Float(1e-3)
-                    builder.harmonic.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
+                    builder.harmonic.phonon.phonopy.parameters = orm.Dict(
+                        {"symmetry_tolerance": 1e-3}
+                    )
 
                 elif structure.pbc == (True, True, False):
                     symmetry_path = determine_symmetry_path(structure)
@@ -477,15 +484,14 @@ class VibroWorkChain(WorkChain):
                 )
 
             builder.phonopy_thermo_dict = Dict(
-                dict= {
-                    'tprop': True, 
-                    'mesh': 200,    # 1000 is too heavy
-                     'write_mesh': False,
-                     }
-                )
+                dict={
+                    "tprop": True,
+                    "mesh": 200,  # 1000 is too heavy
+                    "write_mesh": False,
+                }
+            )
 
         elif simulation_mode == 2:
-
             builder_iraman = IRamanSpectraWorkChain.get_builder_from_protocol(
                 code=phonon_code,
                 structure=structure,
@@ -494,7 +500,9 @@ class VibroWorkChain(WorkChain):
                 **kwargs,
             )
 
-            builder_iraman.dielectric.scf.pw.code = dielectric_code # we have a specific code for DielectricWorkChain
+            builder_iraman.dielectric.scf.pw.code = (
+                dielectric_code  # we have a specific code for DielectricWorkChain
+            )
             builder_iraman.dielectric.property = dielectric_property
 
             builder_iraman.phonon.phonopy.code = phonopy_code
@@ -510,12 +518,13 @@ class VibroWorkChain(WorkChain):
 
                 if structure.pbc == (True, False, False):
                     builder_iraman.symmetry.symprec = orm.Float(1e-3)
-                    builder_iraman.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
+                    builder_iraman.phonon.phonopy.parameters = orm.Dict(
+                        {"symmetry_tolerance": 1e-3}
+                    )
 
             builder.iraman = builder_iraman
 
         elif simulation_mode == 3:
-
             builder_phonon = PhononWorkChain.get_builder_from_protocol(
                 pw_code=phonon_code,
                 phonopy_code=phonopy_code,
@@ -558,8 +567,10 @@ class VibroWorkChain(WorkChain):
                     }
                 )
 
-                builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
-                
+                builder.phonopy_thermo_dict = Dict(
+                    dict=PhononProperty.THERMODYNAMIC.value
+                )
+
                 if structure.pbc == (True, False, False):
                     builder.phonopy_bands_dict = Dict(
                         dict={
@@ -569,11 +580,13 @@ class VibroWorkChain(WorkChain):
                             "band_labels": [GAMMA, "$\\mathrm{X}$"],
                         }
                     )
-                    #change symprec for 1D materials to 1e-3
+                    # change symprec for 1D materials to 1e-3
                     builder.phonopy_pdos_dict["symmetry_tolerance"] = 1e-3
                     builder.phonopy_thermo_dict["symmetry_tolerance"] = 1e-3
                     builder.phonon.symmetry.symprec = orm.Float(1e-3)
-                    builder.phonon.phonopy.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
+                    builder.phonon.phonopy.parameters = orm.Dict(
+                        {"symmetry_tolerance": 1e-3}
+                    )
 
                 elif structure.pbc == (True, True, False):
                     symmetry_path = determine_symmetry_path(structure)
@@ -606,15 +619,14 @@ class VibroWorkChain(WorkChain):
                 )
 
             builder.phonopy_thermo_dict = Dict(
-                dict= {
-                    'tprop': True, 
-                    'mesh': 200,    # 1000 is too heavy
-                     'write_mesh': False,
-                     }
-                )
+                dict={
+                    "tprop": True,
+                    "mesh": 200,  # 1000 is too heavy
+                    "write_mesh": False,
+                }
+            )
 
         elif simulation_mode == 4:
-
             builder_dielectric = DielectricWorkChain.get_builder_from_protocol(
                 code=dielectric_code,
                 structure=structure,
@@ -643,9 +655,9 @@ class VibroWorkChain(WorkChain):
                 builder.pop(available_wchains[wchain_idx - 1], None)
         builder.phonopy_calc.code = phonopy_code
         builder.phonopy_calc.metadata.options.resources = {
-                "num_machines": 1,
-                "num_mpiprocs_per_machine": 1,
-            }
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1,
+        }
         if structure.pbc == (True, False, False):
             builder.phonopy_calc.parameters = orm.Dict({"symmetry_tolerance": 1e-3})
         builder.structure = structure
@@ -709,16 +721,22 @@ class VibroWorkChain(WorkChain):
             # try in a verdi shell: from plumpy.utils import AttributesFrozendict
             if self.ctx.key == "phonon":
                 # See how this works in PhononWorkChain
-                inputs = AttributeDict(self.exposed_inputs(PhonopyCalculation, namespace="phonopy_calc"))
+                inputs = AttributeDict(
+                    self.exposed_inputs(PhonopyCalculation, namespace="phonopy_calc")
+                )
                 inputs.phonopy_data = self.ctx[self.ctx.key].outputs.phonopy_data
                 inputs.parameters = self.inputs[f"phonopy_{calc_type}_dict"]
-                
+
             elif self.ctx.key == "harmonic":
                 # See how this works in HarmonicWorkChain
-                inputs = AttributeDict(self.exposed_inputs(PhonopyCalculation, namespace="phonopy_calc"))
-                inputs.force_constants  = list(self.ctx[self.ctx.key].outputs["vibrational_data"].values())[-1]
+                inputs = AttributeDict(
+                    self.exposed_inputs(PhonopyCalculation, namespace="phonopy_calc")
+                )
+                inputs.force_constants = list(
+                    self.ctx[self.ctx.key].outputs["vibrational_data"].values()
+                )[-1]
                 inputs.parameters = self.inputs[f"phonopy_{calc_type}_dict"]
-                
+
             inputs.metadata.call_link_label = key
             future = self.submit(PhonopyCalculation, **inputs)
             self.report(
@@ -745,19 +763,19 @@ class VibroWorkChain(WorkChain):
             if self.ctx["bands"].is_finished_ok:
                 self.out("phonon_bands", self.ctx["bands"].outputs.phonon_bands)
             else:
-                self.report(f"the child bands PhonopyCalculation failed")
+                self.report("the child bands PhonopyCalculation failed")
                 failed = True
 
             if self.ctx["pdos"].is_finished_ok:
                 self.out("phonon_pdos", self.ctx["pdos"].outputs.projected_phonon_dos)
             else:
-                self.report(f"the child pdos PhonopyCalculation failed")
+                self.report("the child pdos PhonopyCalculation failed")
                 failed = True
 
             if self.ctx["thermo"].is_finished_ok:
                 self.out("phonon_thermo", self.ctx["thermo"].outputs.thermal_properties)
             else:
-                self.report(f"the child thermo PhonopyCalculation failed")
+                self.report("the child thermo PhonopyCalculation failed")
                 failed = True
 
         if failed:

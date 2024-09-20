@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import ipywidgets as ipw
-from IPython.display import HTML, clear_output, display
+from IPython.display import HTML, display
 import base64
 import json
 
 import numpy as np
+
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()  # Convert ndarray to list
         return super().default(obj)
+
 
 def create_html_table(matrix):
     """
@@ -22,11 +24,11 @@ def create_html_table(matrix):
     """
     html = '<table border="1" style="border-collapse: collapse;">'
     for row in matrix:
-        html += '<tr>'
+        html += "<tr>"
         for cell in row:
             html += f'<td style="padding: 5px; text-align: center;">{cell}</td>'
-        html += '</tr>'
-    html += '</table>'
+        html += "</tr>"
+    html += "</table>"
     return html
 
 
@@ -38,29 +40,34 @@ def get_priority_tensor(filtered_node):
     :return: Corresponding to the highest priority key found, or None if not found
     """
     # Define the priority order of keys within the function
-    priority_keys = ['numerical_accuracy_4', 'numerical_accuracy_2_step_2', 'numerical_accuracy_2_step_1', 'numerical_accuracy_2']
-    
+    priority_keys = [
+        "numerical_accuracy_4",
+        "numerical_accuracy_2_step_2",
+        "numerical_accuracy_2_step_1",
+        "numerical_accuracy_2",
+    ]
+
     # Get the keys from the tensor outputs
     tensor_keys = filtered_node.keys()
-    
+
     for key in priority_keys:
         if key in tensor_keys:
             return filtered_node[key]
-    
+
     # If no matching key is found, return None or handle the case as needed
     return None
 
-    
-def export_dielectric_data(node):
 
-    if not "vibronic" in node.outputs:
+def export_dielectric_data(node):
+    if "vibronic" not in node.outputs:
         return None
-    
-    if not any(key in node.outputs.vibronic for key in ["iraman", "dielectric", "harmonic"]):
+
+    if not any(
+        key in node.outputs.vibronic for key in ["iraman", "dielectric", "harmonic"]
+    ):
         return None
 
     else:
-
         if "iraman" in node.outputs.vibronic:
             vibrational_data = node.outputs.vibronic.iraman.vibrational_data
 
@@ -70,11 +77,17 @@ def export_dielectric_data(node):
         elif "dielectric" in node.outputs.vibronic:
             tensor_data = node.outputs.vibronic.dielectric
             output_data = get_priority_tensor(tensor_data)
-            dielectric_tensor = output_data.get_array("dielectric").round(6) # Dielectric Constant
-            born_charges = output_data.get_array("born_charges") # List of Born effective charges per Atom
-            vol = output_data.get_unitcell().get_cell_volume() # Volume of the cell
+            dielectric_tensor = output_data.get_array("dielectric").round(
+                6
+            )  # Dielectric Constant
+            born_charges = output_data.get_array(
+                "born_charges"
+            )  # List of Born effective charges per Atom
+            vol = output_data.get_unitcell().get_cell_volume()  # Volume of the cell
             raman_tensors = output_data.get_array("raman_tensors")  # Raman tensors
-            nlo_susceptibility = output_data.get_array("nlo_susceptibility") # non-linear optical susceptibility tensor (pm/V)
+            nlo_susceptibility = output_data.get_array(
+                "nlo_susceptibility"
+            )  # non-linear optical susceptibility tensor (pm/V)
             unit_cell = output_data.get_unitcell().sites
             return {
                 "dielectric_tensor": dielectric_tensor,
@@ -84,13 +97,17 @@ def export_dielectric_data(node):
                 "nlo_susceptibility": nlo_susceptibility,
                 "unit_cell": unit_cell,
             }
-        
+
         output_data = get_priority_tensor(vibrational_data)
-        dielectric_tensor = output_data.dielectric.round(6) # Dielectric Constant
-        born_charges = output_data.get_array("born_charges") # List of Born effective charges per Atom
-        vol = output_data.get_unitcell().get_cell_volume() # Volume of the cell
-        raman_tensors = output_data.get_array("raman_tensors") # Raman tensors
-        nlo_susceptibility = output_data.nlo_susceptibility # non-linear optical susceptibility tensor (pm/V)
+        dielectric_tensor = output_data.dielectric.round(6)  # Dielectric Constant
+        born_charges = output_data.get_array(
+            "born_charges"
+        )  # List of Born effective charges per Atom
+        vol = output_data.get_unitcell().get_cell_volume()  # Volume of the cell
+        raman_tensors = output_data.get_array("raman_tensors")  # Raman tensors
+        nlo_susceptibility = (
+            output_data.nlo_susceptibility
+        )  # non-linear optical susceptibility tensor (pm/V)
         unit_cell = output_data.get_unitcell().sites
 
         return {
@@ -101,25 +118,20 @@ def export_dielectric_data(node):
             "nlo_susceptibility": nlo_susceptibility,
             "unit_cell": unit_cell,
         }
-            
-
-   
 
 
 class DielectricResults(ipw.VBox):
-
     def __init__(self, dielectric_data):
-
-        #Helper 
-        self.dielectric_results_help= ipw.HTML(
+        # Helper
+        self.dielectric_results_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
             The DielectricWorkchain computes different properties: <br>
                 <em style="display: inline-block; margin-left: 20px;">-High Freq. Dielectric Tensor </em> <br>
                 <em style="display: inline-block; margin-left: 20px;">-Born Charges </em> <br>
                 <em style="display: inline-block; margin-left: 20px;">-Raman Tensors </em> <br>
                 <em style="display: inline-block; margin-left: 20px;">-The non-linear optical susceptibility tensor </em> <br>
-                All information can be downloaded as a JSON file. <br> 
-            
+                All information can be downloaded as a JSON file. <br>
+
             </div>"""
         )
 
@@ -131,7 +143,6 @@ class DielectricResults(ipw.VBox):
         self.raman_tensors = dielectric_data["raman_tensors"]
         self.nlo_susceptibility = dielectric_data["nlo_susceptibility"]
 
-
         # HTML table with the dielectric tensor
         self.dielectric_tensor_table = ipw.Output()
 
@@ -141,11 +152,13 @@ class DielectricResults(ipw.VBox):
         # HTML table with the Raman tensors @ site
         self.raman_tensors_table = ipw.Output()
 
-        
-        decimal_places = 6          
+        decimal_places = 6
         # Create the options with rounded positions
         site_selector_options = [
-            (f"{site.kind_name} @ ({', '.join(f'{coord:.{decimal_places}f}' for coord in site.position)})", index)
+            (
+                f"{site.kind_name} @ ({', '.join(f'{coord:.{decimal_places}f}' for coord in site.position)})",
+                index,
+            )
             for index, site in enumerate(self.unit_cell_sites)
         ]
 
@@ -156,15 +169,17 @@ class DielectricResults(ipw.VBox):
             description="Select atom site:",
             style={"description_width": "initial"},
         )
-        #Download button
-        self.download_button = ipw.Button(description="Download Data", icon="download", button_style="primary")
+        # Download button
+        self.download_button = ipw.Button(
+            description="Download Data", icon="download", button_style="primary"
+        )
         self.download_button.on_click(self.download_data)
 
-        #Initialize the HTML table
+        # Initialize the HTML table
         self._create_dielectric_tensor_table()
-        #Initialize Born Charges Table
+        # Initialize Born Charges Table
         self._create_born_charges_table(self.site_selector.value)
-        #Initialize Raman Tensors Table
+        # Initialize Raman Tensors Table
         self._create_raman_tensors_table(self.site_selector.value)
 
         self.site_selector.observe(self._on_site_selection_change, names="value")
@@ -174,7 +189,22 @@ class DielectricResults(ipw.VBox):
                 ipw.HTML("<h3>Dielectric tensor</h3>"),
                 self.dielectric_tensor_table,
                 self.site_selector,
-                ipw.HBox([ipw.VBox([ipw.HTML("<h3>Born effective charges</h3>"), self.born_charges_table]), ipw.VBox([ipw.HTML("<h3>Raman Tensor </h3>"), self.raman_tensors_table])]),
+                ipw.HBox(
+                    [
+                        ipw.VBox(
+                            [
+                                ipw.HTML("<h3>Born effective charges</h3>"),
+                                self.born_charges_table,
+                            ]
+                        ),
+                        ipw.VBox(
+                            [
+                                ipw.HTML("<h3>Raman Tensor </h3>"),
+                                self.raman_tensors_table,
+                            ]
+                        ),
+                    ]
+                ),
                 self.download_button,
             )
         )
@@ -203,7 +233,7 @@ class DielectricResults(ipw.VBox):
             """
         )
         display(javas)
-    
+
     def _create_html_table(self, matrix):
         """
         Create an HTML table representation of a 3x3 matrix.
@@ -213,13 +243,13 @@ class DielectricResults(ipw.VBox):
         """
         html = '<table border="1" style="border-collapse: collapse;">'
         for row in matrix:
-            html += '<tr>'
+            html += "<tr>"
             for cell in row:
                 html += f'<td style="padding: 5px; text-align: center;">{cell}</td>'
-            html += '</tr>'
-        html += '</table>'
+            html += "</tr>"
+        html += "</table>"
         return html
-    
+
     def _create_dielectric_tensor_table(self):
         table_data = self._create_html_table(self.dielectric_tensor)
         self.dielectric_tensor_table.layout = {
@@ -257,12 +287,3 @@ class DielectricResults(ipw.VBox):
         self.raman_tensors_table.clear_output()
         self._create_born_charges_table(change["new"])
         self._create_raman_tensors_table(change["new"])
-
-
-
-
-
-
-
-
-    
