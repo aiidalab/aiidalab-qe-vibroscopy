@@ -14,6 +14,24 @@ from aiida import orm
 from aiidalab_qe.common.panel import Panel
 from IPython.display import clear_output, display
 
+import sys
+import os
+def disable_print(func):
+    def wrapper(*args, **kwargs):
+        # Save the current standard output
+        original_stdout = sys.stdout
+        # Redirect standard output to os.devnull
+        sys.stdout = open(os.devnull, 'w')
+        try:
+            # Call the function
+            result = func(*args, **kwargs)
+        finally:
+            # Restore the original standard output
+            sys.stdout.close()
+            sys.stdout = original_stdout
+        return result
+    return wrapper
+
 
 class Setting(Panel):
 
@@ -104,6 +122,7 @@ class Setting(Panel):
             )
         for elem in [self._sc_x, self._sc_y, self._sc_z]:
             elem.observe(change_supercell, names="value")
+            elem.observe(self._estimate_supercells, names="value")
 
         self.supercell_selector = ipw.HBox(
             children=[
@@ -130,6 +149,23 @@ class Setting(Panel):
         )
         # supercell hint (15A lattice params)
         self.supercell_hint_button.on_click(self._suggest_supercell)
+        
+        # reset supercell
+        self.supercell_reset_button = ipw.Button(
+            description="Reset",
+            disabled=False,
+            layout=ipw.Layout(width="100px"),
+            button_style="warning",
+        )
+        # supercell reset reaction
+        self.supercell_reset_button.on_click(self._reset_supercell)
+        
+        # Estimate the number of supercells for frozen phonons.
+        self.supercell_number_estimator = ipw.HTML(
+                    description="Number of supercells to be computed:",
+                    value = "0",
+                    style={"description_width": "initial"},
+                )
 
         ## end supercell hint.
 
@@ -137,7 +173,12 @@ class Setting(Panel):
             [
                 self.hint_button_help,
                 ipw.HBox(
-                    [self.supercell_selector, self.supercell_hint_button],
+                    [
+                        self.supercell_selector, 
+                        self.supercell_hint_button, 
+                        self.supercell_number_estimator,
+                        self.supercell_reset_button,
+                        ],
                 ),
             ]
         )
@@ -203,7 +244,36 @@ class Setting(Panel):
                 direction.value = suggested if not direction.disabled else 1
         else:
             return
+    
+    @tl.observe("input_structure")
+    @disable_print
+    def _estimate_supercells(self, _=None):
+        """_summary_
 
+        Estimate the number of supercells to be computed for frozen phonon calculation.
+        """
+        from aiida_phonopy.data.preprocess import PreProcessData
+        
+        supercells = PreProcessData(
+                    structure=self.input_structure,
+                    supercell_matrix=[
+                        [self._sc_x.value, 0, 0], 
+                        [0, self._sc_y.value, 0], 
+                        [0, 0, self._sc_z.value]],
+                    symprec=1e-5,
+                    distinguish_kinds=False,
+                    is_symmetry=True,
+                    ).get_supercells_with_displacements()
+        
+        self.supercell_number_estimator.value = f"{len(supercells)}"
+        
+        return 
+
+    def _reset_supercell(self, _=None):
+        for direction in [self._sc_x, self._sc_y, self._sc_z]:
+                direction.value = 2
+        return
+    
     def get_panel_value(self):
         """Return a dictionary with the input parameters for the plugin."""
         return {
