@@ -27,6 +27,9 @@ dependencies = [
     "kaleido",
 ]
 
+[tool.ruff.lint]
+ignore = ["E501", "E402", "TRY003", "RUF012", "N806"]
+
 [project.urls]
 Source = "https://github.com/mikibonacci/aiidalab-qe-vibroscopy"
 

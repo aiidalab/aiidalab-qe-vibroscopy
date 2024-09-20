@@ -1,4 +1,3 @@
-from argparse import ArgumentParser
 from typing import List, Optional
 
 import pathlib
@@ -15,7 +14,7 @@ from math import ceil
 Check double imports!
 """
 import euphonic
-from euphonic import ureg, Spectrum2D, QpointFrequencies, ForceConstants
+from euphonic import ureg, QpointFrequencies, ForceConstants
 import euphonic.plot
 from euphonic.util import get_qpoint_labels
 from euphonic.styles import base_style
@@ -24,38 +23,26 @@ from euphonic.cli.utils import (
     _calc_modes_kwargs,
     _compose_style,
     _plot_label_kwargs,
-    get_args,
     _get_debye_waller,
     _get_energy_bins,
     _get_q_distance,
-    _get_cli_parser,
-    load_data_from_file,
     matplotlib_save_or_show,
 )
 
 from euphonic.cli.utils import (
-    _calc_modes_kwargs,
-    _compose_style,
-    _get_cli_parser,
-    _get_debye_waller,
-    _get_energy_bins,
-    _get_q_distance,
     _get_pdos_weighting,
     _arrange_pdos_groups,
-    _plot_label_kwargs,
 )
-from euphonic.cli.utils import load_data_from_file, get_args, matplotlib_save_or_show
-import euphonic.plot
 from euphonic.powder import (
     sample_sphere_dos,
     sample_sphere_pdos,
     sample_sphere_structure_factor,
 )
 from euphonic.spectra import apply_kinematic_constraints
-from euphonic.styles import base_style, intensity_widget_style
+from euphonic.styles import intensity_widget_style
 import euphonic.util
 
-from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
+from phonopy.file_IO import write_force_constants_to_hdf5
 
 # Dummy tqdm function if tqdm progress bars unavailable
 try:
@@ -69,7 +56,9 @@ except ModuleNotFoundError:
             return sequence
 
 
-import sys, os
+import sys
+import os
+
 
 # Disable
 def blockPrint():
@@ -130,9 +119,7 @@ def join_q_paths(coordinates: list, labels: list, delta_q=0.1, G=[0, 0, 0]):
     list_of_paths = []
     Nq_tot = 0
 
-    new_labels_index = (
-        []
-    )  # here we store the index to then set the labels list as in seekpath, to be refined in the produce_curated_data routine.
+    new_labels_index = []  # here we store the index to then set the labels list as in seekpath, to be refined in the produce_curated_data routine.
     for path in coordinates:
         kxi, kyi, kzi = path[0]  # starting point
         kxf, kyf, kzf = path[1]  # end point
@@ -273,7 +260,6 @@ def produce_bands_weigthed_data(
         # print("Getting band path...")
         # HERE we add the custom path generation:
         if linear_path:
-
             # 1. get the rl_norm list for conversion delta_q ==> Nq in the join_q_paths
             structure = fc.crystal.to_spglib_cell()
             bandpath = seekpath.get_explicit_k_path(structure)
@@ -365,10 +351,12 @@ def produce_bands_weigthed_data(
     style = _compose_style(user_args=args, base=[base_style])
     if plot:
         with matplotlib.style.context(style):
-
-            fig = euphonic.plot.plot_2d(
-                spectra, vmin=args.vmin, vmax=args.vmax, **plot_label_kwargs
-            )
+            fig = euphonic.plot.plot_2d(  # noqa F841
+                spectra,  # noqa F841
+                vmin=args.vmin,  # noqa F841
+                vmax=args.vmax,  # noqa F841
+                **plot_label_kwargs,  # noqa F841
+            )  # noqa F841
             matplotlib_save_or_show(save_filename=args.save_to)
 
     enablePrint()
@@ -756,12 +744,11 @@ def generate_force_constant_instance(
 
 
 def export_euphonic_data(node, fermi_energy=None):
-
-    if not "vibronic" in node.outputs:
+    if "vibronic" not in node.outputs:
         # Not a phonon calculation
         return None
     else:
-        if not "phonon_bands" in node.outputs.vibronic:
+        if "phonon_bands" not in node.outputs.vibronic:
             return None
 
     output_set = node.outputs.vibronic.phonon_bands
@@ -802,7 +789,6 @@ def generated_curated_data(spectra):
             if len(ticks_positions) > 1:
                 if ticks_positions[-1] < ticks_positions[-2] or shift:
                     if ticks_positions[-1] == 0:  # new linear path
-
                         ticks_positions.pop()
                         last = ticks_labels.pop().strip()
 

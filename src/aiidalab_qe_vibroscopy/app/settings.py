@@ -6,17 +6,16 @@ Authors:
     * Miki Bonacci <miki.bonacci@psi.ch>
     Inspired by Xing Wang <xing.wang@psi.ch>
 """
+
 import ipywidgets as ipw
 import traitlets as tl
 import numpy as np
 
 from aiida import orm
 from aiidalab_qe.common.panel import Panel
-from IPython.display import clear_output, display
 
 
 class Setting(Panel):
-
     title = "Vibrational Settings"
 
     simulation_mode = [
@@ -226,7 +225,6 @@ class Setting(Panel):
         self.supercell = input_dict.get("supercell_selector", [2, 2, 2])
         self.symmetry_symprec.value = input_dict.get("symmetry_symprec", 1e-5)
         self._sc_x.value, self._sc_y.value, self._sc_z.value = self.supercell
-        
 
     def reset(self):
         """Reset the panel"""

@@ -1,12 +1,11 @@
-"""Bands results view widgets
+"""Bands results view widgets"""
 
-"""
 from __future__ import annotations
 
 
 from aiidalab_qe.common.panel import ResultPanel
 from aiidalab_qe.common.bandpdoswidget import BandPdosPlotly
-
+from IPython.display import display
 import numpy as np
 
 from ..utils.raman.result import export_iramanworkchain_data
@@ -23,21 +22,6 @@ import ipywidgets as ipw
 
 from ..utils.raman.result import SpectrumPlotWidget, ActiveModesWidget
 
-def create_html_table(matrix):
-    """
-    Create an HTML table representation of a 3x3 matrix.
-
-    :param matrix: List of lists representing a 3x3 matrix
-    :return: HTML table string
-    """
-    html = '<table border="1" style="border-collapse: collapse;">'
-    for row in matrix:
-        html += '<tr>'
-        for cell in row:
-            html += f'<td style="padding: 5px; text-align: center;">{cell}</td>'
-        html += '</tr>'
-    html += '</table>'
-    return html
 
 class PhononBandPdosPlotly(BandPdosPlotly):
     def __init__(self, bands_data=None, pdos_data=None):
@@ -92,7 +76,6 @@ class Result(ResultPanel):
     children_result_widget = ()
 
     def _update_view(self):
-
         children_result_widget = ()
         tab_titles = []  # this is needed to name the sub panels
 
@@ -102,7 +85,6 @@ class Result(ResultPanel):
         dielectric_data = export_dielectric_data(self.node)
 
         if phonon_data:
-
             phonon_children = ()
             if phonon_data["bands"] or phonon_data["pdos"]:
                 _bands_plot_view_class = PhononBandPdosPlotly(
@@ -110,7 +92,7 @@ class Result(ResultPanel):
                     pdos_data=phonon_data["pdos"][0],
                 )
 
-                # the data (bands and pdos) are the first element of the lists phonon_data["bands"] and phonon_data["pdos"]! 
+                # the data (bands and pdos) are the first element of the lists phonon_data["bands"] and phonon_data["pdos"]!
                 downloadBandsPdos_widget = DownloadBandsPdosWidget(
                     data=phonon_data,
                 )
@@ -120,10 +102,12 @@ class Result(ResultPanel):
 
                 phonon_children += (
                     _bands_plot_view_class.bandspdosfigure,
-                    ipw.HBox(children=[
-                        downloadBandsPdos_widget,
-                        downloadYamlHdf5_widget,
-                        ]),
+                    ipw.HBox(
+                        children=[
+                            downloadBandsPdos_widget,
+                            downloadYamlHdf5_widget,
+                        ]
+                    ),
                 )
 
             if phonon_data["thermo"]:
@@ -157,9 +141,8 @@ class Result(ResultPanel):
                 g.add_scatter(x=T, y=E, name=f"Entropy ({E_units})")
                 g.add_scatter(x=T, y=Cv, name=f"Specific Heat-V=const ({Cv_units})")
 
-                downloadThermo_widget = DownloadThermoWidget(
-                    T,F,E,Cv)
-                    
+                downloadThermo_widget = DownloadThermoWidget(T, F, E, Cv)
+
                 phonon_children += (
                     g,
                     downloadThermo_widget,
@@ -179,16 +162,14 @@ class Result(ResultPanel):
         if ins_data:
             intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"])
             children_result_widget += (intensity_maps,)
-            tab_titles.append(f"Inelastic Neutrons")
+            tab_titles.append("Inelastic Neutrons")
 
         if spectra_data:
-
             # Here we should provide the possibility to have both IR and Raman,
             # as the new logic can provide both at the same time.
             # We are gonna use the same widget, providing the correct spectrum_type: "Raman" or "Ir".
             children_spectra = ()
             for spectrum, data in spectra_data.items():
-
                 if not data:
                     continue
 
@@ -223,18 +204,12 @@ class Result(ResultPanel):
                     ),
                 ),
             )
-            tab_titles.append(f"Raman/IR spectra")
-
-            #create and VBox
-            my_VBox = ipw.VBox(children=children_spectra, layout=ipw.Layout(width="100%"))
+            tab_titles.append("Raman/IR spectra")
 
         if dielectric_data:
-            
             dielectric_results = DielectricResults(dielectric_data)
             children_result_widget += (dielectric_results,)
             tab_titles.append("Dielectric properties")
-
-        
 
         self.result_tabs = ipw.Tab(children=children_result_widget)
 
@@ -243,9 +218,9 @@ class Result(ResultPanel):
 
         self.children = [self.result_tabs]
 
+
 class DownloadBandsPdosWidget(ipw.HBox):
     def __init__(self, data, **kwargs):
-
         self.download_button = ipw.Button(
             description="Download phonon bands and pdos data",
             icon="pencil",
@@ -268,6 +243,7 @@ class DownloadBandsPdosWidget(ipw.HBox):
         import json
         from monty.json import jsanitize
         import base64
+
         file_name_bands = "phonon_bands_data.json"
         file_name_pdos = "phonon_dos_data.json"
         if self.bands_data[0]:
@@ -298,16 +274,13 @@ class DownloadBandsPdosWidget(ipw.HBox):
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            """.format(
-                payload=payload, filename=filename
-            )
+            """.format(payload=payload, filename=filename)
         )
         display(javas)
-        
-class DownloadThermoWidget(ipw.HBox):
-    
-    def __init__(self, T,F,E,Cv, **kwargs):
 
+
+class DownloadThermoWidget(ipw.HBox):
+    def __init__(self, T, F, E, Cv, **kwargs):
         self.download_button = ipw.Button(
             description="Download thermal properties data",
             icon="pencil",
@@ -316,7 +289,7 @@ class DownloadThermoWidget(ipw.HBox):
             layout=ipw.Layout(width="auto"),
         )
         self.download_button.on_click(self.download_data)
-        
+
         self.temperature = T
         self.free_E = F
         self.entropy = E
@@ -331,14 +304,19 @@ class DownloadThermoWidget(ipw.HBox):
     def download_data(self, _=None):
         """Function to download the phonon data."""
         import json
-        from monty.json import jsanitize
         import base64
+
         file_name = "phonon_thermo_data.json"
         data_export = {}
         for key, value in zip(
-            ["Temperature (K)","Helmoltz Free Energy (kJ/mol)",
-             "Entropy (J/K/mol)","Specific Heat-V=const (J/K/mol)"],
-            [self.temperature, self.free_E,self.entropy, self.Cv]):
+            [
+                "Temperature (K)",
+                "Helmoltz Free Energy (kJ/mol)",
+                "Entropy (J/K/mol)",
+                "Specific Heat-V=const (J/K/mol)",
+            ],
+            [self.temperature, self.free_E, self.entropy, self.Cv],
+        ):
             if isinstance(value, np.ndarray):
                 data_export[key] = value.tolist()
             else:
@@ -347,7 +325,6 @@ class DownloadThermoWidget(ipw.HBox):
         json_str = json.dumps(data_export)
         b64_str = base64.b64encode(json_str.encode()).decode()
         self._download(payload=b64_str, filename=file_name)
-        
 
     @staticmethod
     def _download(payload, filename):
@@ -361,8 +338,6 @@ class DownloadThermoWidget(ipw.HBox):
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            """.format(
-                payload=payload, filename=filename
-            )
+            """.format(payload=payload, filename=filename)
         )
         display(javas)

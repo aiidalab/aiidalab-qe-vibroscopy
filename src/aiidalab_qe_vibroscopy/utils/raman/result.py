@@ -1,16 +1,13 @@
-"""Bands results view widgets
+"""Bands results view widgets"""
 
-"""
 from __future__ import annotations
 
 
-from aiidalab_qe.common.panel import ResultPanel
 import ipywidgets as ipw
 import numpy as np
 from IPython.display import HTML, clear_output, display
 import base64
 import json
-from ase.visualize import view
 import nglview as nv
 from ase import Atoms
 
@@ -26,7 +23,6 @@ def plot_powder(
     broadening_function=multilorentz,
     normalize: bool = True,
 ):
-
     frequencies = np.array(frequencies)
     intensities = np.array(intensities)
 
@@ -44,12 +40,11 @@ def plot_powder(
 
 
 def export_iramanworkchain_data(node):
-
     """
     We have multiple choices: IR, RAMAN.
     """
 
-    if not "vibronic" in node.outputs:
+    if "vibronic" not in node.outputs:
         return None
     else:
         if "iraman" in node.outputs.vibronic:
@@ -61,7 +56,6 @@ def export_iramanworkchain_data(node):
             return None
 
     if "vibrational_data" in output_node:
-
         # We enable the possibility to provide both spectra.
         # We give as output or string, or the output node.
 
@@ -87,14 +81,13 @@ def export_iramanworkchain_data(node):
 
             # sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
             if len(total_intensities) == 0:
-                spectra_data[
-                    "Ir"
-                ] = "No IR modes detected."  # explanation added in the main results script of the app.
+                spectra_data["Ir"] = (
+                    "No IR modes detected."  # explanation added in the main results script of the app.
+                )
             else:
                 spectra_data["Ir"] = output_node
 
         if "raman_tensors" in vibro.get_arraynames():
-
             (
                 polarized_intensities,
                 depolarized_intensities,
@@ -105,9 +98,9 @@ def export_iramanworkchain_data(node):
 
             # sometimes IR/Raman has not active peaks by symmetry, or due to the fact that 1st order cannot capture them
             if len(total_intensities) == 0:
-                spectra_data[
-                    "Raman"
-                ] = "No Raman modes detected."  # explanation added in the main results script of the app.
+                spectra_data["Raman"] = (
+                    "No Raman modes detected."  # explanation added in the main results script of the app.
+                )
             else:
                 spectra_data["Raman"] = output_node
 
@@ -246,9 +239,7 @@ class SpectrumPlotWidget(ipw.VBox):
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            """.format(
-                payload=payload, filename=filename
-            )
+            """.format(payload=payload, filename=filename)
         )
         display(javas)
 
@@ -289,7 +280,9 @@ class SpectrumPlotWidget(ipw.VBox):
                 total_intensities = polarized_intensities
 
             self.frequencies, self.intensities = plot_powder(
-                frequencies, total_intensities, self.broadening.value,
+                frequencies,
+                total_intensities,
+                self.broadening.value,
             )
             self._display_figure()
 
@@ -340,7 +333,7 @@ class SpectrumPlotWidget(ipw.VBox):
             try:
                 dir_values = [float(i) for i in input_values]
                 return dir_values, True
-            except:
+            except:  # noqa: E722
                 return dir_values, False
         else:
             return dir_values, False
@@ -357,7 +350,7 @@ class SpectrumPlotWidget(ipw.VBox):
         fig.layout.xaxis.title = "Wavenumber (cm-1)"
         fig.layout.yaxis.title = "Intensity (arb. units)"
         fig.layout.xaxis.nticks = 0
-        fig.add_scatter(x=self.frequencies, y=self.intensities, name=f"")
+        fig.add_scatter(x=self.frequencies, y=self.intensities, name="")
         fig.update_layout(
             height=500,
             width=700,

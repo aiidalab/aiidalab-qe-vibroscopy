@@ -1,25 +1,12 @@
-import pathlib
-import tempfile
-import io
+from IPython.display import display
 
-import base64
-from IPython.display import HTML, clear_output, display
-
-import euphonic
-from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
-
+import numpy as np
 import ipywidgets as ipw
-import plotly.graph_objects as go
-import plotly.io as pio
 
 # from ..euphonic.bands_pdos import *
-from .intensity_maps import *
-import json
-from monty.json import jsanitize
+from .intensity_maps import *  # noqa: F403
 
 # sys and os used to prevent euphonic to print in the stdout.
-import sys
-import os
 
 ########################
 ################################ START DESCRIPTION
@@ -40,6 +27,7 @@ export_phononworkchain_data function, used then in the result.py panel.
 
 COLORSCALE = "Viridis"
 COLORBAR_DICT = dict(orientation="v", showticklabels=False, x=1, thickness=10, len=0.4)
+
 
 # # Intensity map widget
 class StructureFactorBasePlotWidget(ipw.VBox):
@@ -193,14 +181,12 @@ class StructureFactorBasePlotWidget(ipw.VBox):
 
 
 class StructureFactorSettingsBaseWidget(ipw.VBox):
-
     """
     Collects all the button and widget used to define settings for Neutron dynamic structure factor,
     both single crystal or powder.
     """
 
     def __init__(self, **kwargs):
-
         super().__init__()
 
         self.float_q_spacing = ipw.FloatText(
@@ -296,7 +282,6 @@ class StructureFactorSettingsBaseWidget(ipw.VBox):
 
 class SingleCrystalSettingsWidget(StructureFactorSettingsBaseWidget):
     def __init__(self, **kwargs):
-
         self.custom_kpath_description = ipw.HTML(
             """
             <div style="padding-top: 0px; padding-bottom: 0px; line-height: 140%;">

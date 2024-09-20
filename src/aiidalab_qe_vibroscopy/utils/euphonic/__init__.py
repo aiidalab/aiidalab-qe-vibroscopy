@@ -1,32 +1,23 @@
 import pathlib
 import tempfile
-import io
 
-import base64
-from IPython.display import HTML, clear_output, display
 
-import euphonic
-from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
+from IPython.display import display
 
 import ipywidgets as ipw
-import plotly.graph_objects as go
-import plotly.io as pio
 
 # from ..euphonic.bands_pdos import *
-from .intensity_maps import *
-from .euphonic_single_crystal_widgets import *
-from .euphonic_powder_widgets import *
-from .euphonic_q_planes_widgets import *
+from .intensity_maps import (
+    generate_force_constant_instance,
+    export_euphonic_data,  # noqa: F401
+)
+from .euphonic_single_crystal_widgets import SingleCrystalFullWidget
+from .euphonic_powder_widgets import PowderFullWidget
+from .euphonic_q_planes_widgets import QSectionFullWidget
 
-
-import json
-from monty.json import jsanitize
-
-# sys and os used to prevent euphonic to print in the stdout.
-import sys
-import os
 
 ###### START for detached app:
+
 
 # Upload buttons
 class UploadPhonopyYamlWidget(ipw.FileUpload):
@@ -49,7 +40,6 @@ class UploadForceConstantsHdf5Widget(ipw.FileUpload):
 
 class UploadPhonopyWidget(ipw.HBox):
     def __init__(self, **kwargs):
-
         self.upload_phonopy_yaml = UploadPhonopyYamlWidget(**kwargs)
         self.upload_phonopy_hdf5 = UploadForceConstantsHdf5Widget(**kwargs)
 
@@ -122,7 +112,6 @@ class EuphonicSuperWidget(ipw.VBox):
     """
 
     def __init__(self, mode="aiidalab-qe app plugin", fc=None):
-
         self.mode = mode
 
         self.upload_widget = UploadPhonopyWidget()
@@ -234,7 +223,6 @@ class EuphonicSuperWidget(ipw.VBox):
 
 class DownloadYamlHdf5Widget(ipw.HBox):
     def __init__(self, phonopy_node, **kwargs):
-
         self.download_button = ipw.Button(
             description="Download phonopy data",
             icon="pencil",
@@ -273,8 +261,6 @@ class DownloadYamlHdf5Widget(ipw.HBox):
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            """.format(
-                payload=payload, filename=filename
-            )
+            """.format(payload=payload, filename=filename)
         )
         display(javas)
