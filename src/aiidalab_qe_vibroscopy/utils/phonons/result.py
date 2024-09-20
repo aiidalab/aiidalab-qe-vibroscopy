@@ -2,8 +2,6 @@
 
 """
 
-
-from aiidalab_qe.common.panel import ResultPanel
 from aiidalab_qe.common.bandpdoswidget import cmap, get_bands_labeling
 
 import numpy as np

@@ -333,10 +333,11 @@ class VibroWorkChain(WorkChain):
     @classmethod
     def get_builder_from_protocol(
         cls,
-        pw_code,
         structure,
-        protocol=None,
+        phonon_code=None,
+        dielectric_code=None,
         phonopy_code=None,
+        protocol=None,
         overrides=None,
         options=None,
         simulation_mode=None,
@@ -368,7 +369,7 @@ class VibroWorkChain(WorkChain):
             # Running the full workchain: IR/Raman, Phonons, INS, Dielectric
 
             builder_harmonic = HarmonicWorkChain.get_builder_from_protocol(
-                pw_code=pw_code,
+                pw_code=phonon_code,
                 phonopy_code=phonopy_code,
                 structure=structure,
                 protocol=protocol,
@@ -393,6 +394,8 @@ class VibroWorkChain(WorkChain):
             builder_harmonic.phonopy.parameters = (
                 builder_harmonic.phonon.phonopy.parameters
             )
+            
+            builder_harmonic.dielectric.scf.pw.code = dielectric_code # we have a specific code for DielectricWorkChain
             builder_harmonic.phonon.phonopy.code = builder_harmonic.phonopy.code
 
             builder_harmonic.phonopy.parameters = Dict(dict=phonon_property.value)
@@ -473,18 +476,25 @@ class VibroWorkChain(WorkChain):
                     }
                 )
 
-                builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
+            builder.phonopy_thermo_dict = Dict(
+                dict= {
+                    'tprop': True, 
+                    'mesh': 200,    # 1000 is too heavy
+                     'write_mesh': False,
+                     }
+                )
 
         elif simulation_mode == 2:
 
             builder_iraman = IRamanSpectraWorkChain.get_builder_from_protocol(
-                code=pw_code,
+                code=phonon_code,
                 structure=structure,
                 protocol=protocol,
                 overrides=overrides,
                 **kwargs,
             )
 
+            builder_iraman.dielectric.scf.pw.code = dielectric_code # we have a specific code for DielectricWorkChain
             builder_iraman.dielectric.property = dielectric_property
 
             builder_iraman.phonon.phonopy.code = phonopy_code
@@ -507,7 +517,7 @@ class VibroWorkChain(WorkChain):
         elif simulation_mode == 3:
 
             builder_phonon = PhononWorkChain.get_builder_from_protocol(
-                pw_code=pw_code,
+                pw_code=phonon_code,
                 phonopy_code=phonopy_code,
                 structure=structure,
                 protocol=protocol,
@@ -595,12 +605,18 @@ class VibroWorkChain(WorkChain):
                     }
                 )
 
-                builder.phonopy_thermo_dict = Dict(dict=PhononProperty.THERMODYNAMIC.value)
+            builder.phonopy_thermo_dict = Dict(
+                dict= {
+                    'tprop': True, 
+                    'mesh': 200,    # 1000 is too heavy
+                     'write_mesh': False,
+                     }
+                )
 
         elif simulation_mode == 4:
 
             builder_dielectric = DielectricWorkChain.get_builder_from_protocol(
-                code=pw_code,
+                code=dielectric_code,
                 structure=structure,
                 protocol=protocol,
                 overrides=overrides["dielectric"],

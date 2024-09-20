@@ -232,7 +232,7 @@ class EuphonicSuperWidget(ipw.VBox):
         self.tab_widget.layout.display = "block"
 
 
-class DowloadYamlHdf5Widget(ipw.HBox):
+class DownloadYamlHdf5Widget(ipw.HBox):
     def __init__(self, phonopy_node, **kwargs):
 
         self.download_button = ipw.Button(
