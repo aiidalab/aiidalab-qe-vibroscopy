@@ -2,6 +2,7 @@ import base64
 from IPython.display import display
 
 import numpy as np
+import copy
 import ipywidgets as ipw
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -196,11 +197,13 @@ class SingleCrystalFullWidget(ipw.VBox):
     and are from Sears (1992) Neutron News 3(3) pp26--37.
     """
 
-    def __init__(self, fc, **kwargs):
+    def __init__(self, fc, q_path, **kwargs):
         self.fc = fc
+        self.q_path = q_path
 
         self.spectra, self.parameters = produce_bands_weigthed_data(
             fc=self.fc,
+            linear_path = self.q_path,
             plot=False,  # CHANGED
         )
 
@@ -248,7 +251,8 @@ class SingleCrystalFullWidget(ipw.VBox):
                 "delta_q": parameters_["q_spacing"],
             }
         else:
-            linear_path = None
+            linear_path = copy.deepcopy(self.q_path)
+            linear_path["delta_q"] = parameters_["q_spacing"]
 
         self.spectra, self.parameters = produce_bands_weigthed_data(
             params=parameters_,

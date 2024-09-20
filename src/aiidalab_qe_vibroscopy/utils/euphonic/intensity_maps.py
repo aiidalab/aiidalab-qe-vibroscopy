@@ -210,7 +210,7 @@ parameters = par_dict
 def produce_bands_weigthed_data(
     params: Optional[List[str]] = parameters,
     fc: ForceConstants = None,
-    linear_path=None,
+    linear_path = None,
     plot=False,
 ) -> None:
     blockPrint()
@@ -752,13 +752,30 @@ def export_euphonic_data(node, fermi_energy=None):
             return None
 
     output_set = node.outputs.vibronic.phonon_bands
-
+    
+    if any(not element for element in  node.inputs.structure.pbc):
+        vibro_bands = node.inputs.vibronic.phonopy_bands_dict.get_dict()
+        # Group the band and band_labels
+        band = vibro_bands['band']
+        band_labels = vibro_bands['band_labels']
+        
+        grouped_bands = [item for sublist in [band_labels[i:i+2] for i in range(len(band_labels)-1)] for item in sublist]
+        grouped_q = [[tuple(band[i:i+3]), tuple(band[i+3:i+6])] for i in range(0, len(band)-3,3)]
+        q_path = {
+            "coordinates":grouped_q,
+            "labels":grouped_bands,
+            "delta_q":0.01, #1/A
+        }
+    else:
+        q_path = None
+    
     phonopy_calc = output_set.creator
     fc = generate_force_constant_instance(phonopy_calc)
     # bands = compute_bands(fc)
     # pdos = compute_pdos(fc)
     return {
         "fc": fc,
+        "q_path": q_path,
     }  # "bands": bands, "pdos": pdos, "thermal": None}
 
 

@@ -160,7 +160,7 @@ class Result(ResultPanel):
             )  # the comma is required! otherwise the tuple is not detected.
         # euphonic
         if ins_data:
-            intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"])
+            intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"], q_path=ins_data["q_path"])
             children_result_widget += (intensity_maps,)
             tab_titles.append("Inelastic Neutrons")
 

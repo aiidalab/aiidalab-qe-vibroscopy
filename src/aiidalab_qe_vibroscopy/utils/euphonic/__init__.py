@@ -111,7 +111,34 @@ class EuphonicSuperWidget(ipw.VBox):
     In between, we trigger the initialization of plots via a button.
     """
 
-    def __init__(self, mode="aiidalab-qe app plugin", fc=None):
+    def __init__(self, mode="aiidalab-qe app plugin", fc=None, q_path=None):
+        """
+        Initialize the Euphonic utility class.
+        Parameters:
+        -----------
+        mode : str, optional
+            The mode of operation, default is "aiidalab-qe app plugin".
+        fc : optional
+            Force constants, default is None.
+        q_path : optional
+            Q-path for phonon calculations, default is None. If Low-D system, this can be provided.
+            It is the same path obtained for the PhonopyCalculation of the phonopy_bands.
+        Attributes:
+        -----------
+        mode : str
+            The mode of operation.
+        upload_widget : UploadPhonopyWidget
+            Widget for uploading phonopy files.
+        fc_hdf5_content : None
+            Content of the force constants HDF5 file.
+        tab_widget : ipw.Tab
+            Tab widget for different views.
+        plot_button : ipw.Button
+            Button to initialize INS data.
+        fc : optional
+            Force constants if provided.
+        """
+        
         self.mode = mode
 
         self.upload_widget = UploadPhonopyWidget()
@@ -127,6 +154,8 @@ class EuphonicSuperWidget(ipw.VBox):
 
         if fc:
             self.fc = fc
+        
+        self.q_path = q_path
 
         self.plot_button = ipw.Button(
             description="Initialise INS data",
@@ -206,7 +235,7 @@ class EuphonicSuperWidget(ipw.VBox):
         self.fc = self._generate_force_constants()
 
         # I first initialise this widget, to then have the 0K ref for the other two.
-        singlecrystalwidget = SingleCrystalFullWidget(self.fc)
+        singlecrystalwidget = SingleCrystalFullWidget(self.fc, self.q_path)
 
         self.tab_widget.children = (
             singlecrystalwidget,
