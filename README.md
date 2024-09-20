@@ -6,7 +6,7 @@ Plugin to compute vibrational properties of materials via the aiida-vibroscopy A
 Once cloned the repository, `cd` into it and:
 
 ```shell
-pip install -e 
+pip install --user .
 ```
 
 If you want to easily set up phonopy, use the CLI of this package (inspect it via `aiidalab-qe-vibroscopy --help`):
