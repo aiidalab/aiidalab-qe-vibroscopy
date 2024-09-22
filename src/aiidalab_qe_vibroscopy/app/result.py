@@ -90,7 +90,11 @@ class Result(ResultPanel):
                 _bands_plot_view_class = PhononBandPdosPlotly(
                     bands_data=phonon_data["bands"][0],
                     pdos_data=phonon_data["pdos"][0],
+                ).bandspdosfigure
+                _bands_plot_view_class.update_layout(
+                    yaxis=dict(autorange=True),  # Automatically scale the y-axis
                 )
+                
 
                 # the data (bands and pdos) are the first element of the lists phonon_data["bands"] and phonon_data["pdos"]!
                 downloadBandsPdos_widget = DownloadBandsPdosWidget(
@@ -101,7 +105,7 @@ class Result(ResultPanel):
                 )
 
                 phonon_children += (
-                    _bands_plot_view_class.bandspdosfigure,
+                    _bands_plot_view_class,
                     ipw.HBox(
                         children=[
                             downloadBandsPdos_widget,
@@ -158,11 +162,6 @@ class Result(ResultPanel):
                     ),
                 ),
             )  # the comma is required! otherwise the tuple is not detected.
-        # euphonic
-        if ins_data:
-            intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"])
-            children_result_widget += (intensity_maps,)
-            tab_titles.append("Inelastic Neutrons")
 
         if spectra_data:
             # Here we should provide the possibility to have both IR and Raman,
@@ -210,6 +209,13 @@ class Result(ResultPanel):
             dielectric_results = DielectricResults(dielectric_data)
             children_result_widget += (dielectric_results,)
             tab_titles.append("Dielectric properties")
+            
+        # euphonic
+        if ins_data:
+            intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"])
+            children_result_widget += (intensity_maps,)
+            tab_titles.append("Inelastic Neutrons")
+
 
         self.result_tabs = ipw.Tab(children=children_result_widget)
 
