@@ -94,7 +94,6 @@ class Result(ResultPanel):
                 _bands_plot_view_class.update_layout(
                     yaxis=dict(autorange=True),  # Automatically scale the y-axis
                 )
-                
 
                 # the data (bands and pdos) are the first element of the lists phonon_data["bands"] and phonon_data["pdos"]!
                 downloadBandsPdos_widget = DownloadBandsPdosWidget(
@@ -209,13 +208,12 @@ class Result(ResultPanel):
             dielectric_results = DielectricResults(dielectric_data)
             children_result_widget += (dielectric_results,)
             tab_titles.append("Dielectric properties")
-            
+
         # euphonic
         if ins_data:
             intensity_maps = EuphonicSuperWidget(fc=ins_data["fc"])
             children_result_widget += (intensity_maps,)
             tab_titles.append("Inelastic Neutrons")
-
 
         self.result_tabs = ipw.Tab(children=children_result_widget)
 
