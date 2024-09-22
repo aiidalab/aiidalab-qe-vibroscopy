@@ -48,14 +48,15 @@ def fixture_code(fixture_localhost):
 def generate_structure_data():
     """generate a `StructureData` object."""
 
-    def _generate_structure_data(name="silicon", pbc=(True, True, True)):
+    def _generate_structure_data(name="silicon"):
         if name == "silicon":
             structure = orm.StructureData(
                 cell=[
                     [3.84737, 0.0, 0.0],
                     [1.923685, 3.331920, 0.0],
                     [1.923685, 1.110640, 3.141364],
-                ]
+                ],
+                pbc=(True, True, True),
             )
             structure.append_atom(position=(0.0, 0.0, 0.0), symbols="Si")
             structure.append_atom(position=(1.923685, 1.110640, 0.785341), symbols="Si")
@@ -65,7 +66,8 @@ def generate_structure_data():
                     [4.18, 0.0, 0.0],
                     [0.0, 4.18, 0.0],
                     [0.0, 0.0, 2.66],
-                ]
+                ],
+                pbc=(True, True, True),
             )
             structure.append_atom(position=(0.0, 0.0, 0.0), symbols="Si")
             structure.append_atom(position=(2.09, 2.09, 1.33), symbols="Si")
@@ -88,11 +90,23 @@ def generate_structure_data():
                 ["O", "O", (0, 0, 10.201532881212)],
                 ["Li", "Li", (0, 0, 6.9018028772754)],
             ]
-            structure = orm.StructureData(cell=cell)
+            structure = orm.StructureData(cell=cell, pbc=(True, True, True))
 
             for site in sites:
                 structure.append_atom(position=site[2], symbols=site[0], name=site[1])
-        structure.pbc = pbc
+
+        elif name == "2D-xy-arsenic":
+            cell = [[3.61, 0, 0], [-1.80, 3.13, 0], [0, 0, 21.3]]
+            structure = orm.StructureData(cell=cell, pbc=(True, True, False))
+            structure.append_atom(
+                position=(1.804, 1.042, 11.352), symbols="As", name="As"
+            )
+            structure.append_atom(position=(0, 2.083, 9.960), symbols="As", name="As")
+
+        elif name == "1D-x-carbon":
+            cell = [[4.2, 0, 0], [0, 20, 0], [0, 0, 20]]
+            structure = orm.StructureData(cell=cell, pbc=(True, False, False))
+            structure.append_atom(position=(0, 0, 0), symbols="C", name="C")
 
         return structure
 

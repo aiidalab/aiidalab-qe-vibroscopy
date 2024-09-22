@@ -47,3 +47,31 @@ def test_settings():
     parameters = configure_step.settings["vibronic"].get_panel_value()
     assert parameters["simulation_mode"] == 1
     assert parameters["supercell_selector"] == [2, 2, 2]
+
+
+@pytest.mark.usefixtures("sssp")
+def test_xy_settings(generate_structure_data):
+    """Test the settings of the vibroscopy app."""
+
+    from aiidalab_qe.app.configuration import ConfigureQeAppWorkChainStep
+
+    configure_step = ConfigureQeAppWorkChainStep()
+    structure = generate_structure_data("2D-xy-arsenic")
+    configure_step.input_structure = structure
+    configure_step.workchain_settings.properties["vibronic"].run.value = True
+    parameters = configure_step.settings["vibronic"].get_panel_value()
+    assert parameters["supercell_selector"] == [2, 2, 1]
+
+
+@pytest.mark.usefixtures("sssp")
+def test_x_settings(generate_structure_data):
+    """Test the settings of the vibroscopy app."""
+
+    from aiidalab_qe.app.configuration import ConfigureQeAppWorkChainStep
+
+    configure_step = ConfigureQeAppWorkChainStep()
+    structure = generate_structure_data("1D-x-carbon")
+    configure_step.input_structure = structure
+    configure_step.workchain_settings.properties["vibronic"].run.value = True
+    parameters = configure_step.settings["vibronic"].get_panel_value()
+    assert parameters["supercell_selector"] == [2, 1, 1]

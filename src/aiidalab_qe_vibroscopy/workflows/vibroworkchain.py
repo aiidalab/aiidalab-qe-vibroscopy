@@ -481,8 +481,12 @@ class VibroWorkChain(WorkChain):
                     )
             else:
                 builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
+                builder.phonopy_bands_dict["symmetry_tolerance"] = overrides[
+                    "symmetry"
+                ]["symprec"]
                 builder.phonopy_pdos_dict = Dict(
                     dict={
+                        "symmetry_tolerance": overrides["symmetry"]["symprec"],
                         "pdos": "auto",
                         "mesh": 150,  # 1000 is too heavy
                         "write_mesh": False,
@@ -491,6 +495,7 @@ class VibroWorkChain(WorkChain):
 
             builder.phonopy_thermo_dict = Dict(
                 dict={
+                    "symmetry_tolerance": overrides["symmetry"]["symprec"],
                     "tprop": True,
                     "mesh": 200,  # 1000 is too heavy
                     "write_mesh": False,
@@ -552,9 +557,8 @@ class VibroWorkChain(WorkChain):
             builder_phonon.phonopy.settings = Dict(dict={"keep_phonopy_yaml": True})
 
             # MBO: I do not understand why I have to do this, but it works
-            symmetry = builder_phonon.pop("symmetry")
             builder.phonon = builder_phonon
-            builder.phonon.symmetry = symmetry
+            builder.phonon.symmetry = overrides["symmetry"]
 
             # Adding the bands and pdos inputs.
             if structure.pbc != (True, True, True):
@@ -624,8 +628,12 @@ class VibroWorkChain(WorkChain):
                     )
             else:
                 builder.phonopy_bands_dict = Dict(dict=PhononProperty.BANDS.value)
+                builder.phonopy_bands_dict["symmetry_tolerance"] = overrides[
+                    "symmetry"
+                ]["symprec"]
                 builder.phonopy_pdos_dict = Dict(
                     dict={
+                        "symmetry_tolerance": overrides["symmetry"]["symprec"],
                         "pdos": "auto",
                         "mesh": 150,  # 1000 is too heavy
                         "write_mesh": False,
@@ -634,6 +642,7 @@ class VibroWorkChain(WorkChain):
 
             builder.phonopy_thermo_dict = Dict(
                 dict={
+                    "symmetry_tolerance": overrides["symmetry"]["symprec"],
                     "tprop": True,
                     "mesh": 200,  # 1000 is too heavy
                     "write_mesh": False,
@@ -649,12 +658,10 @@ class VibroWorkChain(WorkChain):
                 **kwargs,
             )
 
-            # MBO: I do not understand why I have to do this, but it works. maybe related with excludes.
-            symmetry = builder_dielectric.pop("symmetry")
             if structure.pbc != (True, True, True):
                 builder_dielectric.pop("kpoints_parallel_distance", None)
             builder.dielectric = builder_dielectric
-            builder.dielectric.symmetry = symmetry
+            builder.dielectric.symmetry = overrides["symmetry"]
             builder.dielectric.property = dielectric_property
 
         # Deleting the not needed parts of the builder:
