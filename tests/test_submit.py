@@ -37,7 +37,7 @@ def test_create_builder_default(
     submit_step.codes["dielectric"].value = pw_code.uuid
     submit_step.codes["phonopy"].value = phonopy_code.uuid
 
-    submit_step.codes["pw"].num_cpus.value = 10
+    submit_step.codes["pw"].num_cpus.value = 8
     submit_step.codes["phonon"].num_cpus.value = 2
     submit_step.codes["dielectric"].num_cpus.value = 3
 
