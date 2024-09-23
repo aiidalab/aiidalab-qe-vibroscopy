@@ -138,7 +138,7 @@ class EuphonicSuperWidget(ipw.VBox):
         fc : optional
             Force constants if provided.
         """
-        
+
         self.mode = mode
 
         self.upload_widget = UploadPhonopyWidget()
@@ -154,7 +154,7 @@ class EuphonicSuperWidget(ipw.VBox):
 
         if fc:
             self.fc = fc
-        
+
         self.q_path = q_path
 
         self.plot_button = ipw.Button(
