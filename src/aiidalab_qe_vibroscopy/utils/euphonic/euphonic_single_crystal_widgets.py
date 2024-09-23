@@ -203,7 +203,7 @@ class SingleCrystalFullWidget(ipw.VBox):
 
         self.spectra, self.parameters = produce_bands_weigthed_data(
             fc=self.fc,
-            linear_path = self.q_path,
+            linear_path=self.q_path,
             plot=False,  # CHANGED
         )
 
@@ -252,7 +252,8 @@ class SingleCrystalFullWidget(ipw.VBox):
             }
         else:
             linear_path = copy.deepcopy(self.q_path)
-            linear_path["delta_q"] = parameters_["q_spacing"]
+            if linear_path:
+                linear_path["delta_q"] = parameters_["q_spacing"]
 
         self.spectra, self.parameters = produce_bands_weigthed_data(
             params=parameters_,
