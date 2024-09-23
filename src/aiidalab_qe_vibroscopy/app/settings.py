@@ -18,7 +18,7 @@ from aiidalab_qe.common.panel import Panel
 import sys
 import os
 
-from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
+from aiida.plugins import DataFactory
 
 HubbardStructureData = DataFactory("quantumespresso.hubbard_structure")
 
@@ -179,7 +179,7 @@ class Setting(Panel):
         self.supercell_hint_button = ipw.Button(
             description="Size hint",
             disabled=False,
-            width="500px",
+            width="100px",
             button_style="info",
         )
         # supercell hint (15A lattice params)
@@ -187,7 +187,7 @@ class Setting(Panel):
 
         # reset supercell
         self.supercell_reset_button = ipw.Button(
-            description="Reset",
+            description="Reset hint",
             disabled=False,
             layout=ipw.Layout(width="100px"),
             button_style="warning",
@@ -211,8 +211,8 @@ class Setting(Panel):
                     [
                         self.supercell_selector,
                         self.supercell_hint_button,
-                        self.supercell_number_estimator,
                         self.supercell_reset_button,
+                        self.supercell_number_estimator,
                     ],
                 ),
             ]
@@ -222,9 +222,25 @@ class Setting(Panel):
 
         self.symmetry_symprec = ipw.FloatText(
             value=1e-5,
+            max=1,
+            min=1e-7,  # Ensure the value is always positive
+            step=1e-4,  # Step value of 1e-4
             description="Symmetry tolerance (symprec):",
             style={"description_width": "initial"},
             layout={"width": "300px"},
+        )
+        self.symmetry_symprec.observe(self._estimate_supercells, "value")
+
+        # reset supercell
+        self.symmetry_symprec_reset_button = ipw.Button(
+            description="Reset symprec",
+            disabled=False,
+            layout=ipw.Layout(width="150px"),
+            button_style="warning",
+        )
+        # supercell reset reaction
+        self.symmetry_symprec_reset_button.on_click(
+            lambda _: setattr(self.symmetry_symprec, "value", 1e-5)
         )
 
         self.children = [
@@ -251,7 +267,12 @@ class Setting(Panel):
                 ],
             ),
             self.supercell_widget,
-            self.symmetry_symprec,
+            ipw.HBox(
+                [
+                    self.symmetry_symprec,
+                    self.symmetry_symprec_reset_button,
+                ],
+            ),
         ]
 
         super().__init__(**kwargs)
@@ -308,6 +329,13 @@ class Setting(Panel):
         if self.block:
             return
 
+        if self.symmetry_symprec.value > 1:
+            self.symmetry_symprec.value = 1
+        elif self.symmetry_symprec.value < 1e-5:
+            self.symmetry_symprec.value = 1e-5
+
+        symprec = self.symmetry_symprec.value
+
         self.supercell_number_estimator.value = spinner_html
 
         from aiida_phonopy.data.preprocess import PreProcessData
@@ -320,7 +348,7 @@ class Setting(Panel):
                     [0, self._sc_y.value, 0],
                     [0, 0, self._sc_z.value],
                 ],
-                symprec=1e-5,
+                symprec=symprec,
                 distinguish_kinds=False,
                 is_symmetry=True,
             )

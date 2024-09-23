@@ -75,3 +75,51 @@ def test_x_settings(generate_structure_data):
     configure_step.workchain_settings.properties["vibronic"].run.value = True
     parameters = configure_step.settings["vibronic"].get_panel_value()
     assert parameters["supercell_selector"] == [2, 1, 1]
+
+
+@pytest.mark.usefixtures("sssp")
+def test_supercell_number_estimator(generate_structure_data):
+    """Test the settings of the vibroscopy app."""
+
+    from aiidalab_qe.app.configuration import ConfigureQeAppWorkChainStep
+
+    configure_step = ConfigureQeAppWorkChainStep()
+    structure = generate_structure_data("silicon")
+    configure_step.input_structure = structure
+    configure_step.workchain_settings.properties["vibronic"].run.value = True
+    parameters = configure_step.settings["vibronic"].get_panel_value()
+    assert parameters["supercell_selector"] == [2, 2, 2]
+    assert configure_step.settings["vibronic"].supercell_number_estimator.value == "1"
+    configure_step.settings["vibronic"]._suggest_supercell()
+    parameters = configure_step.settings["vibronic"].get_panel_value()
+    assert parameters["supercell_selector"] == [4, 4, 4]
+    assert configure_step.settings["vibronic"].supercell_number_estimator.value == "1"
+    configure_step.settings["vibronic"]._sc_x.value = 3
+    configure_step.settings["vibronic"]._sc_y.value = 2
+    configure_step.settings["vibronic"]._sc_z.value = 2
+    assert configure_step.settings["vibronic"].supercell_number_estimator.value == "4"
+    configure_step.settings["vibronic"]._reset_supercell()
+    configure_step.settings["vibronic"]._sc_x.value = 2
+    configure_step.settings["vibronic"]._sc_y.value = 2
+    configure_step.settings["vibronic"]._sc_z.value = 2
+    assert configure_step.settings["vibronic"].supercell_number_estimator.value == "1"
+
+
+@pytest.mark.usefixtures("sssp")
+def test_symprec(generate_structure_data):
+    """Test the settings of the vibroscopy app."""
+
+    from aiidalab_qe.app.configuration import ConfigureQeAppWorkChainStep
+
+    configure_step = ConfigureQeAppWorkChainStep()
+    structure = generate_structure_data("silicon")
+    configure_step.input_structure = structure
+    configure_step.workchain_settings.properties["vibronic"].run.value = True
+    parameters = configure_step.settings["vibronic"].get_panel_value()
+    assert parameters["symmetry_symprec"] == 1e-5
+    configure_step.settings["vibronic"].symmetry_symprec.value = 1
+    parameters = configure_step.settings["vibronic"].get_panel_value()
+    assert parameters["symmetry_symprec"] == 1
+    configure_step.settings["vibronic"].reset()
+    parameters = configure_step.settings["vibronic"].get_panel_value()
+    assert parameters["symmetry_symprec"] == 1e-5
