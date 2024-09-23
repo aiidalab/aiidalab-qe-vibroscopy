@@ -1,33 +1,33 @@
-import pathlib
-import tempfile
-import io
-
 import base64
-from IPython.display import HTML, clear_output, display
+from IPython.display import display
 
-import euphonic
-from phonopy.file_IO import write_force_constants_to_hdf5, write_disp_yaml
-
+import numpy as np
 import ipywidgets as ipw
 import plotly.graph_objects as go
 import plotly.io as pio
 
 # from ..euphonic.bands_pdos import *
-from ..euphonic.intensity_maps import *
+from ..euphonic.intensity_maps import (
+    AttrDict,
+    produce_bands_weigthed_data,
+    generated_curated_data,
+)
 
 import json
 from monty.json import jsanitize
 
 # sys and os used to prevent euphonic to print in the stdout.
-import sys
-import os
 
-from aiidalab_qe_vibroscopy.utils.euphonic.euphonic_base_widgets import *
+from aiidalab_qe_vibroscopy.utils.euphonic.euphonic_base_widgets import (
+    StructureFactorSettingsBaseWidget,
+    COLORSCALE,
+    COLORBAR_DICT,
+    StructureFactorBasePlotWidget,
+)
 
 
 class SingleCrystalPlotWidget(StructureFactorBasePlotWidget):
     def __init__(self, spectra, intensity_ref_0K=1, **kwargs):
-
         (
             final_xspectra,
             final_zspectra,
@@ -71,7 +71,6 @@ class SingleCrystalPlotWidget(StructureFactorBasePlotWidget):
         )
 
     def _update_spectra(self, spectra):
-
         (
             final_xspectra,
             final_zspectra,
@@ -91,9 +90,11 @@ class SingleCrystalPlotWidget(StructureFactorBasePlotWidget):
         self.fig.add_trace(
             go.Heatmap(
                 z=final_zspectra.T,
-                y=y[:, 0] * self.THz_to_meV
-                if self.E_units_button.value == "meV"
-                else y[:, 0],
+                y=(
+                    y[:, 0] * self.THz_to_meV
+                    if self.E_units_button.value == "meV"
+                    else y[:, 0]
+                ),
                 x=x,
                 colorbar=COLORBAR_DICT,
                 colorscale=COLORSCALE,  # imported from euphonic_base_widgets
@@ -115,7 +116,6 @@ class SingleCrystalPlotWidget(StructureFactorBasePlotWidget):
 
 class SingleCrystalSettingsWidget(StructureFactorSettingsBaseWidget):
     def __init__(self, **kwargs):
-
         self.custom_kpath_description = ipw.HTML(
             """
             <div style="padding-top: 0px; padding-bottom: 0px; line-height: 140%;">
@@ -197,11 +197,11 @@ class SingleCrystalFullWidget(ipw.VBox):
     """
 
     def __init__(self, fc, **kwargs):
-
         self.fc = fc
 
         self.spectra, self.parameters = produce_bands_weigthed_data(
-            fc=self.fc, plot=False  # CHANGED
+            fc=self.fc,
+            plot=False,  # CHANGED
         )
 
         self.title_intensity = ipw.HTML(
@@ -316,7 +316,7 @@ class SingleCrystalFullWidget(ipw.VBox):
             for k in s:
                 labels.append(k.strip())
                 # AAA missing support for fractions.
-                l = tuple(map(float, [kk for kk in k.strip().split(" ")]))
+                l = tuple(map(float, [kk for kk in k.strip().split(" ")]))  # noqa: E741
                 scoords.append(l)
             coordinates.append(scoords)
         return coordinates, labels
@@ -333,8 +333,6 @@ class SingleCrystalFullWidget(ipw.VBox):
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            """.format(
-                payload=payload, filename=filename
-            )
+            """.format(payload=payload, filename=filename)
         )
         display(javas)
