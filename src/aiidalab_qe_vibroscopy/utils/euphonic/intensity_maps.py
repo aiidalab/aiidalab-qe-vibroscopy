@@ -301,17 +301,17 @@ def produce_bands_weigthed_data(
         )
 
     # duplication from euphonic/cli/utils.py
-    if args.emin is None:
+    if args.e_min is None:
         # Subtract small amount from min frequency - otherwise due to unit
         # conversions binning of this frequency can vary with different
         # architectures/lib versions, making it difficult to test
         emin_room = 1e-5 * ureg("meV").to(modes.frequencies.units).magnitude
-        args.emin = min(np.min(modes.frequencies.magnitude - emin_room), 0.0)
-    if args.emax is None:
-        args.emax = np.max(modes.frequencies.magnitude) * 1.05
-    if args.emin >= args.emax:
+        args.e_min = min(np.min(modes.frequencies.magnitude - emin_room), 0.0)
+    if args.e_max is None:
+        args.e_max = np.max(modes.frequencies.magnitude) * 1.05
+    if args.e_min >= args.e_max:
         raise ValueError(
-            "Maximum energy ({args.emax}) should be greater than minimum ({args.emin}). "
+            f"Maximum energy ({args.e_max}) should be greater than minimum ({args.e_min}). "
         )
 
     modes.frequencies_unit = args.energy_unit
