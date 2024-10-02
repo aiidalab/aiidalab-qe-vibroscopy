@@ -278,7 +278,8 @@ class Setting(Panel):
         super().__init__(**kwargs)
 
         # we define a block for the estimation of the supercell if we ask for hint,
-        # so that we call the estimator at the end (we don't lose time).
+        # so that we call the estimator only at the end of the supercell hint generator,
+        # and now each time after the x, y, z generation (i.e., we don't lose time).
         # see the methods below.
         self.block = False
 
@@ -329,12 +330,9 @@ class Setting(Panel):
         if self.block:
             return
 
-        if self.symmetry_symprec.value > 1:
-            self.symmetry_symprec.value = 1
-        elif self.symmetry_symprec.value < 1e-5:
-            self.symmetry_symprec.value = 1e-5
+        symprec_value = self.symmetry_symprec.value
 
-        symprec = self.symmetry_symprec.value
+        self.symmetry_symprec.value = max(1e-5, min(symprec_value, 1))
 
         self.supercell_number_estimator.value = spinner_html
 
@@ -348,7 +346,7 @@ class Setting(Panel):
                     [0, self._sc_y.value, 0],
                     [0, 0, self._sc_z.value],
                 ],
-                symprec=symprec,
+                symprec=self.symmetry_symprec.value,
                 distinguish_kinds=False,
                 is_symmetry=True,
             )
@@ -384,10 +382,7 @@ class Setting(Panel):
             for direction, periodic in zip(
                 [self._sc_x, self._sc_y, self._sc_z], self.input_structure.pbc
             ):
-                if periodic:
-                    reset_supercell.append(2)
-                else:
-                    reset_supercell.append(1)
+                reset_supercell.append(2 if periodic else 1)
             (self._sc_x.value, self._sc_y.value, self._sc_z.value) = reset_supercell
             self.block = False
             self._estimate_supercells()
