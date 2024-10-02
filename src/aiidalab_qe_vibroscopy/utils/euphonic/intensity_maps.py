@@ -299,6 +299,21 @@ def produce_bands_weigthed_data(
         x_tick_labels = get_qpoint_labels(
             modes.qpts, cell=modes.crystal.to_spglib_cell()
         )
+
+    # duplication from euphonic/cli/utils.py
+    if args.emin is None:
+        # Subtract small amount from min frequency - otherwise due to unit
+        # conversions binning of this frequency can vary with different
+        # architectures/lib versions, making it difficult to test
+        emin_room = 1e-5 * ureg("meV").to(modes.frequencies.units).magnitude
+        args.emin = min(np.min(modes.frequencies.magnitude - emin_room), 0.0)
+    if args.emax is None:
+        args.emax = np.max(modes.frequencies.magnitude) * 1.05
+    if args.emin >= args.emax:
+        raise ValueError(
+            "Maximum energy ({args.emax}) should be greater than minimum ({args.emin}). "
+        )
+
     modes.frequencies_unit = args.energy_unit
     ebins = _get_energy_bins(modes, args.ebins + 1, emin=args.e_min, emax=args.e_max)
 
