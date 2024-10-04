@@ -79,7 +79,7 @@ def test_x_settings(generate_structure_data):
 
 @pytest.mark.usefixtures("sssp")
 def test_supercell_number_estimator(generate_structure_data):
-    """Test the settings of the vibroscopy app."""
+    """Test the supercell_number_estimator setting of the vibroscopy app."""
 
     from aiidalab_qe.app.configuration import ConfigureQeAppWorkChainStep
 
@@ -89,25 +89,29 @@ def test_supercell_number_estimator(generate_structure_data):
     configure_step.workchain_settings.properties["vibronic"].run.value = True
     parameters = configure_step.settings["vibronic"].get_panel_value()
     assert parameters["supercell_selector"] == [2, 2, 2]
-    assert configure_step.settings["vibronic"].supercell_number_estimator.value == "1"
+    assert configure_step.settings["vibronic"].supercell_number_estimator.value == "?"
     configure_step.settings["vibronic"]._suggest_supercell()
     parameters = configure_step.settings["vibronic"].get_panel_value()
     assert parameters["supercell_selector"] == [4, 4, 4]
+    assert configure_step.settings["vibronic"].supercell_number_estimator.value == "?"
+    configure_step.settings["vibronic"]._estimate_supercells()
     assert configure_step.settings["vibronic"].supercell_number_estimator.value == "1"
     configure_step.settings["vibronic"]._sc_x.value = 3
     configure_step.settings["vibronic"]._sc_y.value = 2
     configure_step.settings["vibronic"]._sc_z.value = 2
+    configure_step.settings["vibronic"]._estimate_supercells()
     assert configure_step.settings["vibronic"].supercell_number_estimator.value == "4"
     configure_step.settings["vibronic"]._reset_supercell()
     configure_step.settings["vibronic"]._sc_x.value = 2
     configure_step.settings["vibronic"]._sc_y.value = 2
     configure_step.settings["vibronic"]._sc_z.value = 2
+    configure_step.settings["vibronic"]._estimate_supercells()
     assert configure_step.settings["vibronic"].supercell_number_estimator.value == "1"
 
 
 @pytest.mark.usefixtures("sssp")
 def test_symprec(generate_structure_data):
-    """Test the settings of the vibroscopy app."""
+    """Test the symprec setting of the vibroscopy app."""
 
     from aiidalab_qe.app.configuration import ConfigureQeAppWorkChainStep
 
@@ -123,3 +127,18 @@ def test_symprec(generate_structure_data):
     configure_step.settings["vibronic"].reset()
     parameters = configure_step.settings["vibronic"].get_panel_value()
     assert parameters["symmetry_symprec"] == 1e-5
+
+
+@pytest.mark.usefixtures("sssp")
+def test_supercell_estimator_button(generate_structure_data):
+    """Test the settings of the button for the supercell number estimator."""
+
+    from aiidalab_qe.app.configuration import ConfigureQeAppWorkChainStep
+
+    configure_step = ConfigureQeAppWorkChainStep()
+    structure = generate_structure_data("silicon")
+    configure_step.input_structure = structure
+    configure_step.workchain_settings.properties["vibronic"].run.value = True
+    assert not configure_step.settings["vibronic"].supercell_estimate_button.disabled
+    configure_step.settings["vibronic"]._estimate_supercells()
+    assert configure_step.settings["vibronic"].supercell_estimate_button.disabled

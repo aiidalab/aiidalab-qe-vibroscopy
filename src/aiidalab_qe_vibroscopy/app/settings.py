@@ -157,7 +157,7 @@ class Setting(Panel):
             )
         for elem in [self._sc_x, self._sc_y, self._sc_z]:
             elem.observe(change_supercell, names="value")
-            elem.observe(self._estimate_supercells, names="value")
+            elem.observe(self._activate_estimate_supercells, names="value")
 
         self.supercell_selector = ipw.HBox(
             children=[
@@ -179,7 +179,7 @@ class Setting(Panel):
         self.supercell_hint_button = ipw.Button(
             description="Size hint",
             disabled=False,
-            width="100px",
+            layout=ipw.Layout(width="100px"),
             button_style="info",
         )
         # supercell hint (15A lattice params)
@@ -195,11 +195,23 @@ class Setting(Panel):
         # supercell reset reaction
         self.supercell_reset_button.on_click(self._reset_supercell)
 
+        # Estimate supercell button
+        self.supercell_estimate_button = ipw.Button(
+            description="Estimate number of supercells ➡",
+            disabled=False,
+            layout=ipw.Layout(width="240px", display="none"),
+            button_style="info",
+            tooltip="Number of supercells for phonons calculations;\nwarning: for large systems, this may take some time.",
+        )
+        # supercell reset reaction
+        self.supercell_estimate_button.on_click(self._estimate_supercells)
+
         # Estimate the number of supercells for frozen phonons.
         self.supercell_number_estimator = ipw.HTML(
-            description="Number of supercells to be computed:",
-            value="0",
+            # description="Number of supercells:",
+            value="?",
             style={"description_width": "initial"},
+            layout=ipw.Layout(display="none"),
         )
 
         ## end supercell hint.
@@ -212,6 +224,7 @@ class Setting(Panel):
                         self.supercell_selector,
                         self.supercell_hint_button,
                         self.supercell_reset_button,
+                        self.supercell_estimate_button,  # I do it on request, as it can take long time.
                         self.supercell_number_estimator,
                     ],
                 ),
@@ -229,19 +242,17 @@ class Setting(Panel):
             style={"description_width": "initial"},
             layout={"width": "300px"},
         )
-        self.symmetry_symprec.observe(self._estimate_supercells, "value")
+        self.symmetry_symprec.observe(self._activate_estimate_supercells, "value")
 
         # reset supercell
         self.symmetry_symprec_reset_button = ipw.Button(
             description="Reset symprec",
             disabled=False,
-            layout=ipw.Layout(width="150px"),
+            layout=ipw.Layout(width="125px"),
             button_style="warning",
         )
         # supercell reset reaction
-        self.symmetry_symprec_reset_button.on_click(
-            lambda _: setattr(self.symmetry_symprec, "value", 1e-5)
-        )
+        self.symmetry_symprec_reset_button.on_click(self._reset_symprec)
 
         self.children = [
             ipw.VBox(
@@ -285,12 +296,22 @@ class Setting(Panel):
 
     @tl.observe("input_structure")
     def _update_input_structure(self, change):
-        if self.input_structure is not None:
+        if self.input_structure:
             for direction, periodic in zip(
                 [self._sc_x, self._sc_y, self._sc_z], self.input_structure.pbc
             ):
                 direction.value = 2 if periodic else 1
                 direction.disabled = False if periodic else True
+
+            self.supercell_number_estimator.layout.display = (
+                "block" if len(self.input_structure.sites) <= 30 else "none"
+            )
+            self.supercell_estimate_button.layout.display = (
+                "block" if len(self.input_structure.sites) <= 30 else "none"
+            )
+        else:
+            self.supercell_number_estimator.layout.display = "none"
+            self.supercell_estimate_button.layout.display = "none"
 
     def _display_supercell(self, change):
         selected = change["new"]
@@ -308,7 +329,7 @@ class Setting(Panel):
             suggested_3D = 15 // np.array(s.cell.cellpar()[:3]) + 1
 
             # if disabled, it means that it is a non-periodic direction.
-            # here we manually unobserve the `_estimate_supercells`, so it is faster
+            # here we manually unobserve the `_activate_estimate_supercells`, so it is faster
             # and only compute when all the three directions are updated
             self.block = True
             for direction, suggested, original in zip(
@@ -316,11 +337,15 @@ class Setting(Panel):
             ):
                 direction.value = suggested if not direction.disabled else 1
             self.block = False
-            self._estimate_supercells()
+            self._activate_estimate_supercells()
         else:
             return
 
-    @tl.observe("input_structure")
+    def _activate_estimate_supercells(self, _=None):
+        self.supercell_estimate_button.disabled = False
+        self.supercell_number_estimator.value = "?"
+
+    # @tl.observe("input_structure")
     @disable_print
     def _estimate_supercells(self, _=None):
         """_summary_
@@ -372,6 +397,7 @@ class Setting(Panel):
                 supercells = preprocess_data.get_supercells_with_displacements()
             """
             self.supercell_number_estimator.value = f"{len(supercells)}"
+            self.supercell_estimate_button.disabled = True
 
         return
 
@@ -385,7 +411,12 @@ class Setting(Panel):
                 reset_supercell.append(2 if periodic else 1)
             (self._sc_x.value, self._sc_y.value, self._sc_z.value) = reset_supercell
             self.block = False
-            self._estimate_supercells()
+            self._activate_estimate_supercells()
+        return
+
+    def _reset_symprec(self, _=None):
+        self.symmetry_symprec.value = 1e-5
+        self._activate_estimate_supercells()
         return
 
     def get_panel_value(self):
