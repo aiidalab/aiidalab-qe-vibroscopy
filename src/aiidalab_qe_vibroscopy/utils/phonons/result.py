@@ -92,8 +92,13 @@ def export_phononworkchain_data(node, fermi_energy=None):
                 )
 
                 for atom_contribution in index_dict[atom][:]:
-                    dos_dict[atom] += pdos.get_y()[atom_contribution][1]
-                    dos_dict["total_dos"] += pdos.get_y()[atom_contribution][1]
+                    if len(pdos.get_y()) <= atom_contribution:
+                        # I need this as for Al4, only one pdos tuple is provided...
+                        # for Si2, actually, two are provided...
+                        break
+                    else:
+                        dos_dict[atom] += pdos.get_y()[atom_contribution][1]
+                        dos_dict["total_dos"] += pdos.get_y()[atom_contribution][1]
 
             dos = []
             # The total dos parsed
