@@ -558,7 +558,7 @@ class VibroWorkChain(WorkChain):
 
             # MBO: I do not understand why I have to do this, but it works
             builder.phonon = builder_phonon
-            builder.phonon.symmetry = overrides["symmetry"]
+            builder.phonon.symmetry = orm.Float(overrides["symmetry"])
 
             # Adding the bands and pdos inputs.
             if structure.pbc != (True, True, True):
@@ -732,7 +732,10 @@ class VibroWorkChain(WorkChain):
     def should_run_phonopy(self):
         # Final phonopy is needed for modes 1 and 3;
         # namely, we compute bands, pdos and thermo.
-        return "phonopy_bands_dict" in self.inputs
+        return (
+            "phonopy_bands_dict" in self.inputs
+            and self.ctx[self.ctx.key].is_finished_ok
+        )
 
     def run_phonopy(self):
         """Run three `PhonopyCalculation` to get (after the calculations of force constants) bands, pdos, thermodynamic quantities."""
