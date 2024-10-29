@@ -193,12 +193,28 @@ class SpectrumPlotWidget(ipw.VBox):
         self.intensities = []
         self.polarization_out = ipw.Output()
 
+        # Polarized and Unpolirized intensities
+        self.separate_polarized_display = ipw.Output()
+        self.separate_polarized = ipw.Checkbox(
+            value=False,
+            description="Separate polarized and depolarized intensities",
+            disabled=False,
+            style={"description_width": "initial"},
+        )
+
         def download_data(_=None):
             filename = "spectra.json"
-            my_dict = {
-                "Frequencies cm-1": self.frequencies.tolist(),
-                "Intensities": self.intensities.tolist(),
-            }
+            if self.separate_polarized.value:
+                my_dict = {
+                    "Frequencies cm-1": self.frequencies.tolist(),
+                    "Polarized intensities": self.intensities.tolist(),
+                    "Depolarized intensities": self.intensities_depolarized.tolist(),
+                }
+            else:
+                my_dict = {
+                    "Frequencies cm-1": self.frequencies.tolist(),
+                    "Intensities": self.intensities.tolist(),
+                }
             json_str = json.dumps(my_dict)
             b64_str = base64.b64encode(json_str.encode()).decode()
             self._download(payload=b64_str, filename=filename)
@@ -219,12 +235,14 @@ class SpectrumPlotWidget(ipw.VBox):
                 self.temperature,
                 self.frequency_laser,
                 self.broadening,
+                self.separate_polarized_display,
                 self.polarization_out,
                 ipw.HBox([self.plot_button, self.download_button]),
                 self.wrong_syntax,
                 self.spectrum_widget,
             ]
         )
+        self._update_separate_polarized()
 
     @staticmethod
     def _download(payload, filename):
@@ -256,6 +274,16 @@ class SpectrumPlotWidget(ipw.VBox):
             with self.polarization_out:
                 clear_output()
 
+        self._update_separate_polarized()
+
+    def _update_separate_polarized(self):
+        with self.separate_polarized_display:
+            clear_output()
+            if (self._plot_type.value == "powder") and (self.spectrum_type == "Raman"):
+                display(self.separate_polarized)
+            else:
+                self.separate_polarized.value = False
+
     def _on_plot_button_clicked(self, change):
         if self._plot_type.value == "powder":
             # Powder spectrum
@@ -277,13 +305,27 @@ class SpectrumPlotWidget(ipw.VBox):
                     labels,
                 ) = self.vibro.run_powder_ir_intensities()
                 total_intensities = polarized_intensities
-
-            self.frequencies, self.intensities = plot_powder(
-                frequencies,
-                total_intensities,
-                self.broadening.value,
-            )
-            self._display_figure()
+            if self.separate_polarized.value:
+                self.frequencies, self.intensities = plot_powder(
+                    frequencies,
+                    polarized_intensities,
+                    self.broadening.value,
+                )
+                self.frequencies_depolarized, self.intensities_depolarized = (
+                    plot_powder(
+                        frequencies,
+                        depolarized_intensities,
+                        self.broadening.value,
+                    )
+                )
+                self._display_figure()
+            else:
+                self.frequencies, self.intensities = plot_powder(
+                    frequencies,
+                    total_intensities,
+                    self.broadening.value,
+                )
+                self._display_figure()
 
         else:
             # Single crystal spectrum
@@ -349,7 +391,15 @@ class SpectrumPlotWidget(ipw.VBox):
         fig.layout.xaxis.title = "Wavenumber (cm-1)"
         fig.layout.yaxis.title = "Intensity (arb. units)"
         fig.layout.xaxis.nticks = 0
-        fig.add_scatter(x=self.frequencies, y=self.intensities, name="")
+        if self.separate_polarized.value:
+            fig.add_scatter(x=self.frequencies, y=self.intensities, name="Polarized")
+            fig.add_scatter(
+                x=self.frequencies_depolarized,
+                y=self.intensities_depolarized,
+                name="Depolarized",
+            )
+        else:
+            fig.add_scatter(x=self.frequencies, y=self.intensities, name="")
         fig.update_layout(
             height=500,
             width=700,
