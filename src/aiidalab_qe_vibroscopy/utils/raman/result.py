@@ -528,6 +528,7 @@ class ActiveModesWidget(ipw.VBox):
             ),
             "kpoint": [0, 0, 0],  # optional
             "amplitude": amplitude,
+            "factor": amplitude * 0.6,
             "nframes": 20,
             "repeat": [
                 self._supercell[0].value,
