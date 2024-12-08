@@ -191,7 +191,7 @@ class EuphonicBaseResultsModel(Model):
         self,
     ):
         # This is used to update the spectra in the case we plot the Q planes (the third tab).
-        parameters_qplanes = AttrDict(
+        self.parameters_qplanes = AttrDict(
             {
                 "h": np.array([i for i in self.h_vec[:-2]]),
                 "k": np.array([i for i in self.k_vec[:-2]]),
@@ -210,14 +210,14 @@ class EuphonicBaseResultsModel(Model):
 
         modes, q_array, h_array, k_array, labels, dw = produce_Q_section_modes(
             self.fc,
-            h=parameters_qplanes.h,
-            k=parameters_qplanes.k,
-            Q0=parameters_qplanes.Q0,
-            n_h=parameters_qplanes.n_h,
-            n_k=parameters_qplanes.n_k,
-            h_extension=parameters_qplanes.h_extension,
-            k_extension=parameters_qplanes.k_extension,
-            temperature=parameters_qplanes.temperature,
+            h=self.parameters_qplanes.h,
+            k=self.parameters_qplanes.k,
+            Q0=self.parameters_qplanes.Q0,
+            n_h=self.parameters_qplanes.n_h,
+            n_k=self.parameters_qplanes.n_k,
+            h_extension=self.parameters_qplanes.h_extension,
+            k_extension=self.parameters_qplanes.k_extension,
+            temperature=self.parameters_qplanes.temperature,
         )
 
         self.av_spec, self.z, self.x, self.y, self.labels = (
@@ -226,15 +226,17 @@ class EuphonicBaseResultsModel(Model):
                 q_array,
                 h_array,
                 k_array,
-                ecenter=parameters_qplanes.ecenter,
-                deltaE=parameters_qplanes.deltaE,
-                bins=parameters_qplanes.bins,
-                spectrum_type=parameters_qplanes.spectrum_type,
+                ecenter=self.parameters_qplanes.ecenter,
+                deltaE=self.parameters_qplanes.deltaE,
+                bins=self.parameters_qplanes.bins,
+                spectrum_type=self.parameters_qplanes.spectrum_type,
                 dw=dw,
                 labels=labels,
             )
         )
-
+        self.xlabel = "AAA"
+        self.ylabel = "AAA" 
+        
     def _curate_path_and_labels(
         self,
     ):

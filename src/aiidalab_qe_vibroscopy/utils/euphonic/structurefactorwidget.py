@@ -451,7 +451,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
     def _on_vector_changed(self, change=None):
         """
-        Update the model.
+        Update the model. Specific to qplanes case.
         """
         self._model.Q0_vec = [i.value for i in self.Q0_vec.children[:-2]]
         self._model.h_vec = [i.value for i in self.h_vec.children]
