@@ -85,6 +85,8 @@ In this module we have the functions used to obtain the intensity maps (dynamica
 and the powder maps(from euphonic, using the force constants instances as obtained from phonopy.yaml).
 These are then used in the widgets to plot the corresponding quantities.
 
+NOTE: the two main functions here are produce_bands_weigthed_data and produce_powder_data.
+
 PLEASE NOTE: the scattering lengths are tabulated (Euphonic/euphonic/data/sears-1992.json) and are from Sears (1992) Neutron News 3(3) pp26--37.
 """
 
@@ -173,38 +175,6 @@ def join_q_paths(coordinates: list, labels: list, delta_q=0.1, G=[0, 0, 0]):
 ########################
 ################################ START INTENSITY PLOT GENERATOR
 ########################
-
-par_dict = {
-    "weighting": "coherent",  # Spectral weighting to plot: DOS, coherent inelastic neutron scattering (default: dos)
-    "grid": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
-    "grid_spacing": 0.1,  # q-point spacing of Monkhorst-Pack grid. (default: 0.1)
-    "energy_unit": "THz",
-    "temperature": 0,  # Temperature in K; enable Debye-Waller factor calculation. (Only applicable when --weighting=coherent). (default: None)
-    #'btol':,
-    "shape": "gauss",  # The broadening shape (default: gauss)
-    "length_unit": "angstrom",
-    "q_spacing": 0.01,  # Target distance between q-point samples in 1/LENGTH_UNIT (default: 0.025)
-    "energy_broadening": 1,
-    "q_broadening": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
-    "ebins": 200,  # Number of energy bins (default: 200)
-    "e_min": 0,
-    "e_max": None,
-    "title": None,
-    "ylabel": "THz",
-    "xlabel": "",
-    "save_json": False,
-    "no_base_style": False,
-    "style": False,
-    "vmin": None,
-    "vmax": None,
-    "save_to": None,
-    "asr": None,  # Apply an acoustic-sum-rule (ASR) correction to the data: "realspace" applies the correction to the force constant matrix in real space. "reciprocal" applies the correction to the dynamical matrix at each q-point. (default: None)
-    "dipole_parameter": 1.0,  # Set the cutoff in real/reciprocal space for the dipole Ewald sum; higher values use more reciprocal terms. If tuned correctly this can result in performance improvements. See euphonic-optimise-dipole-parameter program for help on choosing a good DIPOLE_PARAMETER. (default: 1.0)
-    "use_c": None,
-    "n_threads": None,
-}
-
-parameters = par_dict
 
 
 def produce_bands_weigthed_data(
@@ -385,48 +355,8 @@ def produce_bands_weigthed_data(
 ################################ START POWDER
 ########################
 
-par_dict_powder = {
-    "weighting": "coherent",  # Spectral weighting to plot: DOS, coherent inelastic neutron scattering (default: dos)
-    "grid": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
-    "grid_spacing": 0.1,  # q-point spacing of Monkhorst-Pack grid. (default: 0.1)
-    "q_min": 0,
-    "q_max": 1,
-    "temperature": None,  # Temperature in K; enable Debye-Waller factor calculation. (Only applicable when --weighting=coherent). (default: None)
-    "ebins": 200,  # Number of energy bins (default: 200)
-    "q_spacing": 0.01,  # Target distance between q-point samples in 1/LENGTH_UNIT (default: 0.025)
-    "energy_broadening": 1,
-    "npts": 150,
-    #'grid':,
-    "energy_unit": "THz",
-    #'btol':,
-    "shape": "gauss",  # The broadening shape (default: gauss)
-    "length_unit": "angstrom",
-    "q_broadening": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
-    "e_min": 0,
-    "e_max": None,
-    "title": None,
-    "ylabel": "THz",
-    "xlabel": "",
-    "save_json": False,
-    "no_base_style": False,
-    "style": False,
-    "vmin": None,
-    "vmax": None,
-    "save_to": None,
-    "asr": None,
-    "dipole_parameter": 1.0,
-    "use_c": None,
-    "n_threads": None,
-    "npts_density": None,
-    "pdos": None,
-    "e_i": None,
-    "sampling": "golden",
-    "jitter": True,
-    "e_f": None,
-    "disable_widgets": True,
-}
 
-parameters_powder = AttrDict(par_dict_powder)
+#parameters_powder = AttrDict(par_dict_powder)
 
 
 def produce_powder_data(
@@ -436,6 +366,8 @@ def produce_powder_data(
     linear_path=None,
 ) -> None:
     blockPrint()
+    """Read the description of the produce_bands_weigthed_data function for more details.
+    """
 
     # args = get_args(get_parser(), params)
     if not params:
@@ -646,158 +578,6 @@ def produce_powder_data(
     enablePrint()
     return spectrum, copy.deepcopy(params)
     matplotlib_save_or_show(save_filename=args.save_to)
-
-
-def generate_force_constant_instance(
-    phonopy_calc=None,
-    path: str = None,
-    summary_name: str = None,
-    born_name: Optional[str] = None,
-    fc_name: str = "FORCE_CONSTANTS",
-    fc_format: Optional[str] = None,
-    mode="stream",  # "download" to have the download of phonopy.yaml and fc.hdf5 . TOBE IMPLEMENTED.
-):
-    """
-    Basically allows to obtain the ForceConstants instance from phonopy, both via files (from the second
-    input parameters we have the same one of `euphonic.ForceConstants.from_phonopy`), or via a
-    PhonopyCalculation instance. Respectively, the two ways will support independent euphonic app and integration
-    of Euphonic into aiidalab.
-    """
-    blockPrint()
-
-    ####### This is done to support the detached app (from aiidalab) with the same code:
-    if path and summary_name:
-        fc = euphonic.ForceConstants.from_phonopy(
-            path=path,
-            summary_name=summary_name,
-            fc_name=fc_name,
-        )
-        return fc
-    elif not phonopy_calc:
-        raise NotImplementedError(
-            "Please provide or the files or the phonopy calculation node."
-        )
-
-    ####### This is almost copied from PhonopyCalculation and is done to support functionalities in aiidalab env:
-    from phonopy.interface.phonopy_yaml import PhonopyYaml
-
-    kwargs = {}
-
-    if "settings" in phonopy_calc.inputs:
-        the_settings = phonopy_calc.inputs.settings.get_dict()
-        for key in ["symmetrize_nac", "factor_nac", "subtract_residual_forces"]:
-            if key in the_settings:
-                kwargs.update({key: the_settings[key]})
-
-    if "phonopy_data" in phonopy_calc.inputs:
-        ph = phonopy_calc.inputs.phonopy_data.get_phonopy_instance(**kwargs)
-        p2s_map = phonopy_calc.inputs.phonopy_data.get_cells_mappings()["primitive"][
-            "p2s_map"
-        ]
-        ph.produce_force_constants()
-    elif "force_constants" in phonopy_calc.inputs:
-        ph = phonopy_calc.inputs.force_constants.get_phonopy_instance(**kwargs)
-        p2s_map = phonopy_calc.inputs.force_constants.get_cells_mappings()["primitive"][
-            "p2s_map"
-        ]
-        ph.force_constants = phonopy_calc.inputs.force_constants.get_array(
-            "force_constants"
-        )
-
-    #######
-
-    # Create temporary directory
-    #
-    with tempfile.TemporaryDirectory() as dirpath:
-        # phonopy.yaml generation:
-        phpy_yaml = PhonopyYaml()
-        phpy_yaml.set_phonon_info(ph)
-        phpy_yaml_txt = str(phpy_yaml)
-
-        with open(
-            pathlib.Path(dirpath) / "phonopy.yaml", "w", encoding="utf8"
-        ) as handle:
-            handle.write(phpy_yaml_txt)
-
-        # Force constants hdf5 file generation:
-        # all this is needed to load the euphonic instance, in case no FC are written in phonopy.yaml
-        # which is the case
-
-        write_force_constants_to_hdf5(
-            force_constants=ph.force_constants,
-            filename=pathlib.Path(dirpath) / "fc.hdf5",
-            p2s_map=p2s_map,
-        )
-
-        # Here below we trigger the download mode. Can be improved avoiding the repetitions of lines
-        if mode == "download":
-            with open(
-                pathlib.Path(dirpath) / "phonopy.yaml", "r", encoding="utf8"
-            ) as handle:
-                file_content = handle.read()
-                phonopy_yaml_bitstream = base64.b64encode(file_content.encode()).decode(
-                    "utf-8"
-                )
-
-            with open(
-                pathlib.Path(dirpath) / "fc.hdf5",
-                "rb",
-            ) as handle:
-                file_content = handle.read()
-                fc_hdf5_bitstream = base64.b64encode(file_content).decode()
-
-            return phonopy_yaml_bitstream, fc_hdf5_bitstream
-
-        # Read force constants (fc.hdf5) and summary+NAC (phonopy.yaml)
-
-        fc = euphonic.ForceConstants.from_phonopy(
-            path=dirpath,
-            summary_name="phonopy.yaml",
-            fc_name="fc.hdf5",
-        )
-        # print(filename)
-        # print(dirpath)
-    enablePrint()
-    return fc
-
-
-def export_euphonic_data(output_vibronic, fermi_energy=None):
-    if "phonon_bands" not in output_vibronic:
-        return None
-
-    output_set = output_vibronic.phonon_bands
-
-    if any(not element for element in output_set.creator.caller.inputs.structure.pbc):
-        vibro_bands = output_set.creator.caller.inputs.phonopy_bands_dict.get_dict()
-        # Group the band and band_labels
-        band = vibro_bands["band"]
-        band_labels = vibro_bands["band_labels"]
-
-        grouped_bands = [
-            item
-            for sublist in [band_labels[i : i + 2] for i in range(len(band_labels) - 1)]
-            for item in sublist
-        ]
-        grouped_q = [
-            [tuple(band[i : i + 3]), tuple(band[i + 3 : i + 6])]
-            for i in range(0, len(band) - 3, 3)
-        ]
-        q_path = {
-            "coordinates": grouped_q,
-            "labels": grouped_bands,
-            "delta_q": 0.01,  # 1/A
-        }
-    else:
-        q_path = None
-
-    phonopy_calc = output_set.creator
-    fc = generate_force_constant_instance(phonopy_calc)
-    # bands = compute_bands(fc)
-    # pdos = compute_pdos(fc)
-    return {
-        "fc": fc,
-        "q_path": q_path,
-    }  # "bands": bands, "pdos": pdos, "thermal": None}
 
 
 def generated_curated_data(spectra):
