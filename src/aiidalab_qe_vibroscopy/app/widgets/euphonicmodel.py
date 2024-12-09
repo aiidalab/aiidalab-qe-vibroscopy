@@ -163,30 +163,28 @@ class EuphonicResultsModel(Model):
 
         if self.spectrum_type == "q_planes":
             self._get_qsection_spectra()
-            return
-
-        self.parameters.update(self.get_model_state())
-
-        # custom linear path
-        custom_kpath = self.custom_kpath if hasattr(self, "custom_kpath") else ""
-        if len(custom_kpath) > 1:
-            coordinates, labels = self._curate_path_and_labels()
-            qpath = {
-                "coordinates": coordinates,
-                "labels": labels,  # ["$\Gamma$","X","X","(1,1,1)"],
-                "delta_q": self.parameters["q_spacing"],
-            }
         else:
-            qpath = copy.deepcopy(self.q_path)
-            if qpath:
-                qpath["delta_q"] = self.parameters["q_spacing"]
+            self.parameters.update(self.get_model_state())
+            # custom linear path
+            custom_kpath = self.custom_kpath if hasattr(self, "custom_kpath") else ""
+            if len(custom_kpath) > 1:
+                coordinates, labels = self._curate_path_and_labels()
+                qpath = {
+                    "coordinates": coordinates,
+                    "labels": labels,  # ["$\Gamma$","X","X","(1,1,1)"],
+                    "delta_q": self.parameters["q_spacing"],
+                }
+            else:
+                qpath = copy.deepcopy(self.q_path)
+                if qpath:
+                    qpath["delta_q"] = self.parameters["q_spacing"]
 
-        spectra, parameters = self._callback_spectra_generation(
-            params=AttrDict(self.parameters),
-            fc=self.fc,
-            linear_path=qpath,
-            plot=False,
-        )
+            spectra, parameters = self._callback_spectra_generation(
+                params=AttrDict(self.parameters),
+                fc=self.fc,
+                linear_path=qpath,
+                plot=False,
+            )
 
         # curated spectra (labels and so on...)
         if self.spectrum_type == "single_crystal":  # single crystal case
@@ -196,15 +194,19 @@ class EuphonicResultsModel(Model):
             (
                 final_xspectra,
                 final_zspectra,
-                self.ticks_positions,
-                self.ticks_labels,
+                ticks_positions,
+                ticks_labels,
             ) = generated_curated_data(spectra)
+
+            self.ticks_positions = ticks_positions
+            self.ticks_labels = ticks_labels
 
             self.z = final_zspectra.T
             self.y = self.y[:, 0]
-            # self.x = None  # we have, instead, the ticks positions and labels
+            self.x = list(
+                range(self.ticks_positions[-1])
+            )  # we have, instead, the ticks positions and labels
 
-            self.xlabel = ""
             self.ylabel = self.energy_units
 
         elif self.spectrum_type == "powder":  # powder case
@@ -215,9 +217,12 @@ class EuphonicResultsModel(Model):
 
             # we don't need to curate the powder data, at variance with the single crystal case.
             # We can directly use them:
+            self.xlabel = "|q| (1/A)"
             self.x = spectra.x_data.magnitude
             self.y = self.y[:, 0]
             self.z = spectra.z_data.magnitude.T
+        elif self.spectrum_type == "q_planes":
+            pass
         else:
             raise ValueError("Spectrum type not recognized:", self.spectrum_type)
 
@@ -268,8 +273,8 @@ class EuphonicResultsModel(Model):
             dw=dw,
             labels=labels,
         )
-        self.xlabel = "AAA"
-        self.ylabel = "AAA"
+        self.xlabel = self.labels["h"]
+        self.ylabel = self.labels["k"]
 
     def energy_conversion_factor(self, new, old):
         # TODO: check this is correct.

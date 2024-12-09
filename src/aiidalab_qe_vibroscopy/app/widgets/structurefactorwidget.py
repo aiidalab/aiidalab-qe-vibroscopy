@@ -83,7 +83,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             (self._model, "energy_units"),
         )
         E_units_ddown.observe(self._update_energy_units, "value")
-        # MAYBE WE LINK ALSO THIS TO THE MODEL? so we can download the data with the preferred units.
 
         q_spacing = ipw.FloatText(
             value=self._model.q_spacing,
@@ -276,6 +275,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
         # fi self._model.spectrum_type == "powder"
         elif self._model.spectrum_type == "q_planes":
+            E_units_ddown.layout.display = "none"
+            q_spacing.layout.display = "none"
+
             self.ecenter = ipw.FloatText(
                 value=0,
                 description="E (meV)",
@@ -343,24 +345,12 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                 [ipw.HTML("k:  ", layout={"width": "20px"}), self.k_vec]
             )
 
-            self.energy_broadening = ipw.FloatText(
-                value=0.5,
-                description="&Delta;E (meV)",
-                tooltip="Energy window in eV",
-            )
-            ipw.link(
-                (self._model, "energy_broadening"),
-                (self.energy_broadening, "value"),
-            )
-            self.energy_broadening.observe(self._on_setting_change, names="value")
-
             self.children += (
                 self.ecenter,
                 self.plane_description_widget,
                 self.Q0_widget,
                 self.h_widget,
                 self.k_widget,
-                self.energy_broadening,
             )
         # fi self._model.spectrum_type == "q_planes"
 
@@ -388,25 +378,15 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
     def _update_plot(self, _=None):
         # update the spectra, i.e. the data contained in the _model.
-        # TODO: we need to treat differently the update of intensity and units.
-        # they anyway need to modify the data, but no additional spectra re-generation is really needed.
-        # so the update_spectra need some more logic, or we call another method.
+
         self._model.get_spectra()
 
-        if self._model.spectrum_type == "q_planes" and not self.rendered:
+        if self._model.spectrum_type == "q_planes":
             # hide figure until we have the data
-            self.figure_container.layout.display = "none"
-
-        if self._model.spectrum_type == "q_planes" and self.rendered:
-            self.figure_container.layout.display = "block"
-
-        heatmap_trace = go.Heatmap(
-            z=self._model.z,
-            y=(self._model.y),
-            x=self._model.x,
-            colorbar=COLORBAR_DICT,
-            colorscale=COLORSCALE,  # imported from euphonic_base_widgets
-        )
+            self.figure_container.layout.display = (
+                "none" if not self.rendered else "block"
+            )
+            self.plot_button.disabled = self.rendered
 
         self.fig.update_layout(yaxis_title=self._model.ylabel)
 
@@ -421,6 +401,16 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                     ticktext=self._model.ticks_labels,
                 )
             )
+        elif hasattr(self._model, "xlabel"):
+            self.fig.update_layout(xaxis_title=self._model.xlabel)
+
+        heatmap_trace = go.Heatmap(
+            z=self._model.z,
+            y=self._model.y,
+            x=self._model.x,
+            colorbar=COLORBAR_DICT,
+            colorscale=COLORSCALE,
+        )
 
         # Add colorbar
         colorbar = heatmap_trace.colorbar
