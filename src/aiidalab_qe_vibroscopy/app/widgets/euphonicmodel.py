@@ -52,6 +52,11 @@ class EuphonicResultsModel(Model):
     energy_bins = tl.Int(200)
     temperature = tl.Float(0)
     weighting = tl.Unicode("coherent")
+    energy_units = tl.Unicode("meV")
+    intensity_filter = tl.List(trait=tl.Float(), default_value=[0, 100])
+
+    THz_to_meV = 4.13566553853599  # conversion factor.
+    THz_to_cm1 = 33.3564095198155  # conversion factor.
 
     def __init__(self, node=None, spectrum_type: str = "single_crystal", **kwargs):
         super().__init__(**kwargs)
@@ -193,11 +198,13 @@ class EuphonicResultsModel(Model):
             ) = generated_curated_data(spectra)
 
             self.z = final_zspectra.T
-            self.y = self.y[:, 0]
-            self.x = None  # we have the ticks positions and labels
+            self.y = self.y[:, 0] * self.energy_conversion_factor(
+                self.energy_units, "meV"
+            )
+            # self.x = None  # we have, instead, the ticks positions and labels
 
             self.xlabel = ""
-            self.ylabel = "Energy (meV)"
+            self.ylabel = f"Energy ({self.energy_units})"
 
         elif self.spectrum_type == "powder":  # powder case
             # Spectrum2D as output of the powder data
@@ -207,8 +214,10 @@ class EuphonicResultsModel(Model):
 
             # we don't need to curate the powder data, at variance with the single crystal case.
             # We can directly use them:
-            self.x = spectra.x_data.magnitude[0]
-            self.y = self.y[:, 0]
+            self.x = spectra.x_data.magnitude
+            self.y = self.y[:, 0] * self.energy_conversion_factor(
+                self.energy_units, "meV"
+            )
             self.z = spectra.z_data.magnitude.T
         else:
             raise ValueError("Spectrum type not recognized:", self.spectrum_type)
@@ -260,6 +269,26 @@ class EuphonicResultsModel(Model):
         )
         self.xlabel = "AAA"
         self.ylabel = "AAA"
+
+    def energy_conversion_factor(self, new, old):
+        # TODO: check this is correct.
+        if new == old:
+            return 1
+        if new == "meV":
+            if old == "THz":
+                return self.THz_to_meV
+            elif old == "cm-1":
+                return self.THz_to_meV * self.THz_to_cm1
+        elif new == "THz":
+            if old == "meV":
+                return 1 / self.THz_to_meV
+            elif old == "cm-1":
+                return 1 / self.THz_to_cm1
+        elif new == "cm-1":
+            if old == "meV":
+                return 1 / self.THz_to_meV * self.THz_to_cm1
+            elif old == "THz":
+                return self.THz_to_cm1
 
     def _curate_path_and_labels(
         self,

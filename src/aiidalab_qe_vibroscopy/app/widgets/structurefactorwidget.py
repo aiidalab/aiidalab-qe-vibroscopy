@@ -57,7 +57,12 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                 width="400px",
             ),
         )
+        ipw.link(
+            (slider_intensity, "value"),
+            (self._model, "intensity_filter"),
+        )
         slider_intensity.observe(self._update_intensity_filter, "value")
+
         specification_intensity = ipw.HTML(
             "(Intensity is relative to the maximum intensity at T=0K)"
         )
@@ -74,6 +79,10 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             layout=ipw.Layout(
                 width="auto",
             ),
+        )
+        ipw.link(
+            (E_units_button, "value"),
+            (self._model, "energy_units"),
         )
         E_units_button.observe(self._update_energy_units, "value")
         # MAYBE WE LINK ALSO THIS TO THE MODEL? so we can download the data with the preferred units.
@@ -113,7 +122,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         energy_bins.observe(self._on_setting_change, names="value")
 
-        temperature = ipw.FloatText(
+        self.temperature = ipw.FloatText(
             value=self._model.temperature,
             step=0.01,
             description="T (K)",
@@ -121,9 +130,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         ipw.link(
             (self._model, "temperature"),
-            (temperature, "value"),
+            (self.temperature, "value"),
         )
-        temperature.observe(self._on_setting_change, names="value")
+        self.temperature.observe(self._on_setting_change, names="value")
 
         weight_button = ipw.ToggleButtons(
             options=[
@@ -141,14 +150,14 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         weight_button.observe(self._on_weight_button_change, names="value")
 
-        plot_button = ipw.Button(
+        self.plot_button = ipw.Button(
             description="Replot",
             icon="pencil",
             button_style="primary",
             disabled=True,
             layout=ipw.Layout(width="auto"),
         )
-        plot_button.observe(self._on_plot_button_change, names="disabled")
+        self.plot_button.on_click(self._update_plot)
 
         reset_button = ipw.Button(
             description="Reset",
@@ -159,14 +168,19 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         reset_button.on_click(self._reset_settings)
 
-        download_button = ipw.Button(
+        self.download_button = ipw.Button(
             description="Download Data and Plot",
             icon="download",
             button_style="primary",
             disabled=False,  # Large files...
             layout=ipw.Layout(width="auto"),
         )
-        download_button.on_click(self._download_data)
+        self.download_button.on_click(self._download_data)
+        ipw.dlink(
+            (self.plot_button, "disabled"),
+            (self.download_button, "disabled"),
+            lambda x: not x,
+        )
 
         self.children += (
             ipw.HBox(
@@ -183,11 +197,11 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             q_spacing,
             energy_broadening,
             energy_bins,
-            temperature,
+            self.temperature,
             weight_button,
-            plot_button,
+            self.plot_button,
             reset_button,
-            download_button,
+            self.download_button,
         )
 
         if self._model.spectrum_type == "single_crystal":
@@ -256,6 +270,12 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                 (self.int_npts, "value"),
             )
             self.int_npts.observe(self._on_setting_change, names="value")
+            self.children += (
+                self.qmin,
+                self.qmax,
+                self.int_npts,
+            )
+
         # fi self._model.spectrum_type == "powder"
         elif self._model.spectrum_type == "q_planes":
             self.ecenter = ipw.FloatText(
@@ -340,9 +360,18 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             self.plot_button.description = "Plot"
             # self.reset_button.disabled = True
             self.download_button.disabled = True
+
+            self.children += (
+                self.ecenter,
+                self.plane_description_widget,
+                self.Q0_widget,
+                self.h_widget,
+                self.k_widget,
+                self.energy_broadening,
+            )
         # fi self._model.spectrum_type == "q_planes"
 
-        self.children += (self.fig,)
+        self.children += (self.figure_container,)
 
         self.rendered = True
 
@@ -350,10 +379,8 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         self._model.fetch_data()
         if not hasattr(self, "fig"):
             self.fig = go.FigureWidget()
+            self.figure_container = ipw.VBox([self.fig])
         self._update_plot()
-
-    def _on_plot_button_change(self, change):
-        self.download_button.disabled = not change["new"]
 
     def _on_weight_button_change(self, change):
         self._model.temperature = 0
@@ -365,7 +392,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
     ):  # think if we want to do something more evident...
         self.plot_button.disabled = False
 
-    def _update_plot(self):
+    def _update_plot(self, _=None):
         # update the spectra, i.e. the data contained in the _model.
         # TODO: we need to treat differently the update of intensity and units.
         # they anyway need to modify the data, but no additional spectra re-generation is really needed.
@@ -373,16 +400,20 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         self._model.get_spectra()
 
         if not self.rendered:
+            if self._model.spectrum_type == "q_planes":
+                # hide figure until we have the data
+                self.figure_container.layout.display = "none"
+
             # First time we render, we set several layout settings.
             # Layout settings
-            if self._model.x:
+            if hasattr(self._model, "x"):
                 self.fig["layout"]["xaxis"].update(
                     title=self._model.xlabel,
-                    range=[min(self._model.x), max(self._model.x)],
+                    range=[np.min(self._model.x), np.max(self._model.x)],
                 )
             self.fig["layout"]["yaxis"].update(
                 title=self._model.ylabel,
-                range=[min(self._model.y), max(self._model.y)],
+                range=[np.min(self._model.y), np.max(self._model.y)],
             )
 
             if self.fig.layout.images:
@@ -400,6 +431,8 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
             # Update the layout to enable autoscaling
             self.fig.update_layout(autosize=True)
+        elif self._model.spectrum_type == "q_planes" and self.rendered:
+            self.figure_container.layout.display = "block"
 
         heatmap_trace = go.Heatmap(
             z=self._model.z,
@@ -430,26 +463,37 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         self.fig.add_trace(heatmap_trace)
         self.fig.data = [self.fig.data[-1]]
 
-    def _update_intensity_filter(self, change):
+        if self.rendered:
+            self._update_intensity_filter()
+
+    def _update_intensity_filter(self):
         # the value of the intensity slider is in fractions of the max.
-        if change["new"] != change["old"]:
-            self.fig.data[0].zmax = (
-                change["new"][1] * np.max(self.fig.data[0].z) / 100
-            )  # above this, it is all yellow, i.e. max intensity.
-            self.fig.data[0].zmin = (
-                change["new"][0] * np.max(self.fig.data[0].z) / 100
-            )  # below this, it is all blue, i.e. zero intensity
+        # NOTE: we do this here, as we do not want to replot.
+        self.fig.data[0].zmax = (
+            self._model.intensity_filter[1] * np.max(self.fig.data[0].z) / 100
+        )  # above this, it is all yellow, i.e. max intensity.
+        self.fig.data[0].zmin = (
+            self._model.intensity_filter[0] * np.max(self.fig.data[0].z) / 100
+        )  # below this, it is all blue, i.e. zero intensity
 
     def _update_energy_units(self, change):
         # the value of the intensity slider is in fractions of the max.
-        if change["new"] != change["old"]:
-            self.fig.data[0].y = (
-                self.fig.data[0].y * self.THz_to_meV
-                if change["new"] == "meV"
-                else self.fig.data[0].y / self.THz_to_meV
-            )
+        self._model.energy_units = change["new"]
+        self.fig.data[0].y = (
+            np.array(self.fig.data[0].y)
+            * self._model.energy_conversion_factor(
+                new=self._model.energy_units, old=change["old"]
+            ),
+        )
 
-        self.fig["layout"]["yaxis"].update(title=change["new"])
+        self.fig["layout"]["yaxis"].update(title=self._model.energy_units)
+
+        # Update x-axis and y-axis to enable autoscaling
+        self.fig.update_xaxes(autorange=True)
+        self.fig.update_yaxes(autorange=True)
+
+        # Update the layout to enable autoscaling
+        self.fig.update_layout(autosize=True)
 
     def _reset_settings(self, _):
         self._model.reset()

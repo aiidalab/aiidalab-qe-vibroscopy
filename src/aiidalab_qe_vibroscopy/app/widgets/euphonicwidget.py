@@ -118,8 +118,8 @@ class EuphonicWidget(ipw.VBox):
         self.loading_widget.layout.display = "block"
 
         self._model.fetch_data()  # should be in the model, but I can do it here once for all and then clone the model.
-        powder_model = EuphonicResultsModel(spectum_type="powder")
-        qsection_model = EuphonicResultsModel(spectum_type="q_planes")
+        powder_model = EuphonicResultsModel(spectrum_type="powder")
+        qsection_model = EuphonicResultsModel(spectrum_type="q_planes")
 
         for data in ["fc", "q_path"]:
             setattr(powder_model, data, getattr(self._model, data))
@@ -133,8 +133,12 @@ class EuphonicWidget(ipw.VBox):
 
         self.tab_widget.children = (
             singlecrystalwidget,
-            # EuphonicStructureFactorWidget(node=self._model.vibro, model=powder_model, spectrum_type="powder"),
-            # EuphonicStructureFactorWidget(node=self._model.vibro, model=qsection_model, spectrum_type="q_planes"),
+            EuphonicStructureFactorWidget(
+                node=self._model.vibro, model=powder_model, spectrum_type="powder"
+            ),
+            EuphonicStructureFactorWidget(
+                node=self._model.vibro, model=qsection_model, spectrum_type="q_planes"
+            ),
         )
 
         for widget in self.tab_widget.children:
