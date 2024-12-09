@@ -65,11 +65,11 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             "(Intensity is relative to the maximum intensity at T=0K)"
         )
 
-        E_units_button = ipw.ToggleButtons(
+        E_units_ddown = ipw.Dropdown(
             options=[
                 ("meV", "meV"),
                 ("THz", "THz"),
-                ("cm<sup>-1</sup>", "cm-1"),
+                ("1/cm", "1/cm"),
             ],
             value="meV",
             description="Energy units:",
@@ -79,10 +79,10 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             ),
         )
         ipw.link(
-            (E_units_button, "value"),
+            (E_units_ddown, "value"),
             (self._model, "energy_units"),
         )
-        E_units_button.observe(self._update_energy_units, "value")
+        E_units_ddown.observe(self._update_energy_units, "value")
         # MAYBE WE LINK ALSO THIS TO THE MODEL? so we can download the data with the preferred units.
 
         q_spacing = ipw.FloatText(
@@ -191,7 +191,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                     margin="10px 0",
                 ),
             ),
-            E_units_button,
+            E_units_ddown,
             q_spacing,
             energy_broadening,
             energy_bins,
@@ -408,6 +408,8 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             colorscale=COLORSCALE,  # imported from euphonic_base_widgets
         )
 
+        self.fig.update_layout(yaxis_title=self._model.ylabel)
+
         # change the path wants also a change in the labels
         if hasattr(self._model, "ticks_positions") and hasattr(
             self._model, "ticks_labels"
@@ -454,11 +456,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
         self.fig.data[0].y = self._model.y
         self.fig.update_layout(yaxis_title=self._model.ylabel)
-        self.fig.update_xaxes(autorange=True)
-        self.fig.update_yaxes(autorange=True)
-
-        # Update the layout to enable autoscaling
-        self.fig.update_layout(autosize=True)
 
     def _reset_settings(self, _):
         self._model.reset()

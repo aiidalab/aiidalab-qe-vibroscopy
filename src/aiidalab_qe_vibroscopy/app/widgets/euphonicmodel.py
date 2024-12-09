@@ -66,7 +66,7 @@ class EuphonicResultsModel(Model):
         self.q_path = None
         self.spectrum_type = spectrum_type
         self.xlabel = None
-        self.ylabel = "Energy (meV)"
+        self.ylabel = self.energy_units
         self.detached_app = False
         if node:
             self.vibro = node
@@ -201,13 +201,11 @@ class EuphonicResultsModel(Model):
             ) = generated_curated_data(spectra)
 
             self.z = final_zspectra.T
-            self.y = self.y[:, 0] * self.energy_conversion_factor(
-                self.energy_units, "meV"
-            )
+            self.y = self.y[:, 0]
             # self.x = None  # we have, instead, the ticks positions and labels
 
             self.xlabel = ""
-            self.ylabel = f"Energy ({self.energy_units})"
+            self.ylabel = self.energy_units
 
         elif self.spectrum_type == "powder":  # powder case
             # Spectrum2D as output of the powder data
@@ -218,12 +216,12 @@ class EuphonicResultsModel(Model):
             # we don't need to curate the powder data, at variance with the single crystal case.
             # We can directly use them:
             self.x = spectra.x_data.magnitude
-            self.y = self.y[:, 0] * self.energy_conversion_factor(
-                self.energy_units, "meV"
-            )
+            self.y = self.y[:, 0]
             self.z = spectra.z_data.magnitude.T
         else:
             raise ValueError("Spectrum type not recognized:", self.spectrum_type)
+
+        self.y = self.y * self.energy_conversion_factor(self.energy_units, "meV")
 
     def _get_qsection_spectra(
         self,
@@ -280,14 +278,14 @@ class EuphonicResultsModel(Model):
         if new == "meV":
             if old == "THz":
                 return self.THz_to_meV
-            elif old == "cm-1":
-                return self.THz_to_meV * self.THz_to_cm1
+            elif old == "1/cm":
+                return 1 / self.THz_to_cm1 * self.THz_to_meV
         elif new == "THz":
             if old == "meV":
                 return 1 / self.THz_to_meV
-            elif old == "cm-1":
+            elif old == "1/cm":
                 return 1 / self.THz_to_cm1
-        elif new == "cm-1":
+        elif new == "1/cm":
             if old == "meV":
                 return 1 / self.THz_to_meV * self.THz_to_cm1
             elif old == "THz":
@@ -296,7 +294,7 @@ class EuphonicResultsModel(Model):
     def _update_energy_units(self, new, old):
         # This is used to update the energy units in the plot.
         self.y = self.y * self.energy_conversion_factor(new, old)
-        self.ylabel = f"Energy ({new})"
+        self.ylabel = self.energy_units
 
     def _curate_path_and_labels(
         self,
