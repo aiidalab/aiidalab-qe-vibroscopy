@@ -178,7 +178,7 @@ def join_q_paths(coordinates: list, labels: list, delta_q=0.1, G=[0, 0, 0]):
 
 
 def produce_bands_weigthed_data(
-    params: Optional[List[str]] = parameters,
+    params: Optional[List[str]] = None,
     fc: ForceConstants = None,
     linear_path=None,
     plot=False,
@@ -360,7 +360,7 @@ def produce_bands_weigthed_data(
 
 
 def produce_powder_data(
-    params: Optional[List[str]] = parameters_powder,
+    params: Optional[List[str]] = None,
     fc: ForceConstants = None,
     plot=False,
     linear_path=None,

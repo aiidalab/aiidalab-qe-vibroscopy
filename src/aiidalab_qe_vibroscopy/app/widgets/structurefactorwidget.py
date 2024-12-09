@@ -1,3 +1,6 @@
+# ADD ALL THE IMPORTS.
+
+
 class EuphonicStructureFactorWidget(ipw.VBox):
     """Description.
     
@@ -5,10 +8,10 @@ class EuphonicStructureFactorWidget(ipw.VBox):
     in all the three cases: single crystal, powder, and q-section....
     """
 
-    def __init__(self, model, spectrum_type = "single_crystal", detached_app = False, **kwargs):
+    def __init__(self, model, node=None, spectrum_type = "single_crystal", detached_app = False, **kwargs):
         super().__init__()
-        node
         self._model = model
+        if node: self._model.vibro = node
         self._model.spectrum_type = spectrum_type
         self._model.detached_app = detached_app
         self.rendered = False
@@ -20,55 +23,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         """
         if self.rendered:
             return
-        
-        self.tab_widget = ipw.Tab()
-        self.tab_widget.layout.display = "none"
-        self.tab_widget.set_title(0, "Single crystal")
-        self.tab_widget.set_title(1, "Powder sample")
-        self.tab_widget.set_title(2, "Q-plane view")
-        self.tab_widget.children = ()
-
-        self.plot_button = ipw.Button(
-            description="Initialise INS data",
-            icon="pencil",
-            button_style="primary",
-            disabled=True,
-            layout=ipw.Layout(width="auto"),
-        )
-        self.plot_button.on_click(self._render_for_real)
-
-        self.loading_widget = LoadingWidget("Loading INS data")
-        self.loading_widget.layout.display = "none"
-
-        if not self._model.detached_app:
-            self.plot_button.disabled = False
-        else:
-            self.upload_widget = UploadPhonopyWidget()
-            self.upload_widget.reset_uploads.on_click(self._on_reset_uploads_button_clicked)
-            self.upload_widget.children[0].observe(self._on_upload_yaml, "_counter")
-            self.upload_widget.children[1].observe(self._on_upload_hdf5, "_counter")
-            self.children += (self.upload_widget,)
-            
-        self.download_widget = DownloadYamlHdf5Widget(model=self._model)
-        self.download_widget.layout.display = "none"
-
-        self.children += (
-            self.plot_button,
-            self.loading_widget,
-            self.tab_widget,
-            self.download_widget,
-            )
-        
-        # NOTE: we initialise here the figure widget, but we do not plot anything yet.
-        # this is useful to call the init_view method, which contains the update for the figure.
-        self.fig = go.FigureWidget()
-        
-        self.rendered = True
-        
-    def _render_for_real(self, change=None):
-
-        self.plot_button.layout.display = "none"
-        self.loading_widget.layout.display = "block"
         
         self._init_view()
         
@@ -345,6 +299,8 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         self.children += (
             ...
         )
+        
+        self.rendered = True
     
     def _init_view(self, _=None):
         self._model.fetch_data()

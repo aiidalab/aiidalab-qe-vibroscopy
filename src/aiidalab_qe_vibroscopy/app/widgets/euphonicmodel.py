@@ -2,16 +2,20 @@ import numpy as np
 import traitlets as tl
 import copy
 
-from aiidalab_qe_vibroscopy.utils.euphonic.data_manipulation.intensity_maps import (
+from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
     AttrDict,
     produce_bands_weigthed_data,
     produce_powder_data,
     generated_curated_data,
-    par_dict,
-    par_dict_powder,
     export_euphonic_data,
     generate_force_constant_instance,
 )
+
+from aiidalab_qe_vibroscopy.utils.euphonic.data.parameters import (
+    parameters_single_crystal,
+    parameters_powder,
+)
+
 
 from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_q_planes_widgets import (
     produce_Q_section_modes,
@@ -21,7 +25,7 @@ from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_q_planes_widgets
 from aiidalab_qe.common.mvc import Model
 
 
-class EuphonicBaseResultsModel(Model):
+class EuphonicResultsModel(Model):
     """Model for the neutron scattering results panel."""
 
     # Here we mode all the model and data-controller, i.e. all the data and their
@@ -73,6 +77,9 @@ class EuphonicBaseResultsModel(Model):
     def fetch_data(self):
         """Fetch the data from the database or from the uploaded files."""
         # 1. from aiida, so we have the node
+        if hasattr(self, "fc"):
+           # we already have the data (this happens if I clone the model with already the data inside)
+           return  
         if self.node:
             ins_data = export_euphonic_data(self.node)
             self.fc = ins_data["fc"]

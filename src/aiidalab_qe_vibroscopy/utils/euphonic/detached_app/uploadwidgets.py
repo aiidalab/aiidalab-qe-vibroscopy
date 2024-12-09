@@ -1,20 +1,117 @@
 import pathlib
 import tempfile
-import ipywidgets as ipw
+
+
 from IPython.display import display
 
-from aiidalab_qe.common.widgets import LoadingWidget
+import ipywidgets as ipw
 
-from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
+# from ..euphonic.bands_pdos import *
+from aiidalab_qe_vibroscopy.utils.euphonic.data_manipulation.intensity_maps import (
     generate_force_constant_instance,
+    export_euphonic_data,  # noqa: F401
+)
+from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_single_crystal_widgets import (
+    SingleCrystalFullWidget,
+)
+from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_powder_widgets import (
+    PowderFullWidget,
+)
+from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_q_planes_widgets import (
+    QSectionFullWidget,
 )
 
-from aiidalab_qe_vibroscopy.app.widgets.structurefactorwidget import EuphonicStructureFactorWidget
+
+from aiidalab_qe.common.widgets import LoadingWidget
+###### START for detached app:
+
+
+# Upload buttons
+class UploadPhonopyYamlWidget(ipw.FileUpload):
+    def __init__(self, **kwargs):
+        super().__init__(
+            description="upload phonopy YAML file",
+            multiple=False,
+            layout={"width": "initial"},
+        )
+
+
+class UploadForceConstantsHdf5Widget(ipw.FileUpload):
+    def __init__(self, **kwargs):
+        super().__init__(
+            description="upload force constants HDF5 file",
+            multiple=False,
+            layout={"width": "initial"},
+        )
+
+
+class UploadPhonopyWidget(ipw.HBox):
+    def __init__(self, **kwargs):
+        self.upload_phonopy_yaml = UploadPhonopyYamlWidget(**kwargs)
+        self.upload_phonopy_hdf5 = UploadForceConstantsHdf5Widget(**kwargs)
+
+        self.reset_uploads = ipw.Button(
+            description="Discard uploaded files",
+            icon="pencil",
+            button_style="warning",
+            disabled=False,
+            layout=ipw.Layout(width="auto"),
+        )
+
+        super().__init__(
+            children=[
+                self.upload_phonopy_yaml,
+                self.upload_phonopy_hdf5,
+                self.reset_uploads,
+            ],
+            **kwargs,
+        )
+
+    def _read_phonopy_files(self, fname, phonopy_yaml_content, fc_hdf5_content=None):
+        suffix = "".join(pathlib.Path(fname).suffixes)
+
+        with tempfile.NamedTemporaryFile(suffix=suffix) as temp_yaml:
+            temp_yaml.write(phonopy_yaml_content)
+            temp_yaml.flush()
+
+            if fc_hdf5_content:
+                with tempfile.NamedTemporaryFile(suffix=".hdf5") as temp_file:
+                    temp_file.write(fc_hdf5_content)
+                    temp_file.flush()
+                    temp_hdf5_name = temp_file.name
+
+                    try:
+                        fc = generate_force_constant_instance(
+                            path=pathlib.Path(fname),
+                            summary_name=temp_yaml.name,
+                            fc_name=temp_hdf5_name,
+                        )
+                    except ValueError:
+                        return None
+
+                    return fc
+            else:
+                temp_hdf5_name = None
+
+                try:
+                    fc = generate_force_constant_instance(
+                        path=pathlib.Path(fname),
+                        summary_name=temp_yaml.name,
+                        # fc_name=temp_hdf5_name,
+                    )
+                except ValueError:
+                    return None
+
+                return fc
+
+
+#### END for detached app
 
 
 ##### START OVERALL WIDGET TO DISPLAY EVERYTHING:
 
-class EuphonicWidget(ipw.VBox):
+
+class EuphonicSuperWidget(ipw.VBox):
     """
     Widget that will include everything,
     from the upload widget to the tabs with single crystal and powder predictions.
@@ -22,7 +119,7 @@ class EuphonicWidget(ipw.VBox):
     """
 
     def __init__(
-        self, model: EuphonicResultsModel, node=None, detached_app = False, **kwargs,
+        self, mode="aiidalab-qe app plugin", model=None, node=None, fc=None, q_path=None
     ):
         """
         Initialize the Euphonic utility class.
@@ -50,20 +147,23 @@ class EuphonicWidget(ipw.VBox):
         fc : optional
             Force constants if provided.
         """
-        
-        super().__init__()
-        
+
+        self.mode = mode
         self._model = model  # this is the single crystal model.
-        if node: self._model.vibro = node
-        self._model.detached_app = detached_app
+        self._model.node = node
         self._model.fc_hdf5_content = None
 
         self.rendered = False
 
+        super().__init__()
+
     def render(self):
         if self.rendered:
             return
-        
+
+        self.upload_widget = UploadPhonopyWidget()
+        self.upload_widget.reset_uploads.on_click(self._on_reset_uploads_button_clicked)
+
         self.tab_widget = ipw.Tab()
         self.tab_widget.layout.display = "none"
         self.tab_widget.set_title(0, "Single crystal")
@@ -78,63 +178,30 @@ class EuphonicWidget(ipw.VBox):
             disabled=True,
             layout=ipw.Layout(width="auto"),
         )
-        self.plot_button.on_click(self._render_for_real)
+        self.plot_button.on_click(self._on_first_plot_button_clicked)
 
         self.loading_widget = LoadingWidget("Loading INS data")
         self.loading_widget.layout.display = "none"
 
-        if not self._model.detached_app:
+        if self.mode == "aiidalab-qe app plugin":
+            self.upload_widget.layout.display = "none"
             self.plot_button.disabled = False
         else:
-            from aiidalab_qe_vibroscopy.utils.euphonic.detached_app.uploadwidgets import UploadPhonopyWidget
-            self.upload_widget = UploadPhonopyWidget()
-            self.upload_widget.reset_uploads.on_click(self._on_reset_uploads_button_clicked)
             self.upload_widget.children[0].observe(self._on_upload_yaml, "_counter")
             self.upload_widget.children[1].observe(self._on_upload_hdf5, "_counter")
-            self.children += (self.upload_widget,)
-            
+
         self.download_widget = DownloadYamlHdf5Widget(model=self._model)
         self.download_widget.layout.display = "none"
 
-        self.children += (
+        self.children = [
+            self.upload_widget,
             self.plot_button,
+            self.loading_widget,
             self.tab_widget,
             self.download_widget,
-            self.loading_widget,
-            )
-        
+        ]
+
         self.rendered = True
-
-    def _render_for_real(self, change=None):
-        # It creates the widgets
-        self.plot_button.layout.display = "none"
-        self.loading_widget.layout.display = "block"
-
-        self._model.fetch_data()  # should be in the model, but I can do it here once for all and then clone the model.
-        powder_model = self._model._clone()
-        qsection_model = self._model._clone()
-
-        # I first initialise this widget, to then have the 0K ref for the other two.
-        # the model is passed to the widget. For the other two, I need to generate the model.
-        singlecrystalwidget = SingleCrystalFullWidget(model=self._model)
-
-        # I need to generate the models for the other two widgets.
-        self._model._inject_single_crystal_settings()
-        powder_model._inject_powder_settings()
-        qsection_model._inject_qsection_settings()
-
-        self.tab_widget.children = (
-            singlecrystalwidget,
-            PowderFullWidget(model=powder_model),
-            QSectionFullWidget(model=qsection_model),
-        )
-
-        for widget in self.tab_widget.children:
-            widget.render()  # this is the render method of the widget.
-
-        self.loading_widget.layout.display = "none"
-        self.tab_widget.layout.display = "block"
-        self.download_widget.layout.display = "block"
 
     def _on_reset_uploads_button_clicked(self, change):
         self.upload_widget.upload_phonopy_yaml.value.clear()
@@ -168,7 +235,39 @@ class EuphonicWidget(ipw.VBox):
                 self._model.fc_hdf5_content = self.upload_widget.children[1].value[
                     fname
                 ]["content"]
-                
+
+    def _on_first_plot_button_clicked(self, change=None):  # basically the render.
+        # It creates the widgets
+        self.plot_button.layout.display = "none"
+        self.loading_widget.layout.display = "block"
+
+        self._model.fetch_data()  # should be in the model.
+        powder_model = self._model._clone()
+        qsection_model = self._model._clone()
+
+        # I first initialise this widget, to then have the 0K ref for the other two.
+        # the model is passed to the widget. For the other two, I need to generate the model.
+        singlecrystalwidget = SingleCrystalFullWidget(model=self._model)
+
+        # I need to generate the models for the other two widgets.
+        self._model._inject_single_crystal_settings()
+        powder_model._inject_powder_settings()
+        qsection_model._inject_qsection_settings()
+
+        self.tab_widget.children = (
+            singlecrystalwidget,
+            PowderFullWidget(model=powder_model),
+            QSectionFullWidget(model=qsection_model),
+        )
+
+        for widget in self.tab_widget.children:
+            widget.render()  # this is the render method of the widget.
+
+        self.loading_widget.layout.display = "none"
+        self.tab_widget.layout.display = "block"
+        self.download_widget.layout.display = "block"
+
+
 class DownloadYamlHdf5Widget(ipw.HBox):
     def __init__(self, model):
         self._model = model
