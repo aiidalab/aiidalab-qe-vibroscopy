@@ -3,9 +3,15 @@ import pathlib
 import base64
 from typing import Optional
 import euphonic
-from euphonic.io.phonopy import write_force_constants_to_hdf5
+from phonopy.file_IO import write_force_constants_to_hdf5
 
-def generate_force_constant_instance(
+from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
+    blockPrint,
+    enablePrint,
+)
+
+
+def generate_force_constant_from_phonopy(
     phonopy_calc=None,
     path: str = None,
     summary_name: str = None,

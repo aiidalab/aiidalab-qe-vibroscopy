@@ -1,8 +1,5 @@
 from typing import List, Optional
 
-import pathlib
-import tempfile
-import base64
 
 import matplotlib.style
 import numpy as np
@@ -42,7 +39,11 @@ from euphonic.spectra import apply_kinematic_constraints
 from euphonic.styles import intensity_widget_style
 import euphonic.util
 
-from phonopy.file_IO import write_force_constants_to_hdf5
+
+from aiidalab_qe_vibroscopy.utils.euphonic.data.parameters import (
+    parameters_single_crystal,
+    parameters_powder,
+)
 
 # Dummy tqdm function if tqdm progress bars unavailable
 try:
@@ -199,11 +200,9 @@ def produce_bands_weigthed_data(
     """
     # args = get_args(get_parser(), params)
     if not params:
-        args = AttrDict(copy.deepcopy(parameters))
+        args = AttrDict(copy.deepcopy(parameters_single_crystal))
     else:
-        args = copy.deepcopy(parameters)
-        args.update(params)
-        args = AttrDict(args)
+        args = AttrDict(params)
 
     # redundancy with args...
     calc_modes_kwargs = _calc_modes_kwargs(args)
@@ -356,7 +355,7 @@ def produce_bands_weigthed_data(
 ########################
 
 
-#parameters_powder = AttrDict(par_dict_powder)
+# parameters_powder = AttrDict(par_dict_powder)
 
 
 def produce_powder_data(
@@ -369,11 +368,10 @@ def produce_powder_data(
     """Read the description of the produce_bands_weigthed_data function for more details.
     """
 
-    # args = get_args(get_parser(), params)
     if not params:
         args = AttrDict(copy.deepcopy(parameters_powder))
     else:
-        args = AttrDict(copy.deepcopy(params))
+        args = AttrDict(params)
 
     # redundancy with args
     calc_modes_kwargs = _calc_modes_kwargs(args)

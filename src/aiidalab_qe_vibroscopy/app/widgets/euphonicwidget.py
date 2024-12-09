@@ -1,18 +1,16 @@
-import pathlib
-import tempfile
 import ipywidgets as ipw
 from IPython.display import display
 
 from aiidalab_qe.common.widgets import LoadingWidget
 
-from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
-    generate_force_constant_instance,
+from aiidalab_qe_vibroscopy.app.widgets.structurefactorwidget import (
+    EuphonicStructureFactorWidget,
 )
-
-from aiidalab_qe_vibroscopy.app.widgets.structurefactorwidget import EuphonicStructureFactorWidget
+from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import EuphonicResultsModel
 
 
 ##### START OVERALL WIDGET TO DISPLAY EVERYTHING:
+
 
 class EuphonicWidget(ipw.VBox):
     """
@@ -22,7 +20,11 @@ class EuphonicWidget(ipw.VBox):
     """
 
     def __init__(
-        self, model: EuphonicResultsModel, node=None, detached_app = False, **kwargs,
+        self,
+        model: EuphonicResultsModel,
+        node=None,
+        detached_app=False,
+        **kwargs,
     ):
         """
         Initialize the Euphonic utility class.
@@ -50,11 +52,11 @@ class EuphonicWidget(ipw.VBox):
         fc : optional
             Force constants if provided.
         """
-        
+
         super().__init__()
-        
+
         self._model = model  # this is the single crystal model.
-        if node: self._model.vibro = node
+        self._model.vibro = node
         self._model.detached_app = detached_app
         self._model.fc_hdf5_content = None
 
@@ -63,7 +65,7 @@ class EuphonicWidget(ipw.VBox):
     def render(self):
         if self.rendered:
             return
-        
+
         self.tab_widget = ipw.Tab()
         self.tab_widget.layout.display = "none"
         self.tab_widget.set_title(0, "Single crystal")
@@ -86,13 +88,18 @@ class EuphonicWidget(ipw.VBox):
         if not self._model.detached_app:
             self.plot_button.disabled = False
         else:
-            from aiidalab_qe_vibroscopy.utils.euphonic.detached_app.uploadwidgets import UploadPhonopyWidget
+            from aiidalab_qe_vibroscopy.utils.euphonic.detached_app.uploadwidgets import (
+                UploadPhonopyWidget,
+            )
+
             self.upload_widget = UploadPhonopyWidget()
-            self.upload_widget.reset_uploads.on_click(self._on_reset_uploads_button_clicked)
+            self.upload_widget.reset_uploads.on_click(
+                self._on_reset_uploads_button_clicked
+            )
             self.upload_widget.children[0].observe(self._on_upload_yaml, "_counter")
             self.upload_widget.children[1].observe(self._on_upload_hdf5, "_counter")
             self.children += (self.upload_widget,)
-            
+
         self.download_widget = DownloadYamlHdf5Widget(model=self._model)
         self.download_widget.layout.display = "none"
 
@@ -101,8 +108,8 @@ class EuphonicWidget(ipw.VBox):
             self.tab_widget,
             self.download_widget,
             self.loading_widget,
-            )
-        
+        )
+
         self.rendered = True
 
     def _render_for_real(self, change=None):
@@ -111,22 +118,23 @@ class EuphonicWidget(ipw.VBox):
         self.loading_widget.layout.display = "block"
 
         self._model.fetch_data()  # should be in the model, but I can do it here once for all and then clone the model.
-        powder_model = self._model._clone()
-        qsection_model = self._model._clone()
+        powder_model = EuphonicResultsModel(spectum_type="powder")
+        qsection_model = EuphonicResultsModel(spectum_type="q_planes")
+
+        for data in ["fc", "q_path"]:
+            setattr(powder_model, data, getattr(self._model, data))
+            setattr(qsection_model, data, getattr(self._model, data))
 
         # I first initialise this widget, to then have the 0K ref for the other two.
         # the model is passed to the widget. For the other two, I need to generate the model.
-        singlecrystalwidget = SingleCrystalFullWidget(model=self._model)
-
-        # I need to generate the models for the other two widgets.
-        self._model._inject_single_crystal_settings()
-        powder_model._inject_powder_settings()
-        qsection_model._inject_qsection_settings()
+        singlecrystalwidget = EuphonicStructureFactorWidget(
+            node=self._model.vibro, model=self._model, spectrum_type="single_crystal"
+        )
 
         self.tab_widget.children = (
             singlecrystalwidget,
-            PowderFullWidget(model=powder_model),
-            QSectionFullWidget(model=qsection_model),
+            # EuphonicStructureFactorWidget(node=self._model.vibro, model=powder_model, spectrum_type="powder"),
+            # EuphonicStructureFactorWidget(node=self._model.vibro, model=qsection_model, spectrum_type="q_planes"),
         )
 
         for widget in self.tab_widget.children:
@@ -168,7 +176,8 @@ class EuphonicWidget(ipw.VBox):
                 self._model.fc_hdf5_content = self.upload_widget.children[1].value[
                     fname
                 ]["content"]
-                
+
+
 class DownloadYamlHdf5Widget(ipw.HBox):
     def __init__(self, model):
         self._model = model

@@ -1,14 +1,21 @@
 import numpy as np
 import traitlets as tl
 import copy
+from IPython.display import display
 
 from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
     AttrDict,
     produce_bands_weigthed_data,
     produce_powder_data,
     generated_curated_data,
+)
+
+from aiidalab_qe_vibroscopy.utils.euphonic.data.phonopy_interface import (
+    generate_force_constant_from_phonopy,
+)
+
+from aiidalab_qe_vibroscopy.utils.euphonic.data.export_vibronic_to_euphonic import (
     export_euphonic_data,
-    generate_force_constant_instance,
 )
 
 from aiidalab_qe_vibroscopy.utils.euphonic.data.parameters import (
@@ -21,6 +28,7 @@ from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_q_planes_widgets
     produce_Q_section_modes,
     produce_Q_section_spectrum,
 )
+
 
 from aiidalab_qe.common.mvc import Model
 
@@ -38,21 +46,33 @@ class EuphonicResultsModel(Model):
     # 2. powder average: pa
     # 3. Q planes: qp
 
-    spectra = {}
-    path = []
-    q_path = None
-    spectrum_type = "single_crystal"
-    x_label = None
-    y_label = "Energy (meV)"
-    detached_app = False
-
     # Settings for single crystal and powder average
     q_spacing = tl.Float(0.01)
     energy_broadening = tl.Float(0.05)
     energy_bins = tl.Int(200)
     temperature = tl.Float(0)
     weighting = tl.Unicode("coherent")
-    
+
+    def __init__(self, node=None, spectrum_type: str = "single_crystal", **kwargs):
+        super().__init__(**kwargs)
+
+        self.spectra = {}
+        self.path = []
+        self.q_path = None
+        self.spectrum_type = spectrum_type
+        self.xlabel = None
+        self.ylabel = "Energy (meV)"
+        self.detached_app = False
+        if node:
+            self.vibro = node
+
+        if self.spectrum_type == "single_crystal":
+            self._inject_single_crystal_settings()
+        elif self.spectrum_type == "powder":
+            self._inject_powder_settings()
+        elif self.spectrum_type == "q_planes":
+            self._inject_qsection_settings()
+
     def set_model_state(self, parameters: dict):
         for k, v in parameters.items():
             setattr(self, k, v)
@@ -78,10 +98,10 @@ class EuphonicResultsModel(Model):
         """Fetch the data from the database or from the uploaded files."""
         # 1. from aiida, so we have the node
         if hasattr(self, "fc"):
-           # we already have the data (this happens if I clone the model with already the data inside)
-           return  
-        if self.node:
-            ins_data = export_euphonic_data(self.node)
+            # we already have the data (this happens if I clone the model with already the data inside)
+            return
+        if self.vibro:
+            ins_data = export_euphonic_data(self.vibro)
             self.fc = ins_data["fc"]
             self.q_path = ins_data["q_path"]
         # 2. from uploaded files...
@@ -99,7 +119,7 @@ class EuphonicResultsModel(Model):
         # we define specific parameters dictionary and callback function for the single crystal case
         self.parameters = copy.deepcopy(parameters_single_crystal)
         self._callback_spectra_generation = produce_bands_weigthed_data
-        
+
         # Dynamically add a trait for single crystal settings
         self.add_traits(custom_kpath=tl.Unicode(""))
 
@@ -108,7 +128,7 @@ class EuphonicResultsModel(Model):
     ):
         self.parameters = copy.deepcopy(parameters_powder)
         self._callback_spectra_generation = produce_powder_data
-        
+
         # Dynamically add a trait for powder settings
         self.add_traits(q_min=tl.Float(0.0))
         self.add_traits(q_max=tl.Float(1))
@@ -132,10 +152,7 @@ class EuphonicResultsModel(Model):
         self,
     ):
         # This is used to update the spectra when the parameters are changed
-        # and the
-        if not hasattr(self, "parameters"):
-            self._inject_single_crystal_settings()
-            
+
         if self.spectrum_type == "q_planes":
             self._get_qsection_spectra()
             return
@@ -164,7 +181,7 @@ class EuphonicResultsModel(Model):
         )
 
         # curated spectra (labels and so on...)
-        if spectrum_type == "single_crystal":  # single crystal case
+        if self.spectrum_type == "single_crystal":  # single crystal case
             self.x, self.y = np.meshgrid(
                 spectra[0].x_data.magnitude, spectra[0].y_data.magnitude
             )
@@ -174,15 +191,15 @@ class EuphonicResultsModel(Model):
                 self.ticks_positions,
                 self.ticks_labels,
             ) = generated_curated_data(spectra)
-            
+
             self.z = final_zspectra.T
-            self.y = self.y[:,0]
-            self.x = None # we have the ticks positions and labels
-            
+            self.y = self.y[:, 0]
+            self.x = None  # we have the ticks positions and labels
+
             self.xlabel = ""
             self.ylabel = "Energy (meV)"
-        
-        elif spectrum_type == "powder":  # powder case
+
+        elif self.spectrum_type == "powder":  # powder case
             # Spectrum2D as output of the powder data
             self.x, self.y = np.meshgrid(
                 spectra.x_data.magnitude, spectra.y_data.magnitude
@@ -191,8 +208,10 @@ class EuphonicResultsModel(Model):
             # we don't need to curate the powder data, at variance with the single crystal case.
             # We can directly use them:
             self.x = spectra.x_data.magnitude[0]
-            self.y = self.y[:,0]
+            self.y = self.y[:, 0]
             self.z = spectra.z_data.magnitude.T
+        else:
+            raise ValueError("Spectrum type not recognized:", self.spectrum_type)
 
     def _get_qsection_spectra(
         self,
@@ -227,23 +246,21 @@ class EuphonicResultsModel(Model):
             temperature=self.parameters_qplanes.temperature,
         )
 
-        self.av_spec, self.z, self.x, self.y, self.labels = (
-            produce_Q_section_spectrum(
-                modes,
-                q_array,
-                h_array,
-                k_array,
-                ecenter=self.parameters_qplanes.ecenter,
-                deltaE=self.parameters_qplanes.deltaE,
-                bins=self.parameters_qplanes.bins,
-                spectrum_type=self.parameters_qplanes.spectrum_type,
-                dw=dw,
-                labels=labels,
-            )
+        self.av_spec, self.z, self.x, self.y, self.labels = produce_Q_section_spectrum(
+            modes,
+            q_array,
+            h_array,
+            k_array,
+            ecenter=self.parameters_qplanes.ecenter,
+            deltaE=self.parameters_qplanes.deltaE,
+            bins=self.parameters_qplanes.bins,
+            spectrum_type=self.parameters_qplanes.spectrum_type,
+            dw=dw,
+            labels=labels,
         )
         self.xlabel = "AAA"
-        self.ylabel = "AAA" 
-        
+        self.ylabel = "AAA"
+
     def _curate_path_and_labels(
         self,
     ):
@@ -269,16 +286,33 @@ class EuphonicResultsModel(Model):
     def produce_phonopy_files(self):
         # This is used to produce the phonopy files from
         # PhonopyCalculation data. The files are phonopy.yaml and force_constants.hdf5
-        phonopy_yaml, fc_hdf5 = generate_force_constant_instance(
+        phonopy_yaml, fc_hdf5 = generate_force_constant_from_phonopy(
             self.node.phonon_bands.creator, mode="download"
         )
         return phonopy_yaml, fc_hdf5
-    
+
     def prepare_data_for_download(self):
         raise NotImplementedError("Need to implement the download of a CSV file")
-    
+        # return data, filename
+
+    @staticmethod
+    def _download(payload, filename):
+        from IPython.display import Javascript
+
+        javas = Javascript(
+            """
+            var link = document.createElement('a');
+            link.href = 'data:text/json;charset=utf-8;base64,{payload}'
+            link.download = "{filename}"
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            """.format(payload=payload, filename=filename)
+        )
+        display(javas)
+
     def _clone(self):
-        # in case we want to clone the model. 
+        # in case we want to clone the model.
         # This is the case when we have the same data and we inject in three
         # different models: we don't need to fetch three times.
         return copy.deepcopy(self)

@@ -21,7 +21,7 @@ from aiidalab_qe_vibroscopy.utils.euphonic.base_widgets.euphonic_base_widgets im
 from monty.json import jsanitize
 import plotly.graph_objects as go
 
-from aiidalab_qe_vibroscopy.utils.euphonic.data_manipulation.intensity_maps import (
+from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
     blockPrint,
     enablePrint,
 )
@@ -101,7 +101,7 @@ def produce_Q_section_spectrum(
     dw=None,
     labels=None,
 ):
-    from aiidalab_qe_vibroscopy.utils.euphonic.data_manipulation.intensity_maps import (
+    from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
         blockPrint,
         enablePrint,
     )

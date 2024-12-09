@@ -1,6 +1,7 @@
-from aiida.orm import Dict
-from aiida_phonopy.common.raw_parsers import get_force_constants_from_phonopy
-from aiida_phonopy.workflows.phonon import generate_force_constant_instance
+from aiidalab_qe_vibroscopy.utils.euphonic.data.phonopy_interface import (
+    generate_force_constant_from_phonopy,
+)
+
 
 def export_euphonic_data(output_vibronic, fermi_energy=None):
     if "phonon_bands" not in output_vibronic:
@@ -32,7 +33,7 @@ def export_euphonic_data(output_vibronic, fermi_energy=None):
         q_path = None
 
     phonopy_calc = output_set.creator
-    fc = generate_force_constant_instance(phonopy_calc)
+    fc = generate_force_constant_from_phonopy(phonopy_calc)
     # bands = compute_bands(fc)
     # pdos = compute_pdos(fc)
     return {

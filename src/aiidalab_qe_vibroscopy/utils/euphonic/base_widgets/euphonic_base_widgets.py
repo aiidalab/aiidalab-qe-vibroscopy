@@ -3,7 +3,7 @@ import ipywidgets as ipw
 import plotly.graph_objects as go
 
 # from ..euphonic.bands_pdos import *
-from aiidalab_qe_vibroscopy.utils.euphonic.data_manipulation.intensity_maps import *  # noqa: F403
+from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import *  # noqa: F403
 
 # sys and os used to prevent euphonic to print in the stdout.
 

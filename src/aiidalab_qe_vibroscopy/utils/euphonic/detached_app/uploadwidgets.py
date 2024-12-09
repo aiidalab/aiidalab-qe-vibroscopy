@@ -7,10 +7,7 @@ from IPython.display import display
 import ipywidgets as ipw
 
 # from ..euphonic.bands_pdos import *
-from aiidalab_qe_vibroscopy.utils.euphonic.data_manipulation.intensity_maps import (
-    generate_force_constant_instance,
-    export_euphonic_data,  # noqa: F401
-)
+
 from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_single_crystal_widgets import (
     SingleCrystalFullWidget,
 )
@@ -21,6 +18,9 @@ from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_q_planes_widgets
     QSectionFullWidget,
 )
 
+from aiidalab_qe_vibroscopy.utils.euphonic.data.phonopy_interface import (
+    generate_force_constant_from_phonopy,
+)
 
 from aiidalab_qe.common.widgets import LoadingWidget
 ###### START for detached app:
@@ -81,7 +81,7 @@ class UploadPhonopyWidget(ipw.HBox):
                     temp_hdf5_name = temp_file.name
 
                     try:
-                        fc = generate_force_constant_instance(
+                        fc = generate_force_constant_from_phonopy(
                             path=pathlib.Path(fname),
                             summary_name=temp_yaml.name,
                             fc_name=temp_hdf5_name,
@@ -94,7 +94,7 @@ class UploadPhonopyWidget(ipw.HBox):
                 temp_hdf5_name = None
 
                 try:
-                    fc = generate_force_constant_instance(
+                    fc = generate_force_constant_from_phonopy(
                         path=pathlib.Path(fname),
                         summary_name=temp_yaml.name,
                         # fc_name=temp_hdf5_name,

@@ -1,7 +1,7 @@
 from aiidalab_qe.common.panel import ResultsModel
 from aiida.common.extendeddicts import AttributeDict
 import traitlets as tl
-from aiidalab_qe_vibroscopy.utils.euphonic.data_manipulation.intensity_maps import (
+from aiidalab_qe_vibroscopy.utils.euphonic.data.export_vibronic_to_euphonic import (
     export_euphonic_data,
 )
 
