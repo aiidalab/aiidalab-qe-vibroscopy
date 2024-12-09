@@ -87,6 +87,8 @@ class EuphonicResultsModel(Model):
             return [1, 1, 1, 100, 1]
         elif trait == "Q0_vec":
             return [0.0, 0.0, 0.0]
+        elif trait == "intensity_filter":
+            return [0, 100]
         return self.traits()[trait].default_value
 
     def get_model_state(self):
@@ -97,7 +99,8 @@ class EuphonicResultsModel(Model):
     ):
         with self.hold_trait_notifications():
             for trait in self.traits():
-                setattr(self, trait, self._get_default(trait))
+                if trait not in ["intensity_filter", "energy_units"]:
+                    setattr(self, trait, self._get_default(trait))
 
     def fetch_data(self):
         """Fetch the data from the database or from the uploaded files."""
@@ -289,6 +292,11 @@ class EuphonicResultsModel(Model):
                 return 1 / self.THz_to_meV * self.THz_to_cm1
             elif old == "THz":
                 return self.THz_to_cm1
+
+    def _update_energy_units(self, new, old):
+        # This is used to update the energy units in the plot.
+        self.y = self.y * self.energy_conversion_factor(new, old)
+        self.ylabel = f"Energy ({new})"
 
     def _curate_path_and_labels(
         self,

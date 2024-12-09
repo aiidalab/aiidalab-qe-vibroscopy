@@ -43,8 +43,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         if self.rendered:
             return
 
-        self._init_view()
-
         slider_intensity = ipw.FloatRangeSlider(
             value=[1, 100],  # Default selected interval
             min=1,
@@ -71,7 +69,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             options=[
                 ("meV", "meV"),
                 ("THz", "THz"),
-                # ("cm<sup>-1</sup>", "cm-1"),
+                ("cm<sup>-1</sup>", "cm-1"),
             ],
             value="meV",
             description="Energy units:",
@@ -356,11 +354,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
             self.energy_broadening.observe(self._on_setting_change, names="value")
 
-            self.plot_button.disabled = False
-            self.plot_button.description = "Plot"
-            # self.reset_button.disabled = True
-            self.download_button.disabled = True
-
             self.children += (
                 self.ecenter,
                 self.plane_description_widget,
@@ -371,6 +364,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
         # fi self._model.spectrum_type == "q_planes"
 
+        self._init_view()
         self.children += (self.figure_container,)
 
         self.rendered = True
@@ -399,39 +393,11 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         # so the update_spectra need some more logic, or we call another method.
         self._model.get_spectra()
 
-        if not self.rendered:
-            if self._model.spectrum_type == "q_planes":
-                # hide figure until we have the data
-                self.figure_container.layout.display = "none"
+        if self._model.spectrum_type == "q_planes" and not self.rendered:
+            # hide figure until we have the data
+            self.figure_container.layout.display = "none"
 
-            # First time we render, we set several layout settings.
-            # Layout settings
-            if hasattr(self._model, "x"):
-                self.fig["layout"]["xaxis"].update(
-                    title=self._model.xlabel,
-                    range=[np.min(self._model.x), np.max(self._model.x)],
-                )
-            self.fig["layout"]["yaxis"].update(
-                title=self._model.ylabel,
-                range=[np.min(self._model.y), np.max(self._model.y)],
-            )
-
-            if self.fig.layout.images:
-                for image in self.fig.layout.images:
-                    image["scl"] = 2  # Set the scale for each image
-
-            self.fig.update_layout(
-                height=500,
-                width=700,
-                margin=dict(l=15, r=15, t=15, b=15),
-            )
-            # Update x-axis and y-axis to enable autoscaling
-            self.fig.update_xaxes(autorange=True)
-            self.fig.update_yaxes(autorange=True)
-
-            # Update the layout to enable autoscaling
-            self.fig.update_layout(autosize=True)
-        elif self._model.spectrum_type == "q_planes" and self.rendered:
+        if self._model.spectrum_type == "q_planes" and self.rendered:
             self.figure_container.layout.display = "block"
 
         heatmap_trace = go.Heatmap(
@@ -466,7 +432,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         if self.rendered:
             self._update_intensity_filter()
 
-    def _update_intensity_filter(self):
+        self.plot_button.disabled = True
+
+    def _update_intensity_filter(self, change=None):
         # the value of the intensity slider is in fractions of the max.
         # NOTE: we do this here, as we do not want to replot.
         self.fig.data[0].zmax = (
@@ -478,17 +446,14 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
     def _update_energy_units(self, change):
         # the value of the intensity slider is in fractions of the max.
-        self._model.energy_units = change["new"]
-        self.fig.data[0].y = (
-            np.array(self.fig.data[0].y)
-            * self._model.energy_conversion_factor(
-                new=self._model.energy_units, old=change["old"]
-            ),
+        self._model._update_energy_units(
+            new=change["new"],
+            old=change["old"],
         )
-
-        self.fig["layout"]["yaxis"].update(title=self._model.energy_units)
-
         # Update x-axis and y-axis to enable autoscaling
+
+        self.fig.data[0].y = self._model.y
+        self.fig.update_layout(yaxis_title=self._model.ylabel)
         self.fig.update_xaxes(autorange=True)
         self.fig.update_yaxes(autorange=True)
 
