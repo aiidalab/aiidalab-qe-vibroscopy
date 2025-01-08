@@ -29,7 +29,7 @@ common_parameters = {
     "save_to": None,
     "asr": None,  # Apply an acoustic-sum-rule (ASR) correction to the data: "realspace" applies the correction to the force constant matrix in real space. "reciprocal" applies the correction to the dynamical matrix at each q-point. (default: None)
     "dipole_parameter": 1.0,  # Set the cutoff in real/reciprocal space for the dipole Ewald sum; higher values use more reciprocal terms. If tuned correctly this can result in performance improvements. See euphonic-optimise-dipole-parameter program for help on choosing a good DIPOLE_PARAMETER. (default: 1.0)
-    "use_c": None,
+    "use_c": False,
     "n_threads": None,
 }
 
