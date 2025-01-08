@@ -42,7 +42,7 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
 
         needs_phonons_tab = self._model.needs_phonons_tab()
         if needs_phonons_tab:
-            vibroscopy_node = self._model._fetch_child_process_node()
+            vibroscopy_node = self._model.fetch_child_process_node()
             phonon_model = PhononModel()
             phonon_widget = PhononWidget(
                 model=phonon_model,
@@ -52,7 +52,7 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
 
         needs_raman_tab = self._model.needs_raman_tab()
         if needs_raman_tab:
-            vibroscopy_node = self._model._fetch_child_process_node()
+            vibroscopy_node = self._model.fetch_child_process_node()
             input_structure = vibroscopy_node.inputs.structure.get_ase()
             irraman_model = IRRamanModel()
             irraman_widget = IRRamanWidget(

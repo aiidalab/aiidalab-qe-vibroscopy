@@ -22,7 +22,7 @@ property = {
         "panel": VibroConfigurationSettingPanel,
         "model": VibroConfigurationSettingsModel,
     },
-    "code": {
+    "resources": {
         "panel": VibroResourcesSettingsPanel,
         "model": VibroResourceSettingsModel,
     },

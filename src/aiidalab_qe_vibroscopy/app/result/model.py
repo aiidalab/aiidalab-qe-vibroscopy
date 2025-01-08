@@ -3,6 +3,7 @@ import traitlets as tl
 
 
 class VibroResultsModel(ResultsModel):
+    title = "Vibroscopy"
     identifier = "vibronic"
 
     _this_process_label = "VibroWorkChain"
