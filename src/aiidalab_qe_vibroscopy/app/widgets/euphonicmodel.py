@@ -48,7 +48,7 @@ class EuphonicResultsModel(Model):
 
     # Settings for single crystal and powder average
     q_spacing = tl.Float(0.01)
-    energy_broadening = tl.Float(0.05)
+    energy_broadening = tl.Float(0.5)
     energy_bins = tl.Int(200)
     temperature = tl.Float(0)
     weighting = tl.Unicode("coherent")
@@ -261,7 +261,7 @@ class EuphonicResultsModel(Model):
             temperature=self.parameters_qplanes.temperature,
         )
 
-        self.av_spec, self.z, self.x, self.y, self.labels = produce_Q_section_spectrum(
+        self.z, q_array, self.x, self.y, self.labels = produce_Q_section_spectrum(
             modes,
             q_array,
             h_array,

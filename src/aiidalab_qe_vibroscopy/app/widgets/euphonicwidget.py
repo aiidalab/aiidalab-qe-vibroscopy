@@ -136,9 +136,9 @@ class EuphonicWidget(ipw.VBox):
             EuphonicStructureFactorWidget(
                 node=self._model.vibro, model=powder_model, spectrum_type="powder"
             ),
-            #EuphonicStructureFactorWidget(
-            #    node=self._model.vibro, model=qsection_model, spectrum_type="q_planes"
-            #),
+            EuphonicStructureFactorWidget(
+                node=self._model.vibro, model=qsection_model, spectrum_type="q_planes"
+            ),
         )
 
         for widget in self.tab_widget.children:

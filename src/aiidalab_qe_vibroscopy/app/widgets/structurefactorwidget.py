@@ -390,7 +390,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
         self.fig.update_layout(yaxis_title=self._model.ylabel)
 
-        # change the path wants also a change in the labels
+        # changing the path wants also a change in the labels
         if hasattr(self._model, "ticks_positions") and hasattr(
             self._model, "ticks_labels"
         ):
@@ -411,7 +411,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             colorbar=COLORBAR_DICT,
             colorscale=COLORSCALE,
         )
-
         # Add colorbar
         colorbar = heatmap_trace.colorbar
         colorbar.x = 1.05  # Move colorbar to the right

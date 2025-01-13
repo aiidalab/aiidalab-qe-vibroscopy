@@ -80,8 +80,8 @@ class SingleCrystalFullModel(Model):
             "save_to": None,
             "asr": None,
             "dipole_parameter": 1.0,
-            "use_c": False,
-            "n_threads": None,
+            # "use_c": False,
+            # "n_threads": None,
         }
 
     def _update_spectra(self):
