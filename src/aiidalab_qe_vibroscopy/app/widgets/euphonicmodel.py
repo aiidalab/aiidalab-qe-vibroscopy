@@ -58,7 +58,13 @@ class EuphonicResultsModel(Model):
     THz_to_meV = 4.13566553853599  # conversion factor.
     THz_to_cm1 = 33.3564095198155  # conversion factor.
 
-    def __init__(self, node=None, spectrum_type: str = "single_crystal", **kwargs):
+    def __init__(
+        self,
+        node=None,
+        spectrum_type: str = "single_crystal",
+        detached_app: bool = False,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
 
         self.spectra = {}
@@ -67,8 +73,8 @@ class EuphonicResultsModel(Model):
         self.spectrum_type = spectrum_type
         self.xlabel = None
         self.ylabel = self.energy_units
-        self.detached_app = False
-        if node:
+        self.detached_app = detached_app
+        if node:  # qe app mode.
             self.vibro = node
 
         if self.spectrum_type == "single_crystal":
@@ -114,10 +120,12 @@ class EuphonicResultsModel(Model):
             self.q_path = ins_data["q_path"]
         # 2. from uploaded files...
         else:
+            # here we just use upload_widget as MVC all together, for simplicity.
+            # moreover, this part is not used in the current QE app.
             self.fc = self.upload_widget._read_phonopy_files(
                 fname=self.fname,
-                phonopy_yaml_content=self._model.phonopy_yaml_content,
-                fc_hdf5_content=self._model.fc_hdf5_content,
+                phonopy_yaml_content=self.phonopy_yaml_content,
+                fc_hdf5_content=self.fc_hdf5_content,
             )
 
     def _inject_single_crystal_settings(

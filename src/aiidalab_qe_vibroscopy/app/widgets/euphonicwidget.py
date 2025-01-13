@@ -98,6 +98,7 @@ class EuphonicWidget(ipw.VBox):
             )
             self.upload_widget.children[0].observe(self._on_upload_yaml, "_counter")
             self.upload_widget.children[1].observe(self._on_upload_hdf5, "_counter")
+            self._model.upload_widget = self.upload_widget
             self.children += (self.upload_widget,)
 
         self.download_widget = DownloadYamlHdf5Widget(model=self._model)
@@ -166,7 +167,7 @@ class EuphonicWidget(ipw.VBox):
             for fname in self.upload_widget.children[
                 0
             ].value.keys():  # always one key because I allow only one file at the time.
-                self.fname = fname
+                self._model.fname = fname
                 self._model.phonopy_yaml_content = self.upload_widget.children[0].value[
                     fname
                 ]["content"]

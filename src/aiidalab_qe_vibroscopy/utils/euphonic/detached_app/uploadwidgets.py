@@ -221,7 +221,7 @@ class EuphonicSuperWidget(ipw.VBox):
             for fname in self.upload_widget.children[
                 0
             ].value.keys():  # always one key because I allow only one file at the time.
-                self.fname = fname
+                self._model.fname = fname
                 self._model.phonopy_yaml_content = self.upload_widget.children[0].value[
                     fname
                 ]["content"]
