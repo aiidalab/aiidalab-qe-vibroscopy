@@ -140,7 +140,7 @@ class EuphonicResultsModel(Model):
         # Dynamically add a trait for powder settings
         self.add_traits(q_min=tl.Float(0.0))
         self.add_traits(q_max=tl.Float(1))
-        self.add_traits(npts=tl.Int(100))
+        self.add_traits(npts=tl.Int(500))
 
     def _inject_qsection_settings(
         self,

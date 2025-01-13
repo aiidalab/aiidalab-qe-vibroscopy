@@ -62,7 +62,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         slider_intensity.observe(self._update_intensity_filter, "value")
 
         specification_intensity = ipw.HTML(
-            "(Intensity is relative to the maximum intensity at T=0K)"
+            "Intensity window (relative to the maximum intensity at T=0K):"
         )
 
         E_units_ddown = ipw.Dropdown(
@@ -89,6 +89,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             step=0.001,
             description="q step (1/A)",
             tooltip="q spacing in 1/A",
+            layout=ipw.Layout(
+                width="auto",
+            ),
         )
         ipw.link(
             (self._model, "q_spacing"),
@@ -101,6 +104,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             step=0.01,
             description="&Delta;E (meV)",
             tooltip="Energy broadening in meV",
+            layout=ipw.Layout(
+                width="auto",
+            ),
         )
         ipw.link(
             (self._model, "energy_broadening"),
@@ -112,6 +118,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             value=self._model.energy_bins,
             description="#E bins",
             tooltip="Number of energy bins",
+            layout=ipw.Layout(
+                width="auto",
+            ),
         )
         ipw.link(
             (self._model, "energy_bins"),
@@ -124,6 +133,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             step=0.01,
             description="T (K)",
             disabled=False,
+            layout=ipw.Layout(
+                width="auto",
+            ),
         )
         ipw.link(
             (self._model, "temperature"),
@@ -140,6 +152,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             description="weight:",
             disabled=False,
             style={"description_width": "initial"},
+            layout=ipw.Layout(
+                width="auto",
+            ),
         )
         ipw.link(
             (self._model, "weighting"),
@@ -179,30 +194,39 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             lambda x: not x,
         )
 
+        self._init_view()  # generate the self.figure_container
+
         self.children += (
             ipw.HBox(
                 [
-                    slider_intensity,
                     specification_intensity,
+                    slider_intensity,
                 ],
                 layout=ipw.Layout(
-                    justify_content="space-between",
-                    margin="10px 0",
+                    justify_content="flex-start",
+                    # margin="10px 0",
                 ),
             ),
-            E_units_ddown,
-            q_spacing,
-            energy_broadening,
-            energy_bins,
-            self.temperature,
-            weight_button,
-            ipw.VBox(
+            ipw.HBox(
                 [
-                    self.plot_button,
-                    reset_button,
-                    self.download_button,
+                    ipw.VBox(
+                        [
+                            E_units_ddown,
+                            q_spacing,
+                            energy_broadening,
+                            energy_bins,
+                            self.temperature,
+                            weight_button,
+                            self.plot_button,
+                            reset_button,
+                            self.download_button,
+                        ],
+                        layout=ipw.Layout(
+                            justify_content="flex-start", max_width="200px"
+                        ),
+                    ),
+                    self.figure_container,
                 ],
-                layout=ipw.Layout(justify_content="flex-start", max_width="200px"),
             ),
         )
 
@@ -262,20 +286,25 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
             self.qmax.observe(self._on_setting_change, names="value")
 
-            self.int_npts = ipw.IntText(
-                value=100,
-                description="npts",
-                tooltip="Number of points to be used in the average sphere.",
-            )
-            ipw.link(
-                (self._model, "npts"),
-                (self.int_npts, "value"),
-            )
-            self.int_npts.observe(self._on_setting_change, names="value")
+            # int_npts fixed to 500 for now.
+            # self.int_npts = ipw.IntText(
+            #    value=100,
+            #    description="npts",
+            #    tooltip="Number of points to be used in the average sphere.",
+            # )
+            # ipw.link(
+            #    (self._model, "npts"),
+            #    (self.int_npts, "value"),
+            # )
+            # self.int_npts.observe(self._on_setting_change, names="value")
             self.children += (
-                self.qmin,
-                self.qmax,
-                self.int_npts,
+                ipw.HBox(
+                    [
+                        self.qmin,
+                        self.qmax,
+                    ],
+                ),
+                # self.int_npts,
             )
 
         # fi self._model.spectrum_type == "powder"
@@ -359,15 +388,13 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
         # fi self._model.spectrum_type == "q_planes"
 
-        self._init_view()
-        self.children += (self.figure_container,)
-
         self.rendered = True
 
     def _init_view(self, _=None):
         self._model.fetch_data()
         if not hasattr(self, "fig"):
             self.fig = go.FigureWidget()
+            self.fig.update_layout(margin=dict(l=20, r=0, t=0, b=20))
             self.figure_container = ipw.VBox([self.fig])
         self._update_plot()
 
@@ -413,13 +440,14 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             z=self._model.z,
             y=self._model.y,
             x=self._model.x,
-            colorbar=COLORBAR_DICT,
+            # colorbar=COLORBAR_DICT,
             colorscale=COLORSCALE,
         )
         # Add colorbar
-        colorbar = heatmap_trace.colorbar
-        colorbar.x = 1.05  # Move colorbar to the right
-        colorbar.y = 0.5  # Center colorbar vertically
+        # Do we need it?
+        # colorbar = heatmap_trace.colorbar
+        # colorbar.x = 1.05  # Move colorbar to the right
+        # colorbar.y = 0.5  # Center colorbar vertically
 
         # Add heatmap trace to figure
         self.fig.add_trace(heatmap_trace)
