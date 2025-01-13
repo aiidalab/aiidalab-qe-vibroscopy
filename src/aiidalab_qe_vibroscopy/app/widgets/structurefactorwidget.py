@@ -8,7 +8,7 @@ import plotly.graph_objs as go
 
 from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import EuphonicResultsModel
 
-COLORSCALE = "Viridis"
+COLORSCALE = "Viridis"  # we should allow more options
 COLORBAR_DICT = dict(orientation="v", showticklabels=False, x=1, thickness=10, len=0.4)
 
 
@@ -196,9 +196,14 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             energy_bins,
             self.temperature,
             weight_button,
-            self.plot_button,
-            reset_button,
-            self.download_button,
+            ipw.VBox(
+                [
+                    self.plot_button,
+                    reset_button,
+                    self.download_button,
+                ],
+                layout=ipw.Layout(justify_content="flex-start", max_width="200px"),
+            ),
         )
 
         if self._model.spectrum_type == "single_crystal":

@@ -327,7 +327,7 @@ class EuphonicResultsModel(Model):
         # This is used to produce the phonopy files from
         # PhonopyCalculation data. The files are phonopy.yaml and force_constants.hdf5
         phonopy_yaml, fc_hdf5 = generate_force_constant_from_phonopy(
-            self.node.phonon_bands.creator, mode="download"
+            self.vibro.phonon_bands.creator, mode="download"
         )
         return phonopy_yaml, fc_hdf5
 
