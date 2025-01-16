@@ -8,6 +8,8 @@ from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
     produce_bands_weigthed_data,
     produce_powder_data,
     generated_curated_data,
+    produce_Q_section_spectrum,
+    produce_Q_section_modes,
 )
 
 from aiidalab_qe_vibroscopy.utils.euphonic.data.phonopy_interface import (
@@ -21,12 +23,6 @@ from aiidalab_qe_vibroscopy.utils.euphonic.data.export_vibronic_to_euphonic impo
 from aiidalab_qe_vibroscopy.utils.euphonic.data.parameters import (
     parameters_single_crystal,
     parameters_powder,
-)
-
-
-from aiidalab_qe_vibroscopy.utils.euphonic.tab_widgets.euphonic_q_planes_widgets import (
-    produce_Q_section_modes,
-    produce_Q_section_spectrum,
 )
 
 
@@ -360,13 +356,27 @@ class EuphonicResultsModel(Model):
         random_number = np.random.randint(0, 100)
 
         # Plotted_data
-        df = pd.DataFrame(self.z, index=self.y, columns=self.x)
+        if self.spectrum_type == "q_planes":
+            # we store x,y,z as values, not as values, indexes and columns
+            z = self.z.reshape(int(self.k_vec[-2]) + 1, int(self.h_vec[-2]) + 1)
+            df = pd.DataFrame(
+                z,
+                index=self.y[: int(self.k_vec[-2]) + 1],
+                columns=self.x[:: int(self.h_vec[-2]) + 1],
+            )
+        else:
+            df = pd.DataFrame(self.z, index=self.y, columns=self.x)
+
         data = base64.b64encode(df.to_csv().encode()).decode()
         filename = f"INS_structure_factor_{random_number}.csv"
 
         # model_state for template jinja plot script
         model_state = self.get_model_state()
         model_state["ylabel"] = self.ylabel
+        if hasattr(self, "xlabel"):
+            model_state["xlabel"] = self.xlabel
+        if hasattr(self, "Q0_vec"):
+            model_state["Q0"] = self.Q0_vec
         model_state["spectrum_type"] = self.spectrum_type
         if hasattr(self, "ticks_labels"):
             model_state["ticks_positions"] = self.ticks_positions

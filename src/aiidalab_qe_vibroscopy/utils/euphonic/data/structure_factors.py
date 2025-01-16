@@ -577,6 +577,111 @@ def produce_powder_data(
     matplotlib_save_or_show(save_filename=args.save_to)
 
 
+def produce_Q_section_modes(
+    fc,
+    h,
+    k,
+    Q0=np.array([0, 0, 0]),
+    n_h=100,
+    n_k=100,
+    h_extension=1,
+    k_extension=1,
+    temperature=0,
+):
+    from euphonic import ureg
+
+    # see get_Q_section
+    # h: array vector
+    # k: array vector
+    # Q0: "point" in Q-space used to build the portion of plane, using also the two vectors h and k.
+    # n_h, n_k: number of points along the two directions. or better, the two vectors.
+
+    def get_Q_section(h, k, Q0, n_h, n_k, h_extension, k_extension):
+        # every point in the space is Q=Q0+dv1*h+dv2*k, which
+
+        q_list = []
+        h_list = []
+        k_list = []
+
+        for dv1 in np.linspace(-h_extension, h_extension, n_h):
+            for dv2 in np.linspace(-k_extension, k_extension, n_k):
+                p = Q0 + dv1 * h + dv2 * k
+                q_list.append(p)  # Q list
+                h_list.append(dv1)  # *h[0])
+                k_list.append(dv2)  # *k[1])
+
+        return np.array(q_list), np.array(h_list), np.array(k_list)
+
+    q_array, h_array, k_array = get_Q_section(
+        h, k, Q0, n_h + 1, n_k + 1, h_extension, k_extension
+    )
+
+    modes = fc.calculate_qpoint_phonon_modes(qpts=q_array, reduce_qpts=False)
+
+    if temperature > 0:
+        blockPrint()
+        dw = _get_debye_waller(
+            temperature * ureg("K"),
+            fc,
+            # grid_spacing=(args.grid_spacing * recip_length_unit),
+            # **calc_modes_kwargs,
+        )
+        enablePrint()
+    else:
+        dw = None
+
+    labels = {
+        "q": f"Q0={[np.round(i,3) for i in Q0]}",
+        "h": f"h={[np.round(i,3) for i in h]}",
+        "k": f"k={[np.round(i,3) for i in k]}",
+    }
+
+    return modes, q_array, h_array, k_array, labels, dw
+
+
+def produce_Q_section_spectrum(
+    modes,
+    q_array,
+    h_array,
+    k_array,
+    ecenter,
+    deltaE=0.5,
+    bins=10,
+    spectrum_type="coherent",
+    dw=None,
+    labels=None,
+):
+    from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
+        blockPrint,
+        enablePrint,
+    )
+
+    # bins = 10 # hard coded beacuse here it does not change anything.
+    ebins = _get_energy_bins(
+        modes, bins + 1, emin=ecenter - deltaE, emax=ecenter + deltaE
+    )
+
+    blockPrint()
+    if (
+        spectrum_type == "coherent"
+    ):  # Temperature?? For now let's drop it otherwise it is complicated.
+        spectrum = modes.calculate_structure_factor(dw=dw).calculate_sqw_map(ebins)
+    elif spectrum_type == "dos":
+        spectrum = modes.calculate_dos_map(ebins)
+
+    mu = ecenter
+    sigma = (deltaE) / 2
+
+    # Gaussian weights.
+    weights = np.exp(-((spectrum.y_data.magnitude - mu) ** 2) / 2 * sigma**2) / np.sqrt(
+        2 * np.pi * sigma**2
+    )
+    av_spec = np.average(spectrum.z_data.magnitude, axis=1, weights=weights[:-1])
+    enablePrint()
+
+    return av_spec, q_array, h_array, k_array, labels
+
+
 def generated_curated_data(spectra):
     # here we concatenate the bands groups and create the ticks and labels.
 

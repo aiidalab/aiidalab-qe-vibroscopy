@@ -2,6 +2,7 @@ try:
     import pandas as pd
     import json
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
 except:
     raise ImportError("Please install pandas, json and matplotlib to run this script.")
 import os
@@ -12,6 +13,7 @@ import os
 ## you can modify some of these: labels, cmap, filename. The rest is just a summary of the
 ## parameters used to produce the data.
 settings = {{ model_state }}
+spectrum_type = settings.get('spectrum_type', 'single_crystal')
 
 ## Load the heatmap data from a CSV file and plotting.
 # File paths
@@ -26,11 +28,22 @@ df = pd.read_csv(csv_file, index_col=0)
 
 # Create the heatmap
 plt.figure(figsize=(10, 8))
-plt.imshow(df.values, cmap=settings['cmap'], aspect='auto')
+
+plt.pcolormesh(df.columns, df.index, df.values, cmap=settings['cmap'], shading='auto')
+
+# Limit the number of ticks in the x axis
+## This is to avoid having too many ticks in the x-axis, which can make the plot unreadable
+## NB: you can change it at you convenience
+max_xticks = 9
+plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=max_xticks))
 
 # Add y-axis label
 if 'ylabel' in settings:
     plt.ylabel(settings['ylabel'])
+
+# Add x-axis label
+if 'xlabel' in settings:
+    plt.xlabel(settings['xlabel'])
 
 # Add color bar
 plt.colorbar()
@@ -40,13 +53,13 @@ if 'ticks_positions' in settings and 'ticks_labels' in settings:
     plt.xticks(settings['ticks_positions'], settings['ticks_labels'])
 
 # Add title
-if 'spectrum_type' in settings:
-    plt.title(f"Inelastic neutron scattering data - {settings['spectrum_type']}")
+if "Q0" in settings:
+    plt.title(f"Inelastic neutron scattering data - {spectrum_type} - Q0 = {settings['Q0']}")
 else:
-    plt.title("Inelastic neutron scattering data")
+    plt.title(f"Inelastic neutron scattering data - {spectrum_type}")
 
 # Invert the y-axis
-plt.gca().invert_yaxis()
+if spectrum_type != "q_planes": plt.gca().invert_yaxis()
 
 # Show the plot
 plt.tight_layout()
