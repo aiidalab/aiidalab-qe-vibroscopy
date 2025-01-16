@@ -181,13 +181,13 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         reset_button.on_click(self._reset_settings)
 
         self.download_button = ipw.Button(
-            description="Download Data and Plot",
+            description="Download Data",
             icon="download",
             button_style="primary",
             disabled=False,  # Large files...
             layout=ipw.Layout(width="auto"),
         )
-        self.download_button.on_click(self._download_data)
+        self.download_button.on_click(self._model._download_data)
         ipw.dlink(
             (self.plot_button, "disabled"),
             (self.download_button, "disabled"),
@@ -481,10 +481,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
     def _reset_settings(self, _):
         self._model.reset()
-
-    def _download_data(self, _=None):
-        data, filename = self._model.prepare_data_for_download()
-        self._model._download(data, filename)
 
     def _on_vector_changed(self, change=None):
         """

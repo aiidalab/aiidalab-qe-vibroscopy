@@ -1,0 +1,53 @@
+try:
+    import pandas as pd
+    import json
+    import matplotlib.pyplot as plt
+except:
+    raise ImportError("Please install pandas, json and matplotlib to run this script.")
+import os
+
+# This script was generated on {{ generation_date }} by the aiidalab-qe-vibroscopy plugin
+
+## settings, including the plotting parameters and csv filename;
+## you can modify some of these: labels, cmap, filename. The rest is just a summary of the
+## parameters used to produce the data.
+settings = {{ model_state }}
+
+## Load the heatmap data from a CSV file and plotting.
+# File paths
+csv_file = settings['filename']  # Path to your CSV file
+
+# Check if files exist
+if not os.path.exists(csv_file):
+    raise FileNotFoundError(f"CSV file not found: {csv_file}")
+
+# Load the data
+df = pd.read_csv(csv_file, index_col=0)
+
+# Create the heatmap
+plt.figure(figsize=(10, 8))
+plt.imshow(df.values, cmap=settings['cmap'], aspect='auto')
+
+# Add y-axis label
+if 'ylabel' in settings:
+    plt.ylabel(settings['ylabel'])
+
+# Add color bar
+plt.colorbar()
+
+# Add x and y axis labels from settings
+if 'ticks_positions' in settings and 'ticks_labels' in settings:
+    plt.xticks(settings['ticks_positions'], settings['ticks_labels'])
+
+# Add title
+if 'spectrum_type' in settings:
+    plt.title(f"Inelastic neutron scattering data - {settings['spectrum_type']}")
+else:
+    plt.title("Inelastic neutron scattering data")
+
+# Invert the y-axis
+plt.gca().invert_yaxis()
+
+# Show the plot
+plt.tight_layout()
+plt.show()

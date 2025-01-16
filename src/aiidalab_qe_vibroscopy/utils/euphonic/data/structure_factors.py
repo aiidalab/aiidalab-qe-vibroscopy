@@ -266,7 +266,6 @@ def produce_bands_weigthed_data(
             )
     else:
         modes = data
-        split_args = {"btol": args.btol}
         x_tick_labels = get_qpoint_labels(
             modes.qpts, cell=modes.crystal.to_spglib_cell()
         )
@@ -328,9 +327,9 @@ def produce_bands_weigthed_data(
     if x_tick_labels:
         spectrum.x_tick_labels = x_tick_labels
 
-    spectra = spectrum.split(**split_args)  # type: List[Spectrum2D]
-    if len(spectra) > 1:
-        pass  # print(f"Found {len(spectra)} regions in q-point path")
+    spectra = spectrum  # .split(**split_args)  # type: List[Spectrum2D]
+    # if len(spectra) > 1:
+    #    pass  # print(f"Found {len(spectra)} regions in q-point path")
 
     if args.save_json:
         spectrum.to_json_file(args.save_json)
@@ -584,44 +583,25 @@ def generated_curated_data(spectra):
     ticks_positions = []
     ticks_labels = []
 
-    final_xspectra = spectra[0].x_data.magnitude
-    final_zspectra = spectra[0].z_data.magnitude
-    for i in spectra[1:]:
-        final_xspectra = np.concatenate((final_xspectra, i.x_data.magnitude), axis=0)
-        final_zspectra = np.concatenate((final_zspectra, i.z_data.magnitude), axis=0)
+    final_xspectra = spectra.x_data.magnitude
+    final_zspectra = spectra.z_data.magnitude
 
-    for j in spectra[:]:
-        # each spectra has the .x_tick_labels attribute, for the bands.
-        shift = False
-        for k in j.x_tick_labels:
-            ticks_positions.append(k[0])
-            # ticks_labels.append("Gamma") if k[1] == '$\\Gamma$' else ticks_labels.append(k[1])
-            ticks_labels.append(k[1])
+    for k in spectra.x_tick_labels:
+        ticks_positions.append(k[0])
+        # ticks_labels.append("Gamma") if k[1] == '$\\Gamma$' else ticks_labels.append(k[1])
+        ticks_labels.append(k[1])
 
-            # Here below we check if we are starting a new group,
-            # i.e. if the xticks count is starting again from 0
-            # I also need to shift correctly the next index, which
-            # refers to the zero of the ticks_positions[-1].
-            if len(ticks_positions) > 1:
-                if ticks_positions[-1] < ticks_positions[-2] or shift:
-                    if ticks_positions[-1] == 0:  # new linear path
-                        ticks_positions.pop()
-                        last = ticks_labels.pop().strip()
+        if len(ticks_positions) > 1:
+            if (
+                ticks_positions[-1] == ticks_positions[-2] + 1
+                and ticks_labels[-1] != ticks_labels[-2]
+            ):
+                ticks_labels[-2] = ticks_labels[-2] + "|" + ticks_labels[-1]
+                ticks_positions.pop()
+                ticks_labels.pop()
 
-                        # if the same index, do not join, just write once
-                        if ticks_labels[-1].strip() != last:
-                            ticks_labels[-1] = ticks_labels[-1].strip() + "|" + last
-                        # the shift is needed because if this index was zero,
-                        # the next one has to be shifted because it means that
-                        # the index counting was restarted from zero,
-                        # i.e. this is a new linear path.
-
-                        shift = True
-                    else:
-                        ticks_positions[-1] = ticks_positions[-1] + ticks_positions[-2]
-
-                if ticks_labels[-1] == ticks_labels[-2]:
-                    ticks_positions.pop()
-                    ticks_labels.pop()
+            if ticks_labels[-1] == ticks_labels[-2]:
+                ticks_positions.pop()
+                ticks_labels.pop()
 
     return final_xspectra, final_zspectra, ticks_positions, ticks_labels

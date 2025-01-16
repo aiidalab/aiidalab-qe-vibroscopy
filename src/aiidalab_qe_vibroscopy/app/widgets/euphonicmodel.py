@@ -47,13 +47,15 @@ class EuphonicResultsModel(Model):
     # 3. Q planes: qp
 
     # Settings for single crystal and powder average
-    q_spacing = tl.Float(0.01)
-    energy_broadening = tl.Float(0.5)
-    energy_bins = tl.Int(200)
-    temperature = tl.Float(0)
-    weighting = tl.Unicode("coherent")
-    energy_units = tl.Unicode("meV")
-    intensity_filter = tl.List(trait=tl.Float(), default_value=[0, 100])
+    q_spacing = tl.Float(0.1)  # q-spacing for the linear path
+    energy_broadening = tl.Float(0.5)  # energy broadening
+    energy_bins = tl.Int(200)  # energy bins
+    temperature = tl.Float(0)  # temperature
+    weighting = tl.Unicode("coherent")  # weighting
+    energy_units = tl.Unicode("meV")  # energy units
+    intensity_filter = tl.List(
+        trait=tl.Float(), default_value=[0, 100]
+    )  # intensity filter
 
     THz_to_meV = 4.13566553853599  # conversion factor.
     THz_to_cm1 = 33.3564095198155  # conversion factor.
@@ -197,7 +199,7 @@ class EuphonicResultsModel(Model):
         # curated spectra (labels and so on...)
         if self.spectrum_type == "single_crystal":  # single crystal case
             self.x, self.y = np.meshgrid(
-                spectra[0].x_data.magnitude, spectra[0].y_data.magnitude
+                spectra.x_data.magnitude, spectra.y_data.magnitude
             )
             (
                 final_xspectra,
@@ -212,8 +214,12 @@ class EuphonicResultsModel(Model):
             self.z = final_zspectra.T
             self.y = self.y[:, 0]
             self.x = list(
-                range(self.ticks_positions[-1])
+                range(self.ticks_positions[-1] + 1)
             )  # we have, instead, the ticks positions and labels
+
+            # we need to cut out some of the x and y data, as they are not used in the plot.
+            self.y = self.y[: np.shape(self.z)[0]]
+            self.x = self.x[: np.shape(self.z)[1]]
 
             self.ylabel = self.energy_units
 
@@ -229,6 +235,11 @@ class EuphonicResultsModel(Model):
             self.x = spectra.x_data.magnitude
             self.y = self.y[:, 0]
             self.z = spectra.z_data.magnitude.T
+
+            # we need to cut out some of the x and y data, as they are not used in the plot.
+            self.y = self.y[: np.shape(self.z)[0]]
+            self.x = self.x[: np.shape(self.z)[1]]
+
         elif self.spectrum_type == "q_planes":
             pass
         else:
@@ -340,8 +351,38 @@ class EuphonicResultsModel(Model):
         return phonopy_yaml, fc_hdf5
 
     def prepare_data_for_download(self):
-        raise NotImplementedError("Need to implement the download of a CSV file")
-        # return data, filename
+        import pandas as pd
+        import base64
+        from aiidalab_qe_vibroscopy.utils.euphonic.plotting.generator import (
+            generate_from_template,
+        )
+
+        random_number = np.random.randint(0, 100)
+
+        # Plotted_data
+        df = pd.DataFrame(self.z, index=self.y, columns=self.x)
+        data = base64.b64encode(df.to_csv().encode()).decode()
+        filename = f"INS_structure_factor_{random_number}.csv"
+
+        # model_state for template jinja plot script
+        model_state = self.get_model_state()
+        model_state["ylabel"] = self.ylabel
+        model_state["spectrum_type"] = self.spectrum_type
+        if hasattr(self, "ticks_labels"):
+            model_state["ticks_positions"] = self.ticks_positions
+            model_state["ticks_labels"] = self.ticks_labels
+        model_state["filename"] = filename
+        model_state["cmap"] = "cividis"
+
+        plotting_script = generate_from_template(model_state)
+        plotting_script_data = base64.b64encode(plotting_script.encode()).decode()
+        plotting_script_filename = f"plot_script_{random_number}.py"
+        return [(data, filename), (plotting_script_data, plotting_script_filename)]
+
+    def _download_data(self, _=None):
+        packed_data = self.prepare_data_for_download()
+        for data, filename in packed_data:
+            self._download(data, filename)
 
     @staticmethod
     def _download(payload, filename):
@@ -350,7 +391,7 @@ class EuphonicResultsModel(Model):
         javas = Javascript(
             """
             var link = document.createElement('a');
-            link.href = 'data:text/json;charset=utf-8;base64,{payload}'
+            link.href = 'data:text;charset=utf-8;base64,{payload}'
             link.download = "{filename}"
             document.body.appendChild(link);
             link.click();
