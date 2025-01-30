@@ -18,11 +18,11 @@ def cli():
     pass
 
 
-@cli.command(help="Setup phonopy@localhost in the current AiiDA database.")
+@cli.command(help="Setup phonopy@localhost-hq in the current AiiDA database.")
 def setup_phonopy():
     load_profile()
     try:
-        load_code("phonopy@localhost")
+        load_code("phonopy@localhost-hq")
     except NotExistent:
         # Use shutil.which to find the path of the phonopy executable
         phonopy_path = shutil.which("phonopy")
@@ -45,7 +45,7 @@ def setup_phonopy():
             "--default-calc-job-plugin",
             "phonopy.phonopy",
             "--computer",
-            "localhost",
+            "localhost-hq",
             "--filepath-executable",
             phonopy_path,
         ]
@@ -53,7 +53,7 @@ def setup_phonopy():
         # Use subprocess.run to run the command
         subprocess.run(command, check=True)
     else:
-        print("Code phonopy@localhost is already installed! Nothing to do here.")
+        print("Code phonopy@localhost-hq is already installed! Nothing to do here.")
 
 
 if __name__ == "__main__":
