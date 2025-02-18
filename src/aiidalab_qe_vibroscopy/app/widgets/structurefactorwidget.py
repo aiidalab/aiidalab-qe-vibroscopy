@@ -99,7 +99,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         q_spacing.observe(self._on_setting_change, names="value")
 
-        energy_broadening = ipw.FloatText(
+        self.energy_broadening = ipw.FloatText(
             value=self._model.energy_broadening,
             step=0.01,
             description="&Delta;E (meV)",
@@ -110,9 +110,9 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         ipw.link(
             (self._model, "energy_broadening"),
-            (energy_broadening, "value"),
+            (self.energy_broadening, "value"),
         )
-        energy_broadening.observe(self._on_setting_change, names="value")
+        self.energy_broadening.observe(self._on_setting_change, names="value")
 
         ebins = ipw.IntText(
             value=self._model.ebins,
@@ -213,7 +213,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                         [
                             E_units_ddown,
                             q_spacing,
-                            energy_broadening,
+                            self.energy_broadening,
                             ebins,
                             self.temperature,
                             weight_button,
@@ -472,12 +472,27 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )  # below this, it is all blue, i.e. zero intensity
 
     def _update_energy_units(self, change):
-        # the value of the intensity slider is in fractions of the max.
-        self._model._update_energy_units()
-        # Update x-axis and y-axis to enable autoscaling
+        """Updating the energy units
 
-        self.fig.data[0].y = self._model.y
-        self.fig.update_layout(yaxis_title=self._model.ylabel)
+        we need to update both the plot and the energy broadening widget.
+        Also, we need to avoid to enable the plot button if it was already disabled:
+        we are not changing anything apart the units.
+        """
+        replot_was_off = self.plot_button.disabled
+
+        with self.hold_trait_notifications():
+            self._model._update_energy_units(
+                old_units=change["old"], new_units=change["new"]
+            )
+
+            self.fig.data[0].y = self._model.y
+            self.fig.update_layout(yaxis_title=self._model.ylabel)
+            self.energy_broadening.description = (
+                f"&Delta;E ({self._model.energy_units})"
+            )
+
+            # putting off again the replot if it was off.
+            self.plot_button.disabled = replot_was_off
 
     def _reset_settings(self, _):
         self._model.reset()

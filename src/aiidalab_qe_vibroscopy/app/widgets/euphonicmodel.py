@@ -42,8 +42,10 @@ class EuphonicResultsModel(Model):
     # 2. powder average: pa
     # 3. Q planes: qp
 
-    # NB: the traits should have the same name of the parameters in the aiidalab_qe_vibroscopy/utils/euphonic/data/parameters.py file.
-    # in this way, we can get_model_state() and update the parameters dictionary in the data-controller.
+    # !NB: the traits should have the same name of the parameters in the aiidalab_qe_vibroscopy/utils/euphonic/data/parameters.py file.
+    # !in this way, we can get_model_state() and update the parameters dictionary in the data-controller.
+    # !only energy_units should not match (energy_unit in the parameters.py), as we always use meV in the methods to obtain spectra.
+    # it is possible to change it by cleaning up the produce_bands_weigthed_data method, but it is not necessary for now.
 
     # Settings for single crystal and powder average
     q_spacing = tl.Float(0.1)  # q-spacing for the linear path
@@ -188,6 +190,12 @@ class EuphonicResultsModel(Model):
                 if qpath:
                     qpath["delta_q"] = self.parameters["q_spacing"]
 
+            # we need to convert back the broadening to meV, as in the get_spectra we use the meV units.
+            self.parameters["energy_broadening"] = (
+                self.energy_broadening
+                / self.energy_conversion_factor(meV_to=self.energy_units)
+            )
+
             spectra, parameters = self._callback_spectra_generation(
                 params=AttrDict(self.parameters),
                 fc=self.fc,
@@ -203,7 +211,8 @@ class EuphonicResultsModel(Model):
             spectra.x_data.magnitude, spectra.y_data.magnitude
         )
         self.y, self.y_meV = self.y_meV[:, 0], self.y_meV[:, 0]
-        # convert, because it is in THz, as output from Euphonic
+        # convert, because it is in meV, as output from Euphonic (the units are
+        # described in aiidalab_qe_vibroscopy/utils/euphonic/data/parameters.py)
         self._update_energy_units()
         if self.spectrum_type == "single_crystal":  # single crystal case
             (
@@ -286,19 +295,31 @@ class EuphonicResultsModel(Model):
         self.ylabel = self.labels["k"]
 
     def energy_conversion_factor(self, meV_to="meV"):
-        if meV_to == "meV":
+        if meV_to == "meV" or not meV_to:
             return 1
         elif meV_to == "THz":
             return self.meV_to_THz
         elif meV_to == "1/cm":
             return self.meV_to_cm_minus_1
 
-    def _update_energy_units(self, _=None):
+    def _update_energy_units(self, old_units=None, new_units=None):
         # This is used to update the energy units in the plot.
         # the [:,0] is needed, please check the shape of the y_meV, it is the one coming
         # from meshgrid, instead later we reassign self.y = self.y[:,0]
-        self.y = self.y_meV * self.energy_conversion_factor(meV_to=self.energy_units)
+        if not new_units:
+            new_units = self.energy_units
+        self.y = (
+            self.y
+            / self.energy_conversion_factor(meV_to=old_units)
+            * self.energy_conversion_factor(meV_to=new_units)
+        )
         self.ylabel = self.energy_units
+        if old_units:
+            self.energy_broadening = (
+                self.energy_broadening
+                / self.energy_conversion_factor(meV_to=old_units)
+                * self.energy_conversion_factor(meV_to=new_units)
+            )
 
     def _curate_path_and_labels(
         self,
