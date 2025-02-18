@@ -47,7 +47,6 @@ class EuphonicResultsModel(Model):
     # !only energy_units should not match (energy_unit in the parameters.py), as we always use meV in the methods to obtain spectra.
     # it is possible to change it by cleaning up the produce_bands_weigthed_data method, but it is not necessary for now.
 
-
     # Settings for single crystal and powder average
     q_spacing = tl.Float(0.1)  # q-spacing for the linear path
     energy_broadening = tl.Float(0.5)  # energy broadening
@@ -367,7 +366,7 @@ class EuphonicResultsModel(Model):
         """Generate the table legend."""
         from importlib_resources import files
         from jinja2 import Environment
-        from aiidalab_qe_vibroscopy.app.widgets.static import templates
+        from aiidalab_qe_vibroscopy.utils.euphonic import templates
 
         env = Environment()
         table_legend_template = (

@@ -37,6 +37,7 @@ class VibroResultsModel(ResultsModel):
     # Here we use _fetch_child_process_node() since the function needs the input_structure in inputs
     def needs_euphonic_tab(self):
         node = self.get_vibro_node()
+        # we need phonons bands to plot the INS (not just Gamma point, at least for now)
         if not any(key in node for key in ["phonon_bands"]):
             return False
         return True

@@ -9,14 +9,21 @@ from aiidalab_qe_vibroscopy.app.widgets.structurefactorwidget import (
 from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import EuphonicResultsModel
 
 
-##### START OVERALL WIDGET TO DISPLAY EVERYTHING:
+##### EUPHONIC WIDGET TO DISPLAY EVERYTHING: UPLOAD, PLOTS, DOWNLOAD #####
 
 
 class EuphonicWidget(ipw.VBox):
     """
     Widget that will include everything,
-    from the upload widget to the tabs with single crystal and powder predictions.
-    In between, we trigger the initialization of plots via a button.
+    from the upload widget to the tabs with single crystal, powder and Q-plane results.
+
+    The first render() is not the real rendering, is just the rendering of the initialize analysis button.
+    The real rendering is done by the _render_for_real method. The reason is that it can take a while,
+    so we don't want to block the entire app. In the future, this could happen in a thread.
+
+    PLEASE NOTE: the EuphonicResultsModel which are initialized are actually three, and are the models for the three
+    different types of calculations: single crystal, powder, and Q-plane, each of them corresponding to a different
+    EuphonicStructureFactorWidget, the true visualization widget for the INS results.
     """
 
     def __init__(
@@ -27,36 +34,48 @@ class EuphonicWidget(ipw.VBox):
         **kwargs,
     ):
         """
-        Initialize the Euphonic utility class.
-        Parameters:
-        -----------
-        mode : str, optional
-            The mode of operation, default is "aiidalab-qe app plugin".
-        fc : optional
-            Force constants, default is None.
-        q_path : optional
-            Q-path for phonon calculations, default is None. If Low-D system, this can be provided.
-            It is the same path obtained for the PhonopyCalculation of the phonopy_bands.
-        Attributes:
-        -----------
-        mode : str
-            The mode of operation.
-        upload_widget : UploadPhonopyWidget
-            Widget for uploading phonopy files.
-        fc_hdf5_content : None
-            Content of the force constants HDF5 file.
-        tab_widget : ipw.Tab
-            Tab widget for different views.
-        plot_button : ipw.Button
-            Button to initialize INS data.
-        fc : optional
-            Force constants if provided.
+        Initialize the Euphonic widget class.
+
+        model : EuphonicResultsModel
+            The model containing the results for Euphonic calculations.
+        node : optional
+            The node associated with the Euphonic calculations, default is None.
+        detached_app : bool, optional
+            Flag indicating if the app is running in detached mode, default is False.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        _model : EuphonicResultsModel
+            The model containing the results for Euphonic calculations.
+        rendered : bool
+            Flag indicating if the widget has been rendered.
+        loading_widget : LoadingWidget
+            Widget indicating loading of INS data.
+            Widget for uploading phonopy files (only if detached_app is True).
+        download_widget : DownloadYamlHdf5Widget
+            Widget for downloading YAML and HDF5 files.
+
+        Methods:
+        --------
+        render():
+            Render just the *plot_button* if it has not been rendered yet.
+        _render_for_real(change=None):
+            Initialize and render the widgets for single crystal, powder, and Q-plane views.
+        _on_reset_uploads_button_clicked(change):
+            Reset the upload widgets and disable the plot button.
+        _on_upload_yaml(change):
+            Handle the upload of a phonopy YAML file.
+        _on_upload_hdf5(change):
+            Handle the upload of a phonopy HDF5 file.
         """
 
         super().__init__()
 
         self._model = model  # this is the single crystal model.
-        self._model.vibro = node
+        if not self._model.vibro:
+            self._model.vibro = node
+
+        # For the detached app (i.e. when the widget is used outside the QeApp),
         self._model.detached_app = detached_app
         self._model.fc_hdf5_content = None
 
@@ -66,6 +85,7 @@ class EuphonicWidget(ipw.VBox):
         if self.rendered:
             return
 
+        # tabs creation
         self.tab_widget = ipw.Tab()
         self.tab_widget.layout.display = "none"
         self.tab_widget.set_title(0, "Single crystal")
@@ -86,8 +106,10 @@ class EuphonicWidget(ipw.VBox):
         self.loading_widget.layout.display = "none"
 
         if not self._model.detached_app:
+            # we are in QeApp, for sure data are already there.
             self.plot_button.disabled = False
         else:
+            # we are in detached app, we need to upload the files.
             from aiidalab_qe_vibroscopy.utils.euphonic.detached_app.uploadwidgets import (
                 UploadPhonopyWidget,
             )
@@ -114,27 +136,40 @@ class EuphonicWidget(ipw.VBox):
         self.rendered = True
 
     def _render_for_real(self, change=None):
-        # It creates the widgets
+        """True render method for the widget(s)
+
+        It fetches the data, creates the models for the second and third different types of
+        results (i.e. powder, and Q-plane), and then creates the three widgets for the
+        single crystal, powder, and Q-plane, respectively.
+        """
+
+        # rendering transition
         self.plot_button.layout.display = "none"
         self.loading_widget.layout.display = "block"
 
-        self._model.fetch_data()  # should be in the model, but I can do it here once for all and then clone the model.
+        # fetch the data
+        self._model.fetch_data()
 
+        # create the models for the other two types of results.
         powder_model = EuphonicResultsModel(spectrum_type="powder")
         qsection_model = EuphonicResultsModel(spectrum_type="q_planes")
 
+        # setting the data for the other two models, because these are exactly the same.
+        # the difference is in the post processiong routines.
         for data in ["fc", "q_path"]:
             setattr(powder_model, data, getattr(self._model, data))
             setattr(qsection_model, data, getattr(self._model, data))
 
-        # I first initialise this widget, to then have the 0K ref for the other two.
-        # the model is passed to the widget. For the other two, I need to generate the model.
-        singlecrystalwidget = EuphonicStructureFactorWidget(
-            node=self._model.vibro, model=self._model, spectrum_type="single_crystal"
-        )
-
+        # NOTE:
+        # (1) the vibro node is the same for all the models.
+        # (2) the self._model is the one for the single crystal.
+        # (3) the powder_model and qsection_model are the ones for the powder and Q-plane views.
         self.tab_widget.children = (
-            singlecrystalwidget,
+            EuphonicStructureFactorWidget(
+                node=self._model.vibro,
+                model=self._model,
+                spectrum_type="single_crystal",
+            ),
             EuphonicStructureFactorWidget(
                 node=self._model.vibro, model=powder_model, spectrum_type="powder"
             ),
@@ -151,6 +186,7 @@ class EuphonicWidget(ipw.VBox):
         self.download_widget.layout.display = "block"
 
     def _on_reset_uploads_button_clicked(self, change):
+        # method employed in the detached app to reset the upload widgets.
         self.upload_widget.upload_phonopy_yaml.value.clear()
         self.upload_widget.upload_phonopy_yaml._counter = 0
         self.upload_widget.upload_phonopy_hdf5.value.clear()
@@ -164,6 +200,7 @@ class EuphonicWidget(ipw.VBox):
         self.tab_widget.layout.display = "none"
 
     def _on_upload_yaml(self, change):
+        # detached app method to handle the upload of a phonopy YAML file.
         if change["new"] != change["old"]:
             for fname in self.upload_widget.children[
                 0
@@ -177,6 +214,7 @@ class EuphonicWidget(ipw.VBox):
             self.plot_button.disabled = False
 
     def _on_upload_hdf5(self, change):
+        # detached app method to handle the upload of a phonopy HDF5 file.
         if change["new"] != change["old"]:
             for fname in self.upload_widget.children[1].value.keys():
                 self._model.fc_hdf5_content = self.upload_widget.children[1].value[
@@ -185,6 +223,15 @@ class EuphonicWidget(ipw.VBox):
 
 
 class DownloadYamlHdf5Widget(ipw.HBox):
+    """
+    Widget to download the phonopy.yaml and fc.hdf5 files.
+
+    The download button will trigger the download of the phonopy.yaml and fc.hdf5 files
+    via the _download_data method of the widget and the produce_phonopy_files method of the model.
+    In the future, this could be done in a thread, and in a way to upload the files in the phonon
+    visualizer of MaterialsCloud.
+    """
+
     def __init__(self, model):
         self._model = model
 
