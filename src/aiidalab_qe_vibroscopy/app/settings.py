@@ -41,33 +41,50 @@ class VibroConfigurationSettingPanel(
         )
         self.settings_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
-            Calculations are performed using the <b><a href="https://aiida-vibroscopy.readthedocs.io/en/latest/"
-        target="_blank">aiida-vibroscopy</b></a> plugin (L. Bastonero and N. Marzari, <a href="https://www.nature.com/articles/s41524-024-01236-3"
-        target="_blank">npj Comput. Mater. <b>10</b>, 55, 2024</a>).
-            The plugin employes the finite-displacement and finite-field approach. Raman spectra are simulated in the first-order non-resonant regime.
+            <ul>
+                <li>Calculations are performed using the <b><a href="https://aiida-vibroscopy.readthedocs.io/en/latest/"
+                target="_blank">aiida-vibroscopy</b></a> plugin (L. Bastonero and N. Marzari, <a href="https://www.nature.com/articles/s41524-024-01236-3"
+                target="_blank">npj Comput. Mater. <b>10</b>, 55, 2024</a>).</li>
+                <ul>
+                    <li>The plugin employes the finite-displacement and finite-field approach.</li>
+                    <li>Raman spectra are simulated in the first-order non-resonant regime. </li>
+                </ul>
+            <li>The inelastic neutron scattering
+            structure factor is calculated as post processing using the <b><a href="https://euphonic.readthedocs.io/en/stable/index.html#" target="_blank">Euphonic</b></a> code (R. Fair et al.,
+            <a href="https://doi.org/10.1107/S1600576722009256"
+            target="_blank">J. Appl. Cryst. <b>55</b>, 1689, 2022</a>).</li>
+            </ul>
             </div>""",
             layout=ipw.Layout(width="400"),
         )
 
         self.use_title = ipw.HTML(
             """<div style="padding-top: 0px; padding-bottom: 0px">
-            <h5>Available vibrational properties:</h5></div>"""
+            <h5>Available simulations:</h5></div>"""
         )
 
         self.use_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
-            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; <em>IR/Raman spectra</em>: both single crystal and powder samples.</li> <br>
-            <li style="margin-right: 10px; list-style-type: none; display: inline-block;">&#8226; <em>Phonons properties</em>: bands, density of states and thermal properties (Helmoltz free energy, entropy and specific heat at constant volume).</li> <br>
-            <li style="list-style-type: none; display: inline-block;">&#8226; <em>Dielectric properties</em>: Born charges, high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors .</li> <br>
-            <li style="list-style-type: none; display: inline-block;">&#8226; <em>Inelastic neutron scattering (INS)</em>: dynamic structure factor and powder intensity maps.</li> <br> <br>
+            <ul>
+                <li> <em>IR/Raman spectra</em>: both single crystal and powder samples.</li>
+                <li> <em>Phonons properties</em>: bands, density
+                of states and thermal properties (Helmoltz free energy, entropy and specific heat at constant volume).</li>
+                <li> <em>Dielectric properties</em>: Born charges,
+                high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors.</li>
+                <li> <em>Inelastic neutron scattering (INS)</em>: dynamic structure factor and powder intensity maps.</li>
+            </ul>
             </div>""",
             layout=ipw.Layout(width="400"),
         )
 
         self.hint_button_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
-            Select a supercell size for Phonon properties. Larger supercells increase computational costs. A 2x2x2 supercell is usually adequate.<br>
-            Utilize the <em>Size hint</em> button for an estimate, maintaining a minimum lattice vector magnitude of 15Å along periodic directions.
+            Select a supercell size for Phonon properties:
+            <ul>
+                <li>Larger supercells increase computational costs.</li>
+                <li>A 2x2x2 supercell is usually adequate.</li>
+            </ul>
+            You can use the <em>Size hint</em> button for an estimate, performed imposing a minimum lattice vector magnitude of 15Å along the periodic directions.
             </div>""",
         )
 

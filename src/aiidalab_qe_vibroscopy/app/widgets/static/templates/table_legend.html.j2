@@ -1,6 +1,25 @@
 <div>
     <p>
-        The plotting parameters presented in this panel are:<br>
+        The results presented here are computed as post processing of the DFT results, using the <b><a href="https://euphonic.readthedocs.io/en/stable/index.html#" target="_blank">Euphonic</b></a> code (R. Fair et al.,
+        <a href="https://doi.org/10.1107/S1600576722009256" target="_blank">J. Appl. Cryst. <b>55</b>, 1689, 2022</a>). <br> <br>
+
+        {% if spectrum_type == "single_crystal" %}
+        <b>Single crystal calculation of the inelastic neutron structure factor S(Q, ω)</b>:<br>
+        The structure factor is calculated for a given q-point path in the reciprocal space, automatically detected.
+        It is possible to modify the path and the plotting parameters, as described below.
+        {% elif spectrum_type == "powder" %}
+        <b>Powder calculation of the inelastic neutron structure factor S(Q, ω)</b>:<br>
+        The structure factor is calculated for a given q-vector magnitude range.
+        It is possible to modify the q range and other plotting parameters, as described below.
+        {% elif spectrum_type == "q_planes" %}
+        <b>Inelastic neutron structure factor in reciprocal space planes for fixed energy cuts S(Q, ω=E cut)</b>:<br>
+        The structure factor is calculated for a given plane in the reciprocal space, at fixed energy cuts (E cut).
+        It is possible to modify the plane and other plotting parameters, as described below. <br>
+        In particular, the signal is obtained as weighted average over a window of energy values ΔE, centered at the E cut level.
+        {% endif %}
+        <br> <br>
+
+        <b>Plotting parameters</b>:<br>
         <ul>
             <li>Intensity window: window for minimum and maximum intensities for the structure factor, relative to the max one at T=0K;</li>
             <li>Energy units: the energy units for the y-axis of the plot and for the energy broadening (can be meV, THz, 1/cm).</li>
@@ -21,22 +40,21 @@
             {% elif spectrum_type == "q_planes" %}
             <li>E cut: energy value at which we want to cut the reciprocal space.</li>
             {% endif %}
-        </ul><br>
+        </ul>
         {% if spectrum_type == "single_crystal" %}
         <b>Define a custom q-points path for the structure factor</b>: <br>
-        we can provide it via a specific format: <br>
+        we can provide a specific reciprocal space path, for plotting, in the following format: <br>
         (1) each linear path should be divided by '|'; <br>
         (2) each path is composed of 'qxi qyi qzi - qxf qyf qzf' where qxi and qxf are, respectively,
-        the start and end x-coordinate of the q direction, in reciprocal lattice units (rlu).<br>
-        An example path is: '0 0 0 - 1 1 1 | 1 1 1 - 0.5 0.5 0.5'. <br>
+        the initial and final q-components along the x-direction, in reciprocal lattice units (rlu).<br>
+        An example path is: '0 0 0 - 1 1 1 | 1 1 1 - 0.5 0.5 0.5'. You can try to copy this path and paste in the corresponding text entry (Custom path (rlu):).<br>
         For now, we do not support fractions (i.e. we accept 0.5 but not 1/2).
         {% elif spectrum_type == "q_planes" %}
         <b>Definition of a plane in reciprocal space</b> <br>
-        To define a plane in the reciprocal space, <br>
-        you should define a point in the reciprocal space, Q<sub>0</sub>,
-        and two vectors h; and k;. Then, each Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h + &beta;*k. <br>
-        Then you can select the number of q points in both directions and the &alpha; and &beta; parameters. <br>
-        Coordinates are reciprocal lattice units (rlu).
+        To define a plane in the reciprocal space, you should define a point in the reciprocal space, Q<sub>0</sub>,
+        and two vectors h; and k;. Then, each Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h + &beta;*k. Then you can select
+        the number of q points in both directions and the &alpha; and &beta; parameters. <br>
+        Coordinates are have to be provided in reciprocal lattice units (rlu).
         {% endif %}
     </p>
 </div>

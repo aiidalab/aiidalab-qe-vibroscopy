@@ -46,17 +46,17 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             return
 
         self.about_toggle = ipw.ToggleButton(
-            layout=ipw.Layout(width="auto"),
+            layout=ipw.Layout(width="20%"),
             button_style="",
             icon="info",
             value=False,
-            description="Details on plot and parameters",
+            description="Plot info",
             tooltip="Info on the parameters and plots",
             disabled=False,
         )
         self.about_toggle.observe(self.display_table_legend, names="value")
 
-        self.table_legend = ipw.HTML("ciao")
+        self.table_legend = ipw.HTML("")
         ipw.dlink(
             (self._model, "table_legend_text"),
             (self.table_legend, "value"),
