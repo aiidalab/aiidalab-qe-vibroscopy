@@ -72,7 +72,7 @@ class EuphonicWidget(ipw.VBox):
         super().__init__()
 
         self._model = model  # this is the single crystal model.
-        if not self._model.vibro:
+        if not hasattr(self._model, "vibro"):
             self._model.vibro = node
 
         # For the detached app (i.e. when the widget is used outside the QeApp),

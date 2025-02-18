@@ -251,7 +251,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                             self.download_button,
                         ],
                         layout=ipw.Layout(
-                            justify_content="flex-start", max_width="200px"
+                            justify_content="flex-start", max_width="250px"
                         ),
                     ),
                     self.figure_container,
