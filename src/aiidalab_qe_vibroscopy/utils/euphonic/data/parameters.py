@@ -9,7 +9,7 @@ common_parameters = {
     "weighting": "coherent",  # Spectral weighting to plot: DOS, coherent inelastic neutron scattering (default: dos)
     "grid": None,  # FWHM of broadening on q axis in 1/LENGTH_UNIT (no broadening if unspecified). (default: None)
     "grid_spacing": 0.1,  # q-point spacing of Monkhorst-Pack grid. (default: 0.1)
-    "energy_unit": "THz",
+    "energy_unit": "meV",
     "temperature": 0,  # Temperature in K; enable Debye-Waller factor calculation. (Only applicable when --weighting=coherent). (default: None)
     "shape": "gauss",  # The broadening shape (default: gauss)
     "length_unit": "angstrom",
@@ -20,7 +20,7 @@ common_parameters = {
     "e_min": 0,
     "e_max": None,
     "title": None,
-    "ylabel": "THz",
+    "ylabel": "meV",
     "xlabel": "",
     "save_json": False,
     "no_base_style": False,

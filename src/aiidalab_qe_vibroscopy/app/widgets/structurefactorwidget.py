@@ -394,7 +394,10 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         self._model.fetch_data()
         if not hasattr(self, "fig"):
             self.fig = go.FigureWidget()
-            self.fig.update_layout(margin=dict(l=20, r=0, t=0, b=20))
+            self.fig.update_layout(
+                margin=dict(l=20, r=0, t=0, b=20),
+                yaxis=dict(autorange=True),
+            )
             self.figure_container = ipw.VBox([self.fig])
         self._update_plot()
 
@@ -470,10 +473,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
     def _update_energy_units(self, change):
         # the value of the intensity slider is in fractions of the max.
-        self._model._update_energy_units(
-            new=change["new"],
-            old=change["old"],
-        )
+        self._model._update_energy_units()
         # Update x-axis and y-axis to enable autoscaling
 
         self.fig.data[0].y = self._model.y

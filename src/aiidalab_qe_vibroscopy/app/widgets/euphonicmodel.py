@@ -37,7 +37,7 @@ class EuphonicResultsModel(Model):
     # plot-controller, i.e. scales, colors and so on, should be attached to the widget, I think.
     # the above last point should be discussed more.
 
-    # For now, we do only the first of the following:
+    # For now, support the following:
     # 1. single crystal data: sc
     # 2. powder average: pa
     # 3. Q planes: qp
@@ -53,8 +53,8 @@ class EuphonicResultsModel(Model):
         trait=tl.Float(), default_value=[0, 100]
     )  # intensity filter
 
-    THz_to_meV = 4.13566553853599  # conversion factor.
-    THz_to_cm1 = 33.3564095198155  # conversion factor.
+    meV_to_THz = 0.242  # conversion factor.
+    meV_to_cm_minus_1 = 8.1  # conversion factor.
 
     def __init__(
         self,
@@ -192,11 +192,17 @@ class EuphonicResultsModel(Model):
                 plot=False,
             )
 
+        if self.spectrum_type == "q_planes":
+            return
+
         # curated spectra (labels and so on...)
+        self.x, self.y_meV = np.meshgrid(
+            spectra.x_data.magnitude, spectra.y_data.magnitude
+        )
+        self.y, self.y_meV = self.y_meV[:, 0], self.y_meV[:, 0]
+        # convert, because it is in THz, as output from Euphonic
+        self._update_energy_units()
         if self.spectrum_type == "single_crystal":  # single crystal case
-            self.x, self.y = np.meshgrid(
-                spectra.x_data.magnitude, spectra.y_data.magnitude
-            )
             (
                 final_xspectra,
                 final_zspectra,
@@ -208,40 +214,25 @@ class EuphonicResultsModel(Model):
             self.ticks_labels = ticks_labels
 
             self.z = final_zspectra.T
-            self.y = self.y[:, 0]
             self.x = list(
                 range(self.ticks_positions[-1] + 1)
             )  # we have, instead, the ticks positions and labels
 
-            # we need to cut out some of the x and y data, as they are not used in the plot.
-            self.y = self.y[: np.shape(self.z)[0]]
-            self.x = self.x[: np.shape(self.z)[1]]
-
-            self.ylabel = self.energy_units
-
         elif self.spectrum_type == "powder":  # powder case
             # Spectrum2D as output of the powder data
-            self.x, self.y = np.meshgrid(
-                spectra.x_data.magnitude, spectra.y_data.magnitude
-            )
 
             # we don't need to curate the powder data, at variance with the single crystal case.
             # We can directly use them:
             self.xlabel = "|q| (1/A)"
-            self.x = spectra.x_data.magnitude
-            self.y = self.y[:, 0]
-            self.z = spectra.z_data.magnitude.T
 
-            # we need to cut out some of the x and y data, as they are not used in the plot.
-            self.y = self.y[: np.shape(self.z)[0]]
-            self.x = self.x[: np.shape(self.z)[1]]
-
-        elif self.spectrum_type == "q_planes":
-            pass
         else:
             raise ValueError("Spectrum type not recognized:", self.spectrum_type)
 
-        self.y = self.y * self.energy_conversion_factor(self.energy_units, "meV")
+        # we need to cut out some of the x and y data, as they are not used in the plot.
+        self.y = self.y[: np.shape(self.z)[0]]
+        self.x = self.x[: np.shape(self.z)[1]]
+
+        self.ylabel = self.energy_units
 
     def _get_qsection_spectra(
         self,
@@ -291,29 +282,19 @@ class EuphonicResultsModel(Model):
         self.xlabel = self.labels["h"]
         self.ylabel = self.labels["k"]
 
-    def energy_conversion_factor(self, new, old):
-        # TODO: check this is correct.
-        if new == old:
+    def energy_conversion_factor(self, meV_to="meV"):
+        if meV_to == "meV":
             return 1
-        if new == "meV":
-            if old == "THz":
-                return self.THz_to_meV
-            elif old == "1/cm":
-                return 1 / self.THz_to_cm1 * self.THz_to_meV
-        elif new == "THz":
-            if old == "meV":
-                return 1 / self.THz_to_meV
-            elif old == "1/cm":
-                return 1 / self.THz_to_cm1
-        elif new == "1/cm":
-            if old == "meV":
-                return 1 / self.THz_to_meV * self.THz_to_cm1
-            elif old == "THz":
-                return self.THz_to_cm1
+        elif meV_to == "THz":
+            return self.meV_to_THz
+        elif meV_to == "1/cm":
+            return self.meV_to_cm_minus_1
 
-    def _update_energy_units(self, new, old):
+    def _update_energy_units(self, _=None):
         # This is used to update the energy units in the plot.
-        self.y = self.y * self.energy_conversion_factor(new, old)
+        # the [:,0] is needed, please check the shape of the y_meV, it is the one coming
+        # from meshgrid, instead later we reassign self.y = self.y[:,0]
+        self.y = self.y_meV * self.energy_conversion_factor(meV_to=self.energy_units)
         self.ylabel = self.energy_units
 
     def _curate_path_and_labels(
