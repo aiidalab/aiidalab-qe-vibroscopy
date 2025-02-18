@@ -60,7 +60,7 @@ class PhononWidget(ipw.VBox):
     def _init_view(self):
         self._model.fetch_data()
         self.bands_pdos = BandsPdosPlotly(
-            self._model.bands_data, self._model.pdos_data
+            bands_data=self._model.bands_data, pdos_data=self._model.pdos_data
         ).bandspdosfigure
         y_max = max(self.bands_pdos.data[0].y)
         y_min = min(self.bands_pdos.data[0].y)

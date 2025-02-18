@@ -7,6 +7,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 from aiidalab_qe.common.infobox import InfoBox
+
 from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import EuphonicResultsModel
 
 COLORSCALE = "Viridis"  # we should allow more options
@@ -334,7 +335,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
         # fi self._model.spectrum_type == "powder"
         elif self._model.spectrum_type == "q_planes":
-            # E_units_ddown.layout.display = "none"
             q_spacing.layout.display = "none"
 
             self.ecenter = ipw.FloatText(
@@ -358,7 +358,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                     <b>Q-plane definition</b>: <br>
                     To define a plane in the reciprocal space, <br>
                     you should define a point in the reciprocal space, Q<sub>0</sub>,
-                    and two vectors h&#8407; and k&#8407;. Then, each Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h&#8407; + &beta;*k&#8407;. <br>
+                    and two vectors h; and k;. Then, each Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h + &beta;*k. <br>
                     Then you can select the number of q points in both directions and the &alpha; and &beta; parameters. <br>
                     Coordinates are reciprocal lattice units (rlu).
                 </div>
@@ -428,6 +428,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                 margin=dict(l=20, r=0, t=0, b=20),
                 yaxis=dict(autorange=True),
             )
+
             self.figure_container = ipw.VBox([self.fig])
         self._update_plot()
 
