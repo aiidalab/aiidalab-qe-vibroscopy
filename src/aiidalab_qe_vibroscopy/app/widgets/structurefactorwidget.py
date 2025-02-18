@@ -6,6 +6,7 @@ import numpy as np
 # ADD ALL THE IMPORTS.
 import plotly.graph_objs as go
 
+from aiidalab_qe.common.infobox import InfoBox
 from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import EuphonicResultsModel
 
 COLORSCALE = "Viridis"  # we should allow more options
@@ -43,14 +44,36 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         if self.rendered:
             return
 
+        self.about_toggle = ipw.ToggleButton(
+            layout=ipw.Layout(width="auto"),
+            button_style="",
+            icon="info",
+            value=False,
+            description="About the parameters",
+            tooltip="Info on the parameters and plots",
+            disabled=False,
+        )
+        self.about_toggle.observe(self.display_table_legend, names="value")
+
+        self.table_legend = ipw.HTML("ciao")
+        ipw.dlink(
+            (self._model, "table_legend_text"),
+            (self.table_legend, "value"),
+        )
+        self.table_legend_infobox = InfoBox(
+            children=[self.table_legend],
+        )
+        self.table_legend_infobox.layout.display = "none"
+        self._model.generate_table_legend()
+
         slider_intensity = ipw.FloatRangeSlider(
             value=[1, 100],  # Default selected interval
-            min=1,
+            min=0,
             max=100,
-            step=1,
+            step=0.1,
             orientation="horizontal",
             readout=True,
-            readout_format=".0f",
+            readout_format=".1f",
             layout=ipw.Layout(
                 width="400px",
             ),
@@ -197,6 +220,8 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         self._init_view()  # generate the self.figure_container
 
         self.children += (
+            self.about_toggle,
+            self.table_legend_infobox,
             ipw.HBox(
                 [
                     specification_intensity,
@@ -309,7 +334,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
         # fi self._model.spectrum_type == "powder"
         elif self._model.spectrum_type == "q_planes":
-            E_units_ddown.layout.display = "none"
+            # E_units_ddown.layout.display = "none"
             q_spacing.layout.display = "none"
 
             self.ecenter = ipw.FloatText(
@@ -319,6 +344,11 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             ipw.link(
                 (self._model, "center_e"),
                 (self.ecenter, "value"),
+            )
+            ipw.dlink(
+                (self._model, "energy_units"),
+                (self.ecenter, "description"),
+                transform=lambda x: f"E ({x})",
             )
             self.ecenter.observe(self._on_setting_change, names="value")
 
@@ -504,3 +534,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         self._model.Q0_vec = [i.value for i in self.Q0_vec.children[:-2]]
         self._model.h_vec = [i.value for i in self.h_vec.children]
         self._model.k_vec = [i.value for i in self.k_vec.children]
+
+    def display_table_legend(self, change):
+        self.table_legend_infobox.layout.display = "block" if change["new"] else "none"

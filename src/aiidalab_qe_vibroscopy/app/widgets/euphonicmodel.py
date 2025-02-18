@@ -57,6 +57,7 @@ class EuphonicResultsModel(Model):
     intensity_filter = tl.List(
         trait=tl.Float(), default_value=[0, 100]
     )  # intensity filter
+    table_legend_text = tl.Unicode("")
 
     meV_to_THz = 0.242  # conversion factor.
     meV_to_cm_minus_1 = 8.1  # conversion factor.
@@ -237,6 +238,9 @@ class EuphonicResultsModel(Model):
             # We can directly use them:
             self.xlabel = "|q| (1/A)"
 
+            self.x = spectra.x_data.magnitude
+            self.z = spectra.z_data.magnitude.T
+
         else:
             raise ValueError("Spectrum type not recognized:", self.spectrum_type)
 
@@ -259,8 +263,14 @@ class EuphonicResultsModel(Model):
                 "h_extension": self.h_vec[-1],
                 "k_extension": self.k_vec[-1],
                 "Q0": np.array([i for i in self.Q0_vec[:]]),
-                "ecenter": self.center_e,
-                "deltaE": self.energy_broadening,
+                "ecenter": self.center_e
+                / self.energy_conversion_factor(
+                    meV_to=self.energy_units
+                ),  # convert to meV
+                "deltaE": self.energy_broadening
+                / self.energy_conversion_factor(
+                    meV_to=self.energy_units
+                ),  # convert to meV
                 "ebins": self.ebins,
                 "spectrum_type": self.weighting,
                 "temperature": self.temperature,
@@ -308,12 +318,21 @@ class EuphonicResultsModel(Model):
         # from meshgrid, instead later we reassign self.y = self.y[:,0]
         if not new_units:
             new_units = self.energy_units
-        self.y = (
-            self.y
-            / self.energy_conversion_factor(meV_to=old_units)
-            * self.energy_conversion_factor(meV_to=new_units)
-        )
-        self.ylabel = self.energy_units
+
+        if self.spectrum_type in ["single_crystal", "powder"]:
+            self.y = (
+                self.y
+                / self.energy_conversion_factor(meV_to=old_units)
+                * self.energy_conversion_factor(meV_to=new_units)
+            )
+            self.ylabel = self.energy_units
+        elif self.spectrum_type == "q_planes":
+            self.center_e = (
+                self.center_e
+                / self.energy_conversion_factor(meV_to=old_units)
+                * self.energy_conversion_factor(meV_to=new_units)
+            )
+
         if old_units:
             self.energy_broadening = (
                 self.energy_broadening
@@ -342,6 +361,27 @@ class EuphonicResultsModel(Model):
                 scoords.append(l)
             coordinates.append(scoords)
         return coordinates, labels
+
+    def generate_table_legend(self, download_mode=False):
+        """Generate the table legend."""
+        from importlib_resources import files
+        from jinja2 import Environment
+        from aiidalab_qe_vibroscopy.app.widgets.static import templates
+
+        env = Environment()
+        table_legend_template = (
+            files(templates).joinpath("table_legend.html.j2").read_text()
+        )
+        table_legend_text = env.from_string(table_legend_template).render(
+            {
+                "spectrum_type": self.spectrum_type,
+            }
+        )
+
+        if download_mode:
+            self.readme_text = table_legend_text
+        else:
+            self.table_legend_text = table_legend_text
 
     def produce_phonopy_files(self):
         # This is used to produce the phonopy files from
