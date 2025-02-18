@@ -119,7 +119,7 @@ class EuphonicWidget(ipw.VBox):
         self.loading_widget.layout.display = "block"
 
         self._model.fetch_data()  # should be in the model, but I can do it here once for all and then clone the model.
-        # WHILE DEBUGGING:
+
         powder_model = EuphonicResultsModel(spectrum_type="powder")
         qsection_model = EuphonicResultsModel(spectrum_type="q_planes")
 
@@ -135,7 +135,6 @@ class EuphonicWidget(ipw.VBox):
 
         self.tab_widget.children = (
             singlecrystalwidget,
-            # WHILE DEBUGGING:
             EuphonicStructureFactorWidget(
                 node=self._model.vibro, model=powder_model, spectrum_type="powder"
             ),
