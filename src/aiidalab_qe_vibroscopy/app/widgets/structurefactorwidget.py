@@ -50,7 +50,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             button_style="",
             icon="info",
             value=False,
-            description="About the parameters",
+            description="Details on plot and parameters",
             tooltip="Info on the parameters and plots",
             disabled=False,
         )
@@ -167,11 +167,11 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
         weight_button = ipw.ToggleButtons(
             options=[
-                ("Coherent", "coherent"),
-                ("DOS", "dos"),
+                ("S(Q, ω)", "coherent"),
+                ("DOS map", "dos"),
             ],
             value=self._model.weighting,
-            description="weight:",
+            description="Plot mode:",
             disabled=False,
             style={"description_width": "initial"},
             layout=ipw.Layout(
@@ -255,20 +255,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
 
         if self._model.spectrum_type == "single_crystal":
-            self.custom_kpath_description = ipw.HTML(
-                """
-            <div style="padding-top: 0px; padding-bottom: 0px; line-height: 140%;">
-                <b>Custom q-points path for the structure factor</b>: <br>
-                we can provide it via a specific format: <br>
-                (1) each linear path should be divided by '|'; <br>
-                (2) each path is composed of 'qxi qyi qzi - qxf qyf qzf' where qxi and qxf are, respectively,
-                the start and end x-coordinate of the q direction, in reciprocal lattice units (rlu).<br>
-                An example path is: '0 0 0 - 1 1 1 | 1 1 1 - 0.5 0.5 0.5'. <br>
-                For now, we do not support fractions (i.e. we accept 0.5 but not 1/2).
-            </div>
-            """
-            )
-
             self.custom_kpath_text = ipw.Text(
                 value="",
                 description="Custom path (rlu):",
@@ -283,10 +269,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
             self.custom_kpath_text.observe(self._on_setting_change, names="value")
 
-            self.children += (
-                self.custom_kpath_description,
-                self.custom_kpath_text,
-            )
+            self.children += (self.custom_kpath_text,)
         # fi self._model.spectrum_type == "single_crystal"
         elif self._model.spectrum_type == "powder":
             self.qmin = ipw.FloatText(
@@ -310,17 +293,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
             self.qmax.observe(self._on_setting_change, names="value")
 
-            # int_npts fixed to 500 for now.
-            # self.int_npts = ipw.IntText(
-            #    value=100,
-            #    description="npts",
-            #    tooltip="Number of points to be used in the average sphere.",
-            # )
-            # ipw.link(
-            #    (self._model, "npts"),
-            #    (self.int_npts, "value"),
-            # )
-            # self.int_npts.observe(self._on_setting_change, names="value")
             self.children += (
                 ipw.HBox(
                     [
@@ -337,7 +309,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
             self.ecenter = ipw.FloatText(
                 value=0,
-                description="E (meV)",
+                description="E cut (meV)",
             )
             ipw.link(
                 (self._model, "center_e"),
@@ -354,11 +326,6 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                 """
                 <div style="padding-top: 0px; padding-bottom: 0px; line-height: 140%;">
                     <b>Q-plane definition</b>: <br>
-                    To define a plane in the reciprocal space, <br>
-                    you should define a point in the reciprocal space, Q<sub>0</sub>,
-                    and two vectors h; and k;. Then, each Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h + &beta;*k. <br>
-                    Then you can select the number of q points in both directions and the &alpha; and &beta; parameters. <br>
-                    Coordinates are reciprocal lattice units (rlu).
                 </div>
                 """
             )

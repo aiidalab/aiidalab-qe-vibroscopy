@@ -3,11 +3,40 @@
         The plotting parameters presented in this panel are:<br>
         <ul>
             <li>Intensity window: window for minimum and maximum intensities for the structure factor, relative to the max one at T=0K;</li>
-            <li>Energy units: the energy units for the y-axis of the plot (can be meV, THz, 1/cm).</li>
+            <li>Energy units: the energy units for the y-axis of the plot and for the energy broadening (can be meV, THz, 1/cm).</li>
+            {% if not spectrum_type == "q_planes" %}
             <li>q step: the spacing (in 1/A) between two consecutive points in the reciprocal space path (x-axis).</li>
+            {% endif %}
+            {% if spectrum_type == "q_planes" %}
+            <li>ΔE: energy window to average over the intensity, considering as center the E cut level (described below).</li>
+            {% else %}
             <li>ΔE: the broadening in energy.</li>
+            {% endif %}
             <li>#E bins: Number of energy bins.</li>
             <li>T: the temperature at which the structure factor is calculated in terms of the Debye-Waller factor. Units are K.</li>
+            <li>Plot mode: the type of plot to be displayed can be the inelastic (one) neutron scattering S(Q, ω) or the Density of States (DOS) map of phonons. In this second case, not finite temperature effects are considered.</li>
+            {% if spectrum_type == "powder" %}
+            <li>|q|min: the minimum value of the q vector magnitude in the plot (in 1/A).</li>
+            <li>|q|max: the maximum value of the q vector magnitude in the plot (in 1/A).</li>
+            {% elif spectrum_type == "q_planes" %}
+            <li>E cut: energy value at which we want to cut the reciprocal space.</li>
+            {% endif %}
         </ul><br>
+        {% if spectrum_type == "single_crystal" %}
+        <b>Define a custom q-points path for the structure factor</b>: <br>
+        we can provide it via a specific format: <br>
+        (1) each linear path should be divided by '|'; <br>
+        (2) each path is composed of 'qxi qyi qzi - qxf qyf qzf' where qxi and qxf are, respectively,
+        the start and end x-coordinate of the q direction, in reciprocal lattice units (rlu).<br>
+        An example path is: '0 0 0 - 1 1 1 | 1 1 1 - 0.5 0.5 0.5'. <br>
+        For now, we do not support fractions (i.e. we accept 0.5 but not 1/2).
+        {% elif spectrum_type == "q_planes" %}
+        <b>Definition of a plane in reciprocal space</b> <br>
+        To define a plane in the reciprocal space, <br>
+        you should define a point in the reciprocal space, Q<sub>0</sub>,
+        and two vectors h; and k;. Then, each Q point is defined as: Q = Q<sub>0</sub> + &alpha;*h + &beta;*k. <br>
+        Then you can select the number of q points in both directions and the &alpha; and &beta; parameters. <br>
+        Coordinates are reciprocal lattice units (rlu).
+        {% endif %}
     </p>
 </div>
