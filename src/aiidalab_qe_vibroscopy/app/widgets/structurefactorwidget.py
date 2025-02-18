@@ -84,9 +84,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         slider_intensity.observe(self._update_intensity_filter, "value")
 
-        specification_intensity = ipw.HTML(
-            "Intensity window (relative to the maximum intensity at T=0K):"
-        )
+        specification_intensity = ipw.HTML("Intensity window (%):")
 
         E_units_ddown = ipw.Dropdown(
             options=[
