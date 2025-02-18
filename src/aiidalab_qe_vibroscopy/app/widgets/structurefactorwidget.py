@@ -114,8 +114,8 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         energy_broadening.observe(self._on_setting_change, names="value")
 
-        energy_bins = ipw.IntText(
-            value=self._model.energy_bins,
+        ebins = ipw.IntText(
+            value=self._model.ebins,
             description="#E bins",
             tooltip="Number of energy bins",
             layout=ipw.Layout(
@@ -123,10 +123,10 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             ),
         )
         ipw.link(
-            (self._model, "energy_bins"),
-            (energy_bins, "value"),
+            (self._model, "ebins"),
+            (ebins, "value"),
         )
-        energy_bins.observe(self._on_setting_change, names="value")
+        ebins.observe(self._on_setting_change, names="value")
 
         self.temperature = ipw.FloatText(
             value=self._model.temperature,
@@ -214,7 +214,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                             E_units_ddown,
                             q_spacing,
                             energy_broadening,
-                            energy_bins,
+                            ebins,
                             self.temperature,
                             weight_button,
                             self.plot_button,

@@ -42,10 +42,13 @@ class EuphonicResultsModel(Model):
     # 2. powder average: pa
     # 3. Q planes: qp
 
+    # NB: the traits should have the same name of the parameters in the aiidalab_qe_vibroscopy/utils/euphonic/data/parameters.py file.
+    # in this way, we can get_model_state() and update the parameters dictionary in the data-controller.
+
     # Settings for single crystal and powder average
     q_spacing = tl.Float(0.1)  # q-spacing for the linear path
     energy_broadening = tl.Float(0.5)  # energy broadening
-    energy_bins = tl.Int(200)  # energy bins
+    ebins = tl.Int(200)  # energy bins
     temperature = tl.Float(0)  # temperature
     weighting = tl.Unicode("coherent")  # weighting
     energy_units = tl.Unicode("meV")  # energy units
@@ -249,7 +252,7 @@ class EuphonicResultsModel(Model):
                 "Q0": np.array([i for i in self.Q0_vec[:]]),
                 "ecenter": self.center_e,
                 "deltaE": self.energy_broadening,
-                "bins": self.energy_bins,
+                "ebins": self.ebins,
                 "spectrum_type": self.weighting,
                 "temperature": self.temperature,
             }
@@ -274,7 +277,7 @@ class EuphonicResultsModel(Model):
             k_array,
             ecenter=self.parameters_qplanes.ecenter,
             deltaE=self.parameters_qplanes.deltaE,
-            bins=self.parameters_qplanes.bins,
+            bins=self.parameters_qplanes.ebins,
             spectrum_type=self.parameters_qplanes.spectrum_type,
             dw=dw,
             labels=labels,
