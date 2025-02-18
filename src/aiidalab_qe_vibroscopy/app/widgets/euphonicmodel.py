@@ -1,7 +1,10 @@
 import numpy as np
 import traitlets as tl
 import copy
+
 from IPython.display import display
+
+from aiidalab_qe.common.mvc import Model
 
 from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
     AttrDict,
@@ -11,43 +14,36 @@ from aiidalab_qe_vibroscopy.utils.euphonic.data.structure_factors import (
     produce_Q_section_spectrum,
     produce_Q_section_modes,
 )
-
 from aiidalab_qe_vibroscopy.utils.euphonic.data.phonopy_interface import (
     generate_force_constant_from_phonopy,
 )
-
 from aiidalab_qe_vibroscopy.utils.euphonic.data.export_vibronic_to_euphonic import (
     export_euphonic_data,
 )
-
 from aiidalab_qe_vibroscopy.utils.euphonic.data.parameters import (
     parameters_single_crystal,
     parameters_powder,
 )
 
 
-from aiidalab_qe.common.mvc import Model
-
-
 class EuphonicResultsModel(Model):
-    """Model for the neutron scattering results panel."""
+    """Model for the neutron scattering results panel.
 
-    # Here we mode all the model and data-controller, i.e. all the data and their
-    # manipulation to produce new spectra.
-    # plot-controller, i.e. scales, colors and so on, should be attached to the widget, I think.
-    # the above last point should be discussed more.
+    Here we define all the model and data-controller, i.e. all the data and their
+    manipulation to produce new spectra.
+    Differently, the plot-controller, i.e. scales, colors and so on, should be attached to the widget, I think, as
+    they are not really changing the data inside the model.
 
-    # For now, support the following:
-    # 1. single crystal data: sc
-    # 2. powder average: pa
-    # 3. Q planes: qp
+    For now, support single crystal, powder and q_planes cases.
 
-    # !NB: the traits should have the same name of the parameters in the aiidalab_qe_vibroscopy/utils/euphonic/data/parameters.py file.
-    # !in this way, we can get_model_state() and update the parameters dictionary in the data-controller.
-    # !only energy_units should not match (energy_unit in the parameters.py), as we always use meV in the methods to obtain spectra.
-    # it is possible to change it by cleaning up the produce_bands_weigthed_data method, but it is not necessary for now.
+    NOTE: the traits should have the same name of the parameters contained the aiidalab_qe_vibroscopy/utils/euphonic/data/parameters.py file.
+    in this way, we can get_model_state() and update the parameters dictionary in the data-controller.
+    Only *energy_units* should not match (energy_unit in the parameters.py), as we always use meV in the methods to obtain spectra.
+    it is possible to change it by cleaning up the produce_bands_weigthed_data method, but it is not necessary for now.
+    """
 
-    # Settings for single crystal and powder average
+    # Here bw we define the common traits of the model. Later (in the init), we will inject
+    # the specific ones for the single crystal, powder and q_planes cases.
     q_spacing = tl.Float(0.1)  # q-spacing for the linear path
     energy_broadening = tl.Float(0.5)  # energy broadening
     ebins = tl.Int(200)  # energy bins
@@ -81,6 +77,8 @@ class EuphonicResultsModel(Model):
         if node:  # qe app mode.
             self.vibro = node
 
+        # Inject the specific traits for the single crystal, powder and q_planes cases.
+        # and we define the specific callback function for the spectra generation.
         if self.spectrum_type == "single_crystal":
             self._inject_single_crystal_settings()
         elif self.spectrum_type == "powder":
@@ -93,6 +91,7 @@ class EuphonicResultsModel(Model):
             setattr(self, k, v)
 
     def _get_default(self, trait):
+        # I need to treat differently the traits that are lists, as they have a different default value.
         if trait in ["h_vec", "k_vec"]:
             return [1, 1, 1, 100, 1]
         elif trait == "Q0_vec":
@@ -102,11 +101,14 @@ class EuphonicResultsModel(Model):
         return self.traits()[trait].default_value
 
     def get_model_state(self):
+        # This will give me the necessary part to update the parameters dictionary,
+        # to be used in the data-controller.
         return {trait: getattr(self, trait) for trait in self.traits()}
 
     def reset(
         self,
     ):
+        # Hold the trait firing when resetting the model.
         with self.hold_trait_notifications():
             for trait in self.traits():
                 if trait not in ["intensity_filter", "energy_units"]:
@@ -114,17 +116,18 @@ class EuphonicResultsModel(Model):
 
     def fetch_data(self):
         """Fetch the data from the database or from the uploaded files."""
-        # 1. from aiida, so we have the node
+        # 1. from QeApp
         if hasattr(self, "fc"):
-            # we already have the data (this happens if I clone the model with already the data inside)
+            # we already have the data (this happens also if I clone the model with already the data inside)
             return
         if self.vibro:
             ins_data = export_euphonic_data(self.vibro)
             self.fc = ins_data["fc"]
             self.q_path = ins_data["q_path"]
-        # 2. from uploaded files...
+
+        # 2. from uploaded files - detached app mode
         else:
-            # here we just use upload_widget as MVC all together, for simplicity.
+            # here we just use upload_widget as and MVC bundle, for simplicity (it is a small component).
             # moreover, this part is not used in the current QE app.
             self.fc = self.upload_widget._read_phonopy_files(
                 fname=self.fname,
@@ -171,13 +174,14 @@ class EuphonicResultsModel(Model):
     def get_spectra(
         self,
     ):
-        # This is used to update the spectra when the parameters are changed
+        # This is used to update the spectra of single crystal and powder cases.
+        # In the case of q_planes, we update the spectra in the _get_qsection_spectra method.
 
         if self.spectrum_type == "q_planes":
             self._get_qsection_spectra()
         else:
             self.parameters.update(self.get_model_state())
-            # custom linear path
+            # custom path case (some non 3D systems, or custom linear path from user inputs)
             custom_kpath = self.custom_kpath if hasattr(self, "custom_kpath") else ""
             if len(custom_kpath) > 1:
                 coordinates, labels = self._curate_path_and_labels()
@@ -313,9 +317,11 @@ class EuphonicResultsModel(Model):
             return self.meV_to_cm_minus_1
 
     def _update_energy_units(self, old_units=None, new_units=None):
-        # This is used to update the energy units in the plot.
-        # the [:,0] is needed, please check the shape of the y_meV, it is the one coming
-        # from meshgrid, instead later we reassign self.y = self.y[:,0]
+        """This is used to update the energy units in the plot.
+
+        In practice, we convert back to meV, if possible, and then to the new units.
+        """
+
         if not new_units:
             new_units = self.energy_units
 
@@ -343,19 +349,37 @@ class EuphonicResultsModel(Model):
     def _curate_path_and_labels(
         self,
     ):
-        # This is used to curate the path and labels of the spectra if custom kpath is provided.
-        # I do not like this implementation (MB)
+        """Produce curated path and labels of the spectra if custom kpath is provided.
+
+
+        The custom kpath is a string with the format:
+        '0 0 0 - 1 1 1 | 1 1 1 - 1 0 0 | 1 0 0 - 0 0 0'
+
+        i.e. each linear path is separated by '|', and each q-points in them are separated by ' - '.
+        """
+
+        # I did it, but I do not like this implementation (MB)
+
         coordinates = []
         labels = []
         path = self.custom_kpath
+
+        # we split the path in the linear paths
         linear_paths = path.split("|")
-        for i in linear_paths:
+
+        # for each linear path, we split
+        # into initial and final q_point
+        for q_point in linear_paths:
             scoords = []
-            s = i.split(
+            s = q_point.split(
                 " - "
-            )  # not i.split("-"), otherwise also the minus of the negative numbers are used for the splitting.
+            )  # not q_point.split("-"), otherwise also the minus of the negative numbers are used for the splitting.
+
+            # loop over the coordinates, to get the labels and the coordinates
+            # (which are a string and float of that string)
             for k in s:
                 labels.append(k.strip())
+                # after the label, we produce the coordinates as floats
                 # AAA missing support for fractions.
                 l = tuple(map(float, [kk for kk in k.strip().split(" ")]))  # noqa: E741
                 scoords.append(l)
@@ -363,7 +387,7 @@ class EuphonicResultsModel(Model):
         return coordinates, labels
 
     def generate_info_legend(self, download_mode=False):
-        """Generate the table legend."""
+        """Generate the info legend using templates."""
         from importlib_resources import files
         from jinja2 import Environment
         from aiidalab_qe_vibroscopy.utils.euphonic import templates
@@ -429,6 +453,7 @@ class EuphonicResultsModel(Model):
         model_state["filename"] = filename
         model_state["cmap"] = "cividis"
 
+        # we provide also a plotting script
         plotting_script = generate_from_template(model_state)
         plotting_script_data = base64.b64encode(plotting_script.encode()).decode()
         plotting_script_filename = f"plot_script_{random_number}.py"
