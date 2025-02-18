@@ -57,7 +57,7 @@ class EuphonicResultsModel(Model):
     intensity_filter = tl.List(
         trait=tl.Float(), default_value=[0, 100]
     )  # intensity filter
-    table_legend_text = tl.Unicode("")
+    info_legend_text = tl.Unicode("")
 
     meV_to_THz = 0.242  # conversion factor.
     meV_to_cm_minus_1 = 8.1  # conversion factor.
@@ -362,26 +362,26 @@ class EuphonicResultsModel(Model):
             coordinates.append(scoords)
         return coordinates, labels
 
-    def generate_table_legend(self, download_mode=False):
+    def generate_info_legend(self, download_mode=False):
         """Generate the table legend."""
         from importlib_resources import files
         from jinja2 import Environment
         from aiidalab_qe_vibroscopy.utils.euphonic import templates
 
         env = Environment()
-        table_legend_template = (
-            files(templates).joinpath("table_legend.html.j2").read_text()
+        info_legend_template = (
+            files(templates).joinpath("info_legend.html.j2").read_text()
         )
-        table_legend_text = env.from_string(table_legend_template).render(
+        info_legend_text = env.from_string(info_legend_template).render(
             {
                 "spectrum_type": self.spectrum_type,
             }
         )
 
         if download_mode:
-            self.readme_text = table_legend_text
+            self.readme_text = info_legend_text
         else:
-            self.table_legend_text = table_legend_text
+            self.info_legend_text = info_legend_text
 
     def produce_phonopy_files(self):
         # This is used to produce the phonopy files from
