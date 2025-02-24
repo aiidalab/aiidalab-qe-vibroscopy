@@ -40,9 +40,9 @@ class RamanModel(Model):
 
     # Active modes
     active_modes_options = tl.List(
-        trait=tl.Tuple((tl.Unicode(), tl.Int())),
+        trait=tl.Tuple((tl.Unicode(), tl.Int())), default_value=[]
     )
-    active_mode = tl.Int(0)
+    active_mode = tl.Int()
     amplitude = tl.Float(3.0)
 
     supercell_0 = tl.Int(1)
@@ -61,6 +61,7 @@ class RamanModel(Model):
             round(frequency, 3) for frequency in self.raw_frequencies
         ]
         self.active_modes_options = self._get_active_modes_options()
+        self.active_mode = 0
 
     def _get_active_modes_options(self):
         active_modes_options = [

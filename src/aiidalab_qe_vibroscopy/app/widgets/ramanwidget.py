@@ -22,6 +22,7 @@ class RamanWidget(ipw.VBox):
         self._model.spectrum_type = spectrum_type
         self._model.vibro = node
         self._model.input_structure = input_structure
+        self._model.fetch_data()
         self.rendered = False
 
     def render(self):
@@ -151,6 +152,10 @@ class RamanWidget(ipw.VBox):
             (self._model, "active_modes_options"),
             (self.active_modes, "options"),
         )
+        ipw.link(
+            (self._model, "active_mode"),
+            (self.active_modes, "value"),
+        )
         self.amplitude = ipw.FloatText(
             description="Amplitude :",
             style={"description_width": "initial"},
@@ -237,7 +242,6 @@ class RamanWidget(ipw.VBox):
         self._initial_view()
 
     def _initial_view(self):
-        self._model.fetch_data()
         self._model.update_data()
         if self._model.spectrum_type == "IR":
             self.temperature.layout.display = "none"
