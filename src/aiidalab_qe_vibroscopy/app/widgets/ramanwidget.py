@@ -203,7 +203,7 @@ class RamanWidget(ipw.VBox):
             ipw.HTML(f"<h3>{self._model.spectrum_type} spectroscopy</h3>"),
             ipw.HTML(
                 """<div style="line-height: 140%; padding-top: 10px; padding-bottom: 10px">
-                Select the type of Raman spectrum to plot.
+                Select the type spectrum to plot.
                 </div>"""
             ),
             self.plot_type,
