@@ -8,6 +8,7 @@ from aiidalab_qe_vibroscopy.app.widgets.structurefactorwidget import (
 )
 from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import EuphonicResultsModel
 
+from aiidalab_qe.common.infobox import InAppGuide
 
 ##### EUPHONIC WIDGET TO DISPLAY EVERYTHING: UPLOAD, PLOTS, DOWNLOAD #####
 
@@ -127,6 +128,7 @@ class EuphonicWidget(ipw.VBox):
         self.download_widget.layout.display = "none"
 
         self.children += (
+            InAppGuide(identifier="ins-results"),
             self.plot_button,
             self.tab_widget,
             self.download_widget,

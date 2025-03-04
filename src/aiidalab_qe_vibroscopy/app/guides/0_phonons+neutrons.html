@@ -1,0 +1,191 @@
+<div id="guide-header">
+  You've activated the phonon in-app guide. In this guide, you will learn how to
+  use the app to compute the phonons of bulk Silicon (Si). <br>
+  Click on <b>Step 1: Select structure</b> and follow the instructions to proceed.
+</div>
+
+<div id="structure-step">
+  In the structure selection step, we select the Si structure from the examples. <br>
+  Once selected, we can view the structure in the viewer below. We can also edit
+  the structure using the available structure editors. When done, we can choose
+  to modify the structure label and/or provide a description. These will be
+  attached to the input structure node in your AiiDA database.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+  <ul>
+    <li><b>Click</b> on the "From examples" tab</li>
+    <li><b>Select</b> the Silicon structure in the dropdown menu</li>
+    <li>Click the <b>Confirm</b> button to proceed</li>
+  </ul>
+    <div class="alert alert-warning">
+      <b>Warning:</b> If the confirmed structure is not yet stored in the AiiDA
+      database, it will be stored automatically when you proceed to the next
+      step.
+    </div>
+    <div class="alert alert-warning">
+      <b>Warning:</b> Changes after confirmation will reset the following steps.
+    </div>
+  </div>
+</div>
+
+<div id="configuration-step">
+  In the configuration step, we define the parameters needed to perform our phonon calculation.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>Select <b>Full geometry</b>, i.e. we relaxed the structure optimizing both cell parameters and atom positions</li>
+      <li>Open <b>step 2.1</b> for further instructions</li>
+    </ol>
+  </div>
+</div>
+
+<div id="properties-selection">
+  Here we select the properties to calculate. Each property is associated with a
+  workflow that will submit one or more calculations.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>Tick the <b>Vibrational Spectroscopy (VIBRO)</b> checkbox</li>
+      <li>Open <b>step 2.2</b> for further instructions</li>
+    </ol>
+  </div>
+</div>
+
+<div id="calculation-settings">
+  Here we can customize the calculation parameters. The settings are divided
+  into several tabs:
+  <ul>
+    <li><b>Basic settings</b>: top-level calculation settings</li>
+    <li><b>Advanced settings</b>: fine-tune the calculations</li>
+    <li>
+      <b>Plugin settings</b>: parameters for plugin calculations including
+      phonon settings (Vibrational settings)
+    </li>
+  </ul>
+  Note that the app pre-configures defaults for most parameters.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+      <ol>
+        <li>Select <b>Fast</b> protocol</li>
+        <li>See further instructions in the <b>Vibrational settings</b> panel below</li>
+      </ol>
+  </div>
+</div>
+
+<div id="phonons-settings">
+  In the Vibrational settings panel, we can customize the parameters for the phonons calculation.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+      <ul>
+        <li>Select <b>Phonons for non-polar materials and INS</b> in the dropdown menu.</li>
+        <li>Estimate the <b>number of supercells</b> to see the number of supercells needed to computed finite displacement forces. The output number should be equal to 1.</li>
+        <li>Click the <b>Confirm</b> button to proceed</li>
+      </ul>
+    <div class="alert alert-warning">
+      <b>Warning:</b> Changes after confirmation will reset the following steps.
+    </div>
+  </div>
+</div>
+
+<div id="submission-step">
+  <p>
+    In the submission step, we define the computational resources to be used in
+    the calculations. The global resources are used to define resources across
+    all workflow calculations. Optionally, you can override the resource
+    settings for specific calculations.
+  </p>
+  <div class="alert alert-warning">
+    <b>Warning:</b> If running locally (for example, on the AiiDAlab demo
+    server), we recommend keeping nodes and CPUs at the default minimum of 1
+    each.
+  </div>
+  <p>
+    Once the resources are defined, we can optionally customize the workflow
+    label (pre-filled according to the settings of steps 1 & 2), as well as
+    provide a detailed description of the workflow. Once we are ready, we can
+    submit the workflow.
+  </p>
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>Select 1 node and 1 CPU for each of the codes below</li>
+      <li><b>(Optional)</b> customize the workflow label</li>
+      <li><b>(Optional)</b> add a workflow description</li>
+      <li>Click the <b>Submit</b> button to proceed</li>
+    </ol>
+    <div class="alert alert-warning">
+      <b>Warning:</b> The workflow may take a moment to submit.
+    </div>
+  </div>
+</div>
+
+<div id="results-panel">
+  In the results panel, each tab will open results pertaining to a specific
+  calculation submitted by the workflow.
+  <div class="alert alert-success">
+    See further instructions below in the <b>Muon results</b> tab.
+  </div>
+</div>
+
+<div id="phonons-results">
+  When phonons results are available, the <b>Load results</b> button will become active allowing us to
+  load the results from AiiDA.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>
+        Once the calculation is complete, click on the
+        <b>Load results</b> button to load the available results
+      </li>
+      <li>
+        Click on the <b>Phonons</b> tab to visualize the phonon spectrum and thermodynamic properties.
+      </li>
+      <li>
+        Click on the <b>Neutron scattering</b> tab to start and inelastic neutron scattering analysis.
+      </li>
+    </ol>
+  </div>
+</div>
+
+<div id="phonons-spectrum-results">
+  Here we can inspect the phonons spectrum and the thermodynamic properties computed within the workflow.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>
+        Check the spectrum and verify that there is a double degenerate mode at 12.08 THz for <b>q</b>=X.
+      </li>
+      <li>
+        Verify that the computed specific heat (constant volume) is 39.3 J/(mol K) at 300 K.
+      </li>
+      <li>Go to the <b>Neutron scattering</b> tab.</li>
+    </ol>
+  </div>
+</div>
+
+<div id="ins-results">
+  Here we can perform a calculation of the inelastic neutron scattering (INS) spectrum.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>
+        Click on the <b>Initialise INS data</b> to start computing the INS signal.
+      </li>
+      <li>
+        Change units to be THz.
+      </li>
+      <li>
+        Decrease the <b>q step</b> to be 0.01 Å<sup>-1</sup>.
+      </li>
+      <li>
+        Click on the <b>Replot</b> to perform again the calculation.
+      </li>
+      <li>
+        Select the <b>Plot mode</b> to be <b>DOS map</b>, replot and verify that you can find the same degenerate mode seen in the phonons spectrum.
+      </li>
+      <li>
+        Play with the other parameters to change the plot as you prefer.
+      </li>
+    </ol>
+  </div>
+</div>

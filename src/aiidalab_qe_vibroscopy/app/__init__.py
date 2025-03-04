@@ -11,6 +11,8 @@ from aiidalab_qe_vibroscopy.app.result.model import VibroResultsModel
 
 from aiidalab_qe_vibroscopy.app.workchain import workchain_and_builder
 
+from pathlib import Path
+
 
 class VibroPluginOutline(PluginOutline):
     title = "Vibrational Spectroscopy (VIBRO)"
@@ -31,4 +33,5 @@ property = {
         "model": VibroResultsModel,
     },
     "workchain": workchain_and_builder,
+    "guides": Path(__file__).resolve().parent / "guides",
 }

@@ -12,6 +12,8 @@ import ipywidgets as ipw
 from aiidalab_qe.common.panel import ConfigurationSettingsPanel
 from aiidalab_qe_vibroscopy.app.model import VibroConfigurationSettingsModel
 
+from aiidalab_qe.common.infobox import InAppGuide
+
 from aiida.plugins import DataFactory
 
 HubbardStructureData = DataFactory("quantumespresso.hubbard_structure")
@@ -20,7 +22,7 @@ HubbardStructureData = DataFactory("quantumespresso.hubbard_structure")
 class VibroConfigurationSettingPanel(
     ConfigurationSettingsPanel[VibroConfigurationSettingsModel],
 ):
-    title = "Vibrational Settings"
+    title = "Vibrational settings"
     identifier = "vibronic"
 
     def __init__(self, model: VibroConfigurationSettingsModel, **kwargs):
@@ -246,6 +248,7 @@ class VibroConfigurationSettingPanel(
         # reset supercell
 
         self.children = [
+            InAppGuide(identifier="phonons-settings"),
             ipw.VBox(
                 [
                     ipw.VBox(

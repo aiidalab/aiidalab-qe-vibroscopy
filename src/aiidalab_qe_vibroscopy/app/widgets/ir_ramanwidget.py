@@ -3,6 +3,8 @@ from aiidalab_qe_vibroscopy.app.widgets.ramanwidget import RamanWidget
 from aiidalab_qe_vibroscopy.app.widgets.ramanmodel import RamanModel
 import ipywidgets as ipw
 
+from aiidalab_qe.common.infobox import InAppGuide
+
 
 class IRRamanWidget(ipw.VBox):
     def __init__(self, model: IRRamanModel, node: None, input_structure, **kwargs):
@@ -19,7 +21,7 @@ class IRRamanWidget(ipw.VBox):
         if self.rendered:
             return
 
-        self.children = []
+        self.children = [InAppGuide(identifier="dielectric-results")]
 
         self.rendered = True
         self._model.fetch_data()

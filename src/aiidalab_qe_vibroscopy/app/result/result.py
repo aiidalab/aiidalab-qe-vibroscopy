@@ -18,13 +18,15 @@ from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import (
     EuphonicResultsModel as EuphonicModel,
 )
 
+from aiidalab_qe.common.infobox import InAppGuide
+
 
 class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
     title = "Vibronic"
     identifier = "vibronic"
     workchain_labels = ["vibro"]
 
-    def render(self):
+    def _render(self):
         if self.rendered:
             return
 
@@ -87,7 +89,7 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
         for index, (title, _) in enumerate(tab_data):
             self.tabs.set_title(index, title)
 
-        self.children = [self.tabs]
+        self.children = [InAppGuide(identifier="phonons-results")] + [self.tabs]
         self.rendered = True
         self.tabs.selected_index = 0
 

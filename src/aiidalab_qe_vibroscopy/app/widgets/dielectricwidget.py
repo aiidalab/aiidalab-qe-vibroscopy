@@ -2,6 +2,8 @@ import ipywidgets as ipw
 from aiidalab_qe_vibroscopy.app.widgets.dielectricmodel import DielectricModel
 from aiidalab_qe.common.widgets import LoadingWidget
 
+from aiidalab_qe.common.infobox import InAppGuide
+
 
 class DielectricWidget(ipw.VBox):
     """
@@ -73,6 +75,7 @@ class DielectricWidget(ipw.VBox):
         )
 
         self.children = [
+            InAppGuide(identifier="dielectric-results"),
             self.dielectric_results_help,
             ipw.HTML("<h3>Dielectric tensor</h3>"),
             self.dielectric_tensor_table,

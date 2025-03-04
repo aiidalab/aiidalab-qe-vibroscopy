@@ -1,0 +1,203 @@
+<div id="guide-header">
+  You've activated the Raman+IR in-app guide. In this guide, you will learn how to
+  use the app to compute the Raman/IR spectra and dielectric properties (Dielectric and Raman tensor, Born effective charges) of Silicon (Si). <br>
+  Click on <b>Step 1: Select structure</b> and follow the instructions to proceed.
+</div>
+
+<div id="structure-step">
+  In the structure selection step, we select the Si structure from the examples. <br>
+  Once selected, we can view the structure in the viewer below. We can also edit
+  the structure using the available structure editors. When done, we can choose
+  to modify the structure label and/or provide a description. These will be
+  attached to the input structure node in your AiiDA database.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+  <ul>
+    <li><b>Click</b> on the "From examples" tab</li>
+    <li><b>Select</b> the Silicon structure in the dropdown menu</li>
+    <li>Click the <b>Confirm</b> button to proceed</li>
+  </ul>
+    <div class="alert alert-warning">
+      <b>Warning:</b> If the confirmed structure is not yet stored in the AiiDA
+      database, it will be stored automatically when you proceed to the next
+      step.
+    </div>
+    <div class="alert alert-warning">
+      <b>Warning:</b> Changes after confirmation will reset the following steps.
+    </div>
+  </div>
+</div>
+
+<div id="configuration-step">
+  In the configuration step, we define the parameters needed to perform our phonon calculation.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>Select <b>Structure as is</b></li>
+      <li>Open <b>step 2.1</b> for further instructions</li>
+    </ol>
+  </div>
+</div>
+
+<div id="properties-selection">
+  Here we select the properties to calculate. Each property is associated with a
+  workflow that will submit one or more calculations.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>Tick the <b>Vibrational Spectroscopy (VIBRO)</b> checkbox</li>
+      <li>Open <b>step 2.2</b> for further instructions</li>
+    </ol>
+  </div>
+</div>
+
+<div id="calculation-settings">
+  Here we can customize the calculation parameters. The settings are divided
+  into several tabs:
+  <ul>
+    <li><b>Basic settings</b>: top-level calculation settings</li>
+    <li><b>Advanced settings</b>: fine-tune the calculations</li>
+    <li>
+      <b>Plugin settings</b>: parameters for plugin calculations including
+      phonon settings (Vibrational settings)
+    </li>
+  </ul>
+  Note that the app pre-configures defaults for most parameters.
+  <div class="alert alert-success">
+        See further instructions in the <b>Vibrational settings</b> panel below.
+  </div>
+</div>
+
+<div id="phonons-settings">
+  In the Vibrational settings panel, we can customize the parameters for the Raman+IR calculation.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+      <ul>
+        <li>Select <b>IR/Raman and Dielectric in Primitive Cell Approach</b> in the dropdown menu. We don't to set the supercell, as the calculations will be done in the unit cell.</li>
+        <li>Click the <b>Confirm</b> button to proceed</li>
+      </ul>
+    <div class="alert alert-warning">
+      <b>Warning:</b> Changes after confirmation will reset the following steps.
+    </div>
+  </div>
+</div>
+
+<div id="submission-step">
+  <p>
+    In the submission step, we define the computational resources to be used in
+    the calculations. The global resources are used to define resources across
+    all workflow calculations. Optionally, you can override the resource
+    settings for specific calculations.
+  </p>
+  <div class="alert alert-warning">
+    <b>Warning:</b> If running locally (for example, on the AiiDAlab demo
+    server), we recommend keeping nodes and CPUs at the default minimum of 1
+    each.
+  </div>
+  <p>
+    Once the resources are defined, we can optionally customize the workflow
+    label (pre-filled according to the settings of steps 1 & 2), as well as
+    provide a detailed description of the workflow. Once we are ready, we can
+    submit the workflow.
+  </p>
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>Select 1 node and 1 CPU for each of the codes below</li>
+      <li><b>(Optional)</b> customize the workflow label</li>
+      <li><b>(Optional)</b> add a workflow description</li>
+      <li>Click the <b>Submit</b> button to proceed</li>
+    </ol>
+    <div class="alert alert-warning">
+      <b>Warning:</b> The workflow may take a moment to submit.
+    </div>
+  </div>
+</div>
+
+<div id="results-panel">
+  In the results panel, each tab will open results pertaining to a specific
+  calculation submitted by the workflow.
+  <div class="alert alert-success">
+    See further instructions below in the <b>Muon results</b> tab.
+  </div>
+</div>
+
+<div id="phonons-results">
+  When phonons results are available, the <b>Load results</b> button will become active allowing us to
+  load the results from AiiDA.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>
+        Once the calculation is complete, click on the
+        <b>Load results</b> button to load the available results
+      </li>
+      <li>
+        Click on the <b>Raman/IR spectra</b> tab to visualize the Raman and infrared spectra.
+      </li>
+      <li>
+        Click on the <b>Dielectric Properties</b> tab.
+      </li>
+    </ol>
+  </div>
+</div>
+
+<div id="Raman-spectrum-results">
+  Below, there are the Raman/IR spectra.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>
+        Inspect the PowderRaman spectrum.
+      </li>
+      <li>
+        Change the <b>Broadening</b> to 50 cm<sup>-1</sup> and click on the <b>Update plot</b> button.
+      </li>
+      <li>Go back to the <b>Dielectric properties</b> tab.</li>
+    </ol>
+  </div>
+</div>
+
+<div id="dielectric-results">
+  Dielectric properties are displayed below.
+  <div class="alert alert-success">
+    <h4>Tasks</h4>
+    <ol>
+      <li>
+        Inspect the three quantities represented in the tables: Dielectric, Raman tensors and Born effective charges.
+      </li>
+      <li>
+        Change selected atom site to correspond to the second Si atom.
+      </li>
+    </ol>
+  </div>
+</div>
+
+<div id="post-guide">
+  <h4>Post-guide exercises</h4>
+  <ol>
+    <li>
+      Download the data on muon stopping sites:
+      <ul>
+        <li>
+          Click the "Download data" button just below the table in inspect the contained files;
+          try to visualize the cif files with your favorite visualization software (e.g., <a
+              href="https://jp-minerals.org/vesta/en/"
+              target="_blank"
+            >
+              VESTA</a
+            >).
+          </li>
+      </ul>
+    </li>
+    <li>
+      Download the polarization data for the muon stopping site B and plot it with a software of your choice,
+      to verify that indeed it is the same you see in this app.
+    </li>
+    <li>
+      Run the same calculation for muon search site but include also a second grid of field for the polarization, adding
+      two additional fields: 50 and 100 mT. You will have to play with the B step carefully (and check the B fields list).
+      You can also make a coarser grid for the 0 - 8 mT range (e.g. imposing a B step of 4 mT).
+    </li>
+  </ol>
+</div>

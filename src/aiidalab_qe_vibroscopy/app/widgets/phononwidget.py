@@ -6,6 +6,8 @@ from aiidalab_qe_vibroscopy.app.widgets.phononmodel import PhononModel
 import plotly.graph_objects as go
 from aiidalab_qe.common.bands_pdos.bandpdosplotly import BandsPdosPlotly
 
+from aiidalab_qe.common.infobox import InAppGuide
+
 
 class PhononWidget(ipw.VBox):
     """
@@ -70,5 +72,9 @@ class PhononWidget(ipw.VBox):
             yaxis=dict(title="Phonon Bands (THz)", range=[y_min - 0.1, y_max + 0.1]),
             xaxis2=dict(range=[0, x_max + 0.1]),
         )
-        self.children = (self.bands_pdos, *self.children)
+        self.children = (
+            InAppGuide(identifier="phonons-spectrum-results"),
+            self.bands_pdos,
+            *self.children,
+        )
         self._model.update_thermo_plot(self.thermal_plot)
