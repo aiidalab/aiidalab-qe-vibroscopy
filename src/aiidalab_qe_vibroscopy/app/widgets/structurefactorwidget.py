@@ -111,14 +111,16 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         E_units_dropdown.observe(self._update_energy_units, "value")
 
-        q_spacing = ipw.FloatText(
+        q_spacing = ipw.BoundedFloatText(
             value=self._model.q_spacing,
-            step=0.001,
+            step=0.01,
+            min=0.01,
             description="q step (1/A)",
             tooltip="q spacing in 1/A",
             layout=ipw.Layout(
                 width="auto",
             ),
+            continuous_update=True,
         )
         ipw.link(
             (self._model, "q_spacing"),
@@ -126,14 +128,16 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         q_spacing.observe(self._on_setting_change, names="value")
 
-        self.energy_broadening = ipw.FloatText(
+        self.energy_broadening = ipw.BoundedFloatText(
             value=self._model.energy_broadening,
             step=0.01,
+            min=0,
             description="&Delta;E (meV)",
             tooltip="Energy broadening in meV",
             layout=ipw.Layout(
                 width="auto",
             ),
+            continuous_update=True,
         )
         ipw.link(
             (self._model, "energy_broadening"),
@@ -141,13 +145,16 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         self.energy_broadening.observe(self._on_setting_change, names="value")
 
-        ebins = ipw.IntText(
+        ebins = ipw.BoundedIntText(
             value=self._model.ebins,
+            min=1,
+            max=5000,
             description="#E bins",
             tooltip="Number of energy bins",
             layout=ipw.Layout(
                 width="auto",
             ),
+            continuous_update=True,
         )
         ipw.link(
             (self._model, "ebins"),
@@ -155,14 +162,17 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         ebins.observe(self._on_setting_change, names="value")
 
-        self.temperature = ipw.FloatText(
+        self.temperature = ipw.BoundedFloatText(
             value=self._model.temperature,
             step=0.01,
+            min=0,
+            max=1000,
             description="T (K)",
             disabled=False,
             layout=ipw.Layout(
                 width="auto",
             ),
+            continuous_update=True,
         )
         ipw.link(
             (self._model, "temperature"),
@@ -170,7 +180,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
         )
         self.temperature.observe(self._on_setting_change, names="value")
 
-        weight_button = ipw.ToggleButtons(
+        weight_button = ipw.Dropdown(
             options=[
                 ("S(Q, ω)", "coherent"),
                 ("DOS map", "dos"),
@@ -264,6 +274,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                 value="",
                 description="Custom path (rlu):",
                 style={"description_width": "initial"},
+                continuous_update=True,
             )
             custom_style = '<style>.custom-font { font-family: "Monospaced"; font-size: 16px; }</style>'
             display(ipw.HTML(custom_style))
@@ -277,9 +288,12 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             self.children += (self.custom_kpath_text,)
 
         elif self._model.spectrum_type == "powder":
-            self.qmin = ipw.FloatText(
+            self.qmin = ipw.BoundedFloatText(
                 value=0,
+                min=0,
+                max=1,
                 description="|q|<sub>min</sub> (1/A)",
+                continuous_update=True,
             )
             ipw.link(
                 (self._model, "q_min"),
@@ -287,10 +301,13 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
             self.qmin.observe(self._on_setting_change, names="value")
 
-            self.qmax = ipw.FloatText(
+            self.qmax = ipw.BoundedFloatText(
                 step=0.01,
                 value=1,
+                min=0,
+                max=1,
                 description="|q|<sub>max</sub> (1/A)",
+                continuous_update=True,
             )
             ipw.link(
                 (self._model, "q_max"),
@@ -313,6 +330,7 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             self.ecenter = ipw.FloatText(
                 value=0,
                 description="E cut (meV)",
+                continuous_update=True,
             )
             ipw.link(
                 (self._model, "center_e"),
@@ -334,7 +352,14 @@ class EuphonicStructureFactorWidget(ipw.VBox):
             )
 
             self.Q0_vec = ipw.HBox(
-                [ipw.FloatText(value=0, layout={"width": "60px"}) for j in range(3)]
+                [
+                    ipw.FloatText(
+                        value=0,
+                        layout={"width": "60px"},
+                        continuous_update=True,
+                    )
+                    for j in range(3)
+                ]
                 + [
                     ipw.HTML(
                         "N<sup>h</sup><sub>q</sub>, N<sup>k</sup><sub>q</sub> &darr;",
@@ -346,7 +371,11 @@ class EuphonicStructureFactorWidget(ipw.VBox):
 
             self.h_vec = ipw.HBox(
                 [
-                    ipw.FloatText(value=1, layout={"width": "60px"})  # coordinates
+                    ipw.FloatText(
+                        value=1,
+                        layout={"width": "60px"},
+                        continuous_update=True,
+                    )  # coordinates
                     for j in range(3)
                 ]
                 + [
@@ -355,7 +384,14 @@ class EuphonicStructureFactorWidget(ipw.VBox):
                 ]  # number of points along this dir, i.e. n_h; and multiplicative factor alpha
             )
             self.k_vec = ipw.HBox(
-                [ipw.FloatText(value=1, layout={"width": "60px"}) for j in range(3)]
+                [
+                    ipw.FloatText(
+                        value=1,
+                        layout={"width": "60px"},
+                        continuous_update=True,
+                    )
+                    for j in range(3)
+                ]
                 + [
                     ipw.IntText(value=100, layout={"width": "60px"}),
                     ipw.IntText(value=1, layout={"width": "60px"}),
