@@ -27,8 +27,8 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
     workchain_labels = ["vibro"]
 
     def _render(self):
-        if self.rendered:
-            return
+        # if self.rendered:
+        #    return
 
         self.tabs = ipw.Tab(
             layout=ipw.Layout(min_height="250px"),
