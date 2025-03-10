@@ -1,7 +1,11 @@
 <div>
     <p>
         The results presented here are computed as post processing of the DFT results, using the <b><a href="https://euphonic.readthedocs.io/en/stable/index.html#" target="_blank">Euphonic</b></a> code (R. Fair et al.,
-        <a href="https://doi.org/10.1107/S1600576722009256" target="_blank">J. Appl. Cryst. <b>55</b>, 1689, 2022</a>). <br> <br>
+        <a href="https://doi.org/10.1107/S1600576722009256" target="_blank">J. Appl. Cryst. <b>55</b>, 1689, 2022</a>).
+        <div class="alert alert-warning">
+            <b>Note:</b> The phonon dispersion curve can be slightly different from the one obtained with the Phonopy code in the "Phonons" tab,
+            in particular if the supercell is not big enough.
+        </div>
 
         {% if spectrum_type == "single_crystal" %}
         <b>Single crystal calculation of the inelastic neutron structure factor S(Q, ω)</b>:<br>

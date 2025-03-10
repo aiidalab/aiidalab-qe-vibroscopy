@@ -359,6 +359,8 @@ class VibroWorkChain(WorkChain):
         :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
+
+
         """
 
         if simulation_mode not in range(1, 5):
@@ -405,6 +407,12 @@ class VibroWorkChain(WorkChain):
 
             # Setting the `raman` dielectric property, to compute up to the third order derivative wrt finite electric fields.
             builder_harmonic.dielectric.property = dielectric_property
+
+            if protocol == "fast":
+                # NOTE: this is a trick to be able to compute fast the full in-app guide on GaAs.
+                builder_harmonic.dielectric.kpoints_parallel_distance = (
+                    builder_harmonic.dielectric.scf.kpoints_distance
+                )
 
             # To run euphonic: we should be able to get rid of this, using phonopy API.
             builder_harmonic.phonon.phonopy.settings = Dict(

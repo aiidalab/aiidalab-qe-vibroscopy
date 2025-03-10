@@ -1,6 +1,6 @@
 <div id="guide-header">
   You've activated the Full vibrational properties in-app guide. In this guide, you will learn how to
-  use the app to compute the phonons, inelastic neutron scattering, Raman/IR spectra and dielectric properties (Dielectric and Raman tensor, Born effective charges) of Gallium Arsenide (GaAs). <br>
+  use the app to compute the <b>phonons, inelastic neutron scattering, Raman/IR spectra and dielectric properties</b> (Dielectric and Raman tensor, Born effective charges) of bulk Silicon (Si). <br>
   <div class="alert alert-warning">
     <b>Pre-requisite:</b> This guide assumes that you already followed the general &rarr; basic guide, or that you are already familiar with the app.
   </div>
@@ -8,12 +8,12 @@
 </div>
 
 <div id="structure-step">
-  In the structure selection step, we select the GaAs structure from the examples. <br>
+  In the structure selection step, we select the Si structure from the examples. <br>
   <div class="alert alert-success">
     <h4>Tasks</h4>
   <ul>
     <li><b>Click</b> on the "From examples" tab</li>
-    <li><b>Select</b> the GaAs structure in the dropdown menu</li>
+    <li><b>Select</b> the Silicon structure in the dropdown menu</li>
     <li>Click the <b>Confirm</b> button to proceed</li>
   </ul>
     <div class="alert alert-warning">
@@ -32,7 +32,7 @@
   <div class="alert alert-success">
     <h4>Tasks</h4>
     <ol>
-      <li>Select <b>Full geometry</b>, i.e. we relaxed the structure optimizing both cell parameters and atom positions</li>
+      <li>Select <b>Full geometry</b>, i.e. we relaxed the structure optimizing both cell parameters and atomic positions</li>
       <li>Open <b>Step 2.1</b> for further instructions</li>
     </ol>
   </div>
@@ -87,16 +87,13 @@
     <h4>Tasks</h4>
       <ul>
         <li>Select <b>IR/Raman, Phonon, Dielectric, INS properties</b> in the dropdown menu.</li>
-        <li>Set the <b>Supercell size</b> to be [1,1,1], to minimize the computational cost of the finite displacement forces simulations.</li>
+        <li>Set the <b>Supercell size</b> to be [2,2,2], if not already set.</li>
         <li>Estimate the <b>number of supercells</b> to see the number of supercells needed to computed finite displacement forces.
-          The output number should be equal to 2.</li>
+          The output number should be equal to 1, thanks to symmetry between different displacements.</li>
         <li>Click the <b>Confirm</b> button to proceed</li>
       </ul>
     <div class="alert alert-warning">
-      <b>Note:</b> the [1,1,1] supercell (i.e., unit cell) is not accurate to correctly reproduce phonons dispersion.
-      In principle, at least a [2,2,2] supercell is needed. However, in this guide we want to perform a quick simulation in order to give
-      you an overview of the vibrational properties that you can obtain using this app.
-      Note also, however, it is sufficient to compute accurate dielectric properties and Raman/IR spectra.
+      <b>Note:</b> a [1,1,1] supercell (i.e., unit cell) is not accurate to correctly reproduce phonons dispersion, but is fine for phonons at &Gamma;. Usually, at least a [2,2,2] supercell is needed.
     </div>
     <div class="alert alert-warning">
       <b>Warning:</b> Changes after confirmation will reset the following steps.
@@ -141,6 +138,7 @@
   calculation submitted by the workflow.
   <div class="alert alert-success">
     See further instructions below in the <b>Vibroscopy</b> results tab.
+    Once the calculation is complete, click on the <b>Load results</b> button to load the available results.
   </div>
 </div>
 
@@ -150,10 +148,6 @@
   <div class="alert alert-success">
     <h4>Tasks</h4>
     <ol>
-      <li>
-        Once the calculation is complete, click on the
-        <b>Load results</b> button to load the available results
-      </li>
       <li>
         Go to the <b>Phonons</b> tab to visualize the phonon spectrum and thermodynamic properties.
       </li>
@@ -167,21 +161,21 @@
     <h4>Tasks</h4>
     <ol>
       <li>
-        Check the spectrum and verify that there is a degenerate mode at 2.10 THz for <b>q</b>=X.
+        Check the spectrum and verify that there is a degenerate mode around 12.10 THz for <b>q</b>=X.
       </li>
       <li>
-        How large is the LO-TO splitting at &Gamma;?
+        Verify that the computed specific heat (constant volume) at 300 K is more or less 39.70 J/(mol K).
       </li>
-      <li>
-        Verify that the computed specific heat (constant volume) at 300 K is more or less 46.5 J/(mol K).
-      </li>
-      <li>Go to the <b>Neutron scattering</b> tab.</li>
+      <li>Go to the <b>Raman/IR spectra</b> tab.</li>
     </ol>
   </div>
 </div>
 
 <div id="Raman-spectrum-results">
   Below, there are the Raman/IR results.
+  <div class="alert alert-warning">
+    <b>Note:</b> no active IR modes are detected, as follows from selection rules.
+  </div>
   <div class="alert alert-success">
     <h4>Tasks</h4>
     <ol>
@@ -192,7 +186,7 @@
         Change the <b>Broadening</b> to 50 cm<sup>-1</sup> and click on the <b>Update plot</b> button.
       </li>
       <li>Inspect the animation of the Raman active modes. Do different modes show different displacement?</li>
-      <li>Go back to the <b>Dielectric properties</b> tab.</li>
+      <li>Go back to the <b>Dielectric Properties</b> tab.</li>
     </ol>
   </div>
 </div>
@@ -206,7 +200,7 @@
         Inspect the three quantities represented in the tables: Dielectric, Raman tensors and Born effective charges.
       </li>
       <li>
-        Use the <b>Select atom site</b> dropwdown to inspect the As atom.
+        Use the <b>Select atom site</b> dropwdown to inspect the second Si atom.
       </li>
     </ol>
   </div>
@@ -233,7 +227,7 @@
         Click on the <b>Replot</b> to perform again the calculation.
       </li>
       <li>
-        Select the <b>Plot mode</b> to be <b>DOS map</b>, replot and verify that you can find the same LO-TO splitting seen in the phonons spectrum.
+        Select the <b>Plot mode</b> to be <b>DOS map</b>, replot and verify that you can find the same degenerate mode seen in the phonons spectrum.
       </li>
       <li>
         Play with the other parameters to change the plot as you prefer.
@@ -249,7 +243,7 @@
       In the Neutron scattering results tab, switch to <b>Powder sample</b> and try to perform similar analysis as done for the Single crystal.
       <ul>
         <li>
-          Verify that the LO-TO splitting is still present.
+          Verify that a signal is still present at the same frequency as the degenerate mode detected before.
         </li>
         <li>
           Enhance the low intensity signal by using the <b>Intensity window (%)</b> slider.
@@ -257,21 +251,16 @@
       </ul>
     </li>
     <li>
-      Use the app to compute the phonon band structure of GaAs (Gallium Arsenide) without non-analytical corrections (NAC) and compare the results with the ones obtained here.
+      Use the app to compute the phonon band structure of GaAs (Gallium Arsenide) and compare the results with the ones obtained for Silicon.
+      <div class="alert alert-warning">
+        <b>Note:</b> you may need much more computational resources to perform all the simulations. If you do not have much computational
+        resources, we suggest to, instead, load the already pre-computed example in the AiiDAlab examples page:
+        <ul>
+          <li>Click on the "Download examples" button at the top of this page</li>
+          <li>Import the example named "Example: GaAs, full vibronic properties"</li>
+          <li>Find it in the calculations history page and open it</li>
+        </ul>
+      </div>
     </li>
-    <ul>
-    <li>
-      Try to find the already relaxed GaAs structure (obtained in this guide) in the AiiDA database (Step 1) and use it.
-    </li>
-    <li>
-      If you can use the relaxed GaAs structure, you do not need to perform geomete optimization (select, in Step 2.1, "Structure as is").
-    </li>
-  </ul>
-    <div class="alert alert-warning">
-      <b>Note:</b> Even if GaAs LO-TO splitting requires the NAC to correct the force constants,
-      for this exercise we will not compute them (i.e., the simulations type
-      selected in Step 2.2 will be: <b>Phonons for non-polar materials and INS</b>).
-      This means that the phonon spectrum will <b>not</b> show the LO-TO splitting.
-    </div>
   </ol>
 </div>

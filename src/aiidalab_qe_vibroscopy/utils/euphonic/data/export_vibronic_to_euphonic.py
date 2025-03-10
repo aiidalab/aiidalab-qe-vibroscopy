@@ -33,7 +33,10 @@ def export_euphonic_data(output_vibronic, fermi_energy=None):
         q_path = None
 
     phonopy_calc = output_set.creator
-    fc = generate_force_constant_from_phonopy(phonopy_calc)
+    fc = generate_force_constant_from_phonopy(
+        phonopy_calc,
+        use_euphonic_full_parser=True,
+    )
     # bands = compute_bands(fc)
     # pdos = compute_pdos(fc)
     return {
