@@ -30,13 +30,9 @@ class RamanWidget(ipw.VBox):
             return
 
         self.guiConfig = {
-            "enabled": True,
-            "components": {
-                "atomsControl": True,
-                "buttons": True,
-                "cameraControls": True,
-            },
+            "components": {"enabled": True, "atomsControl": True, "buttons": True},
             "buttons": {
+                "enabled": True,
                 "fullscreen": True,
                 "download": True,
                 "measurement": True,
@@ -288,6 +284,7 @@ class RamanWidget(ipw.VBox):
             "width": "150px",
         }
         self.weas = self._model.set_vibrational_mode_animation(self.weas)
+
         with self.animation:
             clear_output()
             display(self.weas)

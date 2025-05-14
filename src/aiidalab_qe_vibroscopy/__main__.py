@@ -16,8 +16,9 @@ import platform
 
 try:
     machine = platform.machine()
-except:
-    machine = 'aarch'
+except Exception:
+    machine = "aarch"
+
 
 @click.group()
 def cli():
@@ -61,7 +62,9 @@ def setup_phonopy():
     else:
         print("Code phonopy@localhost is already installed! Nothing to do here.")
 
-    if 'arm' in machine: # we need to install scipy from conda only if arm machine. OPENBLAS broken in the pip one.
+    if (
+        "arm" in machine
+    ):  # we need to install scipy from conda only if arm machine. OPENBLAS broken in the pip one.
         command = [
             "conda",
             "install",
@@ -79,6 +82,7 @@ def setup_phonopy():
         ]
         # Use subprocess.run to run the command
         subprocess.run(command, check=True)
+
 
 if __name__ == "__main__":
     cli()

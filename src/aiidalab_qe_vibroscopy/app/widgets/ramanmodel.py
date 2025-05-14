@@ -373,6 +373,7 @@ class RamanModel(Model):
             "color": "black",
             "radius": 0.1,
         }
+
         weas.avr.phonon_setting = phonon_setting
         return weas
 

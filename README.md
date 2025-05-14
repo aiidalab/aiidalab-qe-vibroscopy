@@ -20,7 +20,7 @@ aiidalab-qe-vibroscopy setup-phonopy # setup phonopy@localhost in AiiDA; this po
 
 #### Installation of scipy from conda is required
 
-In case of `arm64` architecture, please run `aiidalab-qe-vibroscopy setup-phonopy`. 
+In case of `arm64` architecture, please run `aiidalab-qe-vibroscopy setup-phonopy`.
 This will install the correct version of scipy to work with the package.
 
 #### h5py issues
