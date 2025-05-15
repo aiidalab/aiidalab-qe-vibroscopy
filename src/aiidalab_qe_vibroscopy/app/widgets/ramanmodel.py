@@ -384,11 +384,17 @@ class RamanModel(Model):
                 "Frequencies cm-1": self.frequencies.tolist(),
                 "Polarized intensities": self.intensities.tolist(),
                 "Depolarized intensities": self.intensities_depolarized.tolist(),
+                "Eigenvectors": self.eigenvectors.tolist(),
+                "Raw Frequencies cm-1": self.raw_frequencies.tolist(),
+                "Labels": self.labels,
             }
         else:
             my_dict = {
                 "Frequencies cm-1": self.frequencies.tolist(),
                 "Intensities": self.intensities.tolist(),
+                "Eigenvectors": self.eigenvectors.tolist(),
+                "Raw Frequencies cm-1": self.raw_frequencies.tolist(),
+                "Labels": self.labels,
             }
         json_str = json.dumps(my_dict)
         b64_str = base64.b64encode(json_str.encode()).decode()
