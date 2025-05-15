@@ -373,7 +373,7 @@ class RamanModel(Model):
             "color": "black",
             "radius": 0.1,
         }
-
+        weas._widget.viewerStyle = {"width": "800px", "height": "600px"}
         weas.avr.phonon_setting = phonon_setting
         return weas
 

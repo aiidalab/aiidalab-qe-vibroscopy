@@ -202,7 +202,9 @@ class RamanWidget(ipw.VBox):
             + self._supercell
         )
         # WeasWidget Setting
-        self.weas = WeasWidget(guiConfig=self.guiConfig)
+        self.weas = WeasWidget(
+            guiConfig=self.guiConfig, viewerStyle={"width": "800px", "height": "600px"}
+        )
         self.weas.from_ase(self._model.input_structure)
         self.weas.avr.model_style = 1
         self.weas.avr.color_type = "JMOL"
@@ -252,11 +254,11 @@ class RamanWidget(ipw.VBox):
                             self.active_modes,
                             self.amplitude,
                             self.supercell_selector,
-                            self.animation,
                         ],
                     ),
                 ]
             ),
+            self.animation,
         ]
 
         self.rendered = True
