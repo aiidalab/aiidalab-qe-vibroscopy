@@ -81,6 +81,11 @@ def get_builder(codes, structure, parameters):
                 PwBaseWorkChain.get_protocol_inputs(protocol)["kpoints_distance"]
             )
 
+    # Protocol name map to match the expected values in the workchain
+    # This should be removed when the protocol is updated in the aiida-vibroscopy
+    protocol_map = {"balanced": "moderate", "stringent": "precise"}
+    protocol = protocol_map.get(protocol, protocol)
+
     builder = VibroWorkChain.get_builder_from_protocol(
         phonon_code=pw_phonon_code,
         dielectric_code=pw_dielectric_code,
