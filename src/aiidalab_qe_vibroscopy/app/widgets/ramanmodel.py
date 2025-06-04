@@ -9,6 +9,8 @@ from aiida_vibroscopy.utils.broadenings import multilorentz
 import plotly.graph_objects as go
 import base64
 import json
+from scipy.integrate import dblquad
+from aiida_vibroscopy.utils.spectra import raman_prefactor
 
 
 class RamanModel(Model):
@@ -21,10 +23,22 @@ class RamanModel(Model):
         default_value=[
             ("Powder", "powder"),
             ("Single Crystal", "single_crystal"),
+            ("2D average", "plane_average"),
         ],
     )
 
     plot_type = tl.Unicode("powder")
+
+    plane_type_options = tl.List(
+        trait=tl.List(tl.Unicode()),
+        default_value=[
+            ("XY", "xy"),
+            ("YZ", "yz"),
+            ("XZ", "xz"),
+        ],
+    )
+    plane_type = tl.Unicode("xy")
+
     temperature = tl.Float(300)
     frequency_laser = tl.Float(532)
     pol_incoming = tl.Unicode("0 0 1")
@@ -74,14 +88,29 @@ class RamanModel(Model):
 
         return active_modes_options
 
+    def _update_spectrum_options(self):
+        if self.spectrum_type == "Raman":
+            self.plot_type_options = [
+                ("Powder", "powder"),
+                ("Single Crystal", "single_crystal"),
+                ("2D average", "plane_average"),
+            ]
+        else:
+            self.plot_type_options = [
+                ("Powder", "powder"),
+                ("Single Crystal", "single_crystal"),
+            ]
+
     def update_data(self):
         """
         Update the plot data based on the selected spectrum type, plot type, and configuration.
         """
         if self.plot_type == "powder":
             self._update_powder_data()
-        else:
+        elif self.plot_type == "crystal":
             self._update_single_crystal_data()
+        elif self.plot_type == "plane_average":
+            self._update_plane_average_data()
 
     def _update_powder_data(self):
         """
@@ -172,6 +201,60 @@ class RamanModel(Model):
         )
         self.frequencies_depolarized, self.intensities_depolarized = [], []
 
+    def _update_plane_average_data(self):
+        "Average the Raman susceptibility tensors over a plane."
+
+        dir_nac_direction, _ = self._check_inputs_correct(self.nac_direction)
+
+        def intensity(a, b, c, d):
+            return dblquad(
+                lambda t, x: np.abs(
+                    a * np.cos(t) * np.cos(t + x)
+                    + b * np.sin(t) * np.cos(t + x)
+                    + c * np.cos(t) * np.sin(t + x)
+                    + d * np.sin(t) * np.sin(t + x)
+                )
+                ** 2,
+                0,
+                2 * np.pi,
+                lambda x: 0,
+                lambda x: 2 * np.pi,
+            )
+
+        def get_plane_subtensor(raman_susc_tensor, plane):
+            if plane == "xy":
+                return raman_susc_tensor[np.ix_([0, 1], [0, 1])]
+            elif plane == "yz":
+                return raman_susc_tensor[np.ix_([1, 2], [1, 2])]
+            elif plane == "xz":
+                return raman_susc_tensor[np.ix_([0, 2], [0, 2])]
+
+        raman_susc_tensor, frequencies, _ = (
+            self.raman_data.run_raman_susceptibility_tensors(
+                nac_direction=dir_nac_direction if self.use_nac_direction else None,
+            )
+        )
+
+        # Average the susceptibility tensors over frequencies at given plane
+        intensities_plane = []
+
+        for tensor in raman_susc_tensor:
+            plane_subtensor = get_plane_subtensor(tensor, self.plane_type)
+            a, b, c, d = plane_subtensor.flatten()
+            avg_intensity, _ = intensity(a, b, c, d)
+            intensities_plane.append(avg_intensity)
+
+        intensities = np.array(intensities_plane)
+        raman_spectrum = intensities * raman_prefactor(
+            self.frequency_laser, self.temperature, True
+        )
+
+        self.frequencies, self.intensities = self.generate_plot_data(
+            frequencies,
+            raman_spectrum,
+            self.broadening,
+        )
+
     def update_plot(self, plot):
         """
         Update the Raman plot based on the selected plot type and configuration.
@@ -179,11 +262,12 @@ class RamanModel(Model):
         Parameters:
             plot: The plotly.graph_objs.Figure widget to update.
         """
-        update_function = (
-            self._update_powder_plot
-            if self.plot_type == "powder"
-            else self._update_single_crystal_plot
-        )
+        if self.plot_type == "powder":
+            update_function = self._update_powder_plot
+        elif self.plot_type == "crystal":
+            update_function = self._update_single_crystal_plot
+        else:
+            update_function = self._update_plane_average_plot
         update_function(plot)
 
     def _update_powder_plot(self, plot):
@@ -228,6 +312,22 @@ class RamanModel(Model):
                 "Depolarized",
             )
             plot.layout.title.text = f"Powder {self.spectrum_type} spectrum"
+
+    def _update_plane_average_plot(self, plot):
+        """
+        Update the plane average Raman plot.
+
+        Parameters:
+            plot: The plotly.graph_objs.Figure widget to update.
+        """
+        if len(plot.data) == 2:
+            self._update_trace(plot.data[0], self.frequencies, self.intensities, "")
+            plot.data[1].x = []
+            plot.data[1].y = []
+            plot.layout.title.text = f"Plane average {self.spectrum_type} spectrum"
+        elif len(plot.data) == 1:
+            self._update_trace(plot.data[0], self.frequencies, self.intensities, "")
+            plot.layout.title.text = f"Plane average {self.spectrum_type} spectrum"
 
     def _clear_depolarized_and_update(self, plot):
         """

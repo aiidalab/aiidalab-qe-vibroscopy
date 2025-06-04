@@ -52,6 +52,22 @@ class RamanWidget(ipw.VBox):
             (self.plot_type, "value"),
         )
         self.plot_type.observe(self._on_plot_type_change, names="value")
+
+        # 2D average plane
+        self.plane_type = ipw.ToggleButtons(
+            description="Plane:",
+            style={"description_width": "initial"},
+            layout=ipw.Layout(width="auto"),
+        )
+        ipw.dlink(
+            (self._model, "plane_type_options"),
+            (self.plane_type, "options"),
+        )
+        ipw.link(
+            (self._model, "plane_type"),
+            (self.plane_type, "value"),
+        )
+
         self.temperature = ipw.FloatText(
             description="Temperature (K):",
             style={"description_width": "initial"},
@@ -223,7 +239,7 @@ class RamanWidget(ipw.VBox):
             ipw.HTML(f"<h3>{self._model.spectrum_type} spectroscopy</h3>"),
             ipw.HTML(
                 """<div style="line-height: 140%; padding-top: 10px; padding-bottom: 10px">
-                Select the type spectrum to plot.
+                Select the type spectrum to plot. Click the <b>Update Plot</b> button to apply any changes.
                 </div>"""
             ),
             self.plot_type,
@@ -236,6 +252,7 @@ class RamanWidget(ipw.VBox):
             self.nac_direction,
             self.pol_incoming,
             self.pol_outgoing,
+            self.plane_type,
             self._wrong_syntax,
             ipw.HBox([self.plot_button, self.download_button]),
             self.spectrum,
@@ -267,6 +284,7 @@ class RamanWidget(ipw.VBox):
 
     def _initial_view(self):
         self._model.update_data()
+        self._model._update_spectrum_options()
         if self._model.spectrum_type == "IR":
             self.temperature.layout.display = "none"
             self.frequency_laser.layout.display = "none"
@@ -275,6 +293,8 @@ class RamanWidget(ipw.VBox):
 
         self.nac_direction.layout.display = "none"
         self.help_nac_direction.layout.display = "none"
+
+        self.plane_type.layout.display = "none"
 
         self.spectrum.add_scatter(
             x=self._model.frequencies, y=self._model.intensities, name=""
@@ -306,15 +326,23 @@ class RamanWidget(ipw.VBox):
     def _on_plot_type_change(self, change):
         if change["new"] == "single_crystal":
             self.pol_incoming.layout.visibility = "visible"
+            self.plane_type.layout.visibility = "hidden"
             if self._model.spectrum_type == "Raman":
                 self.pol_outgoing.layout.visibility = "visible"
             else:
                 self.separate_polarizations.layout.display = "none"
             self.separate_polarizations.layout.visibility = "hidden"
-        else:
+        elif change["new"] == "powder":
             self.pol_incoming.layout.visibility = "hidden"
             self.pol_outgoing.layout.visibility = "hidden"
             self.separate_polarizations.layout.visibility = "visible"
+            self.plane_type.layout.visibility = "hidden"
+        elif change["new"] == "plane_average":  # 2D average
+            self.pol_incoming.layout.visibility = "hidden"
+            self.pol_outgoing.layout.visibility = "hidden"
+            self.separate_polarizations.layout.visibility = "hidden"
+            self.plane_type.layout.display = "block"
+            self.plane_type.layout.visibility = "visible"
 
     def _on_plot_button_click(self, _):
         _, incoming_syntax_ok = self._model._check_inputs_correct(
