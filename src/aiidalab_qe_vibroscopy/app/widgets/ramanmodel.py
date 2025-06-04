@@ -12,6 +12,7 @@ import json
 from scipy.integrate import dblquad
 from aiida_vibroscopy.utils.spectra import raman_prefactor
 
+
 class RamanModel(Model):
     vibro = tl.Instance(AttributeDict, allow_none=True)
     input_structure = tl.Instance(Atoms, allow_none=True)
@@ -86,10 +87,9 @@ class RamanModel(Model):
         ]
 
         return active_modes_options
-    
-    def _update_spectrum_options(self):
 
-        if  self.spectrum_type == "Raman":
+    def _update_spectrum_options(self):
+        if self.spectrum_type == "Raman":
             self.plot_type_options = [
                 ("Powder", "powder"),
                 ("Single Crystal", "single_crystal"),
@@ -100,7 +100,6 @@ class RamanModel(Model):
                 ("Powder", "powder"),
                 ("Single Crystal", "single_crystal"),
             ]
-
 
     def update_data(self):
         """
