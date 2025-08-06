@@ -122,6 +122,19 @@ class VibroConfigurationSettingPanel(
             (self.symmetry_symprec, "value"),
         )
 
+        self.tmax = ipw.BoundedFloatText(
+            min=100,
+            max=10000,
+            step=10,
+            description="<b>Max Temperature (K):</b>",
+            style={"description_width": "initial"},
+            layout={"width": "300px"},
+        )
+        ipw.link(
+            (self._model, "tmax"),
+            (self.tmax, "value"),
+        )
+
         self.supercell_x = ipw.BoundedIntText(
             min=1,
             layout={"width": "40px"},
@@ -243,6 +256,9 @@ class VibroConfigurationSettingPanel(
                     ],
                 ),
                 self.infobox_supercells.infobox,
+                ipw.HBox(
+                    [ipw.HTML("<h5>Thermodynamic properties</h5>"), self.tmax],
+                ),
             ]
         )
         self.supercell_widget.layout.display = "block"
