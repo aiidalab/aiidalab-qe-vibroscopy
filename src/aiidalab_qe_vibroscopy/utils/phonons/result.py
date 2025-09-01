@@ -78,21 +78,20 @@ def export_phononworkchain_data(node, fermi_energy=None):
                 {},
                 {"total_dos": np.zeros(np.shape(pdos.get_y()[0][1]))},
             )
-            for atom in set(symbols):
+            for i, atom in enumerate(set(symbols)):
                 # index lists
                 index_dict[atom] = [
-                    i for i in range(len(symbols)) if symbols[i] == atom
+                    j for j in range(len(symbols)) if symbols[j] == atom
                 ]
                 # initialization of the pdos
-                dos_dict[atom] = np.zeros(
-                    np.shape(pdos.get_y()[index_dict[atom][0]][1])
-                )
+                dos_dict[atom] = np.zeros(np.shape(pdos.get_y()[i][1]))
 
                 for atom_contribution in index_dict[atom][:]:
                     if len(pdos.get_y()) <= atom_contribution:
                         # I need this as for Al4, only one pdos tuple is provided...
                         # for Si2, actually, two are provided...
-                        break
+                        dos_dict[atom] += pdos.get_y()[i][1]
+                        dos_dict["total_dos"] += pdos.get_y()[i][1]
                     else:
                         dos_dict[atom] += pdos.get_y()[atom_contribution][1]
                         dos_dict["total_dos"] += pdos.get_y()[atom_contribution][1]
