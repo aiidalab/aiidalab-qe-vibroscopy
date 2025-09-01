@@ -49,6 +49,11 @@ class RamanModel(Model):
     frequencies = []
     intensities = []
 
+    raw_frequencies = []
+    raw_intensities = []
+    raw_pol_intensities = []
+    raw_depol_intensities = []
+
     frequencies_depolarized = []
     intensities_depolarized = []
 
@@ -107,7 +112,7 @@ class RamanModel(Model):
         """
         if self.plot_type == "powder":
             self._update_powder_data()
-        elif self.plot_type == "crystal":
+        elif self.plot_type == "single_crystal":
             self._update_single_crystal_data()
         elif self.plot_type == "plane_average":
             self._update_plane_average_data()
@@ -119,9 +124,9 @@ class RamanModel(Model):
         dir_nac_direction, _ = self._check_inputs_correct(self.nac_direction)
         if self.spectrum_type == "Raman":
             (
-                polarized_intensities,
-                depolarized_intensities,
-                frequencies,
+                self.raw_pol_intensities,
+                self.raw_depol_intensities,
+                self.raw_frequencies,
                 _,
             ) = self.raman_data.run_powder_raman_intensities(
                 frequencies=self.frequency_laser,
@@ -131,37 +136,40 @@ class RamanModel(Model):
 
             if self.separate_polarizations:
                 self.frequencies, self.intensities = self.generate_plot_data(
-                    frequencies,
-                    polarized_intensities,
+                    self.raw_frequencies,
+                    self.raw_pol_intensities,
                     self.broadening,
                 )
                 self.frequencies_depolarized, self.intensities_depolarized = (
                     self.generate_plot_data(
-                        frequencies,
-                        depolarized_intensities,
+                        self.raw_frequencies,
+                        self.raw_depol_intensities,
                         self.broadening,
                     )
                 )
             else:
-                combined_intensities = polarized_intensities + depolarized_intensities
+                self.raw_intensities = (
+                    self.raw_pol_intensities + self.raw_depol_intensities
+                )
                 self.frequencies, self.intensities = self.generate_plot_data(
-                    frequencies,
-                    combined_intensities,
+                    self.raw_frequencies,
+                    self.raw_intensities,
                     self.broadening,
                 )
                 self.frequencies_depolarized, self.intensities_depolarized = [], []
+                self.raw_pol_intensities, self.raw_depol_intensities = [], []
 
         elif self.spectrum_type == "IR":
             (
-                intensities,
-                frequencies,
+                self.raw_intensities,
+                self.raw_frequencies,
                 _,
             ) = self.raman_data.run_powder_ir_intensities(
                 nac_direction=dir_nac_direction if self.use_nac_direction else None,
             )
             self.frequencies, self.intensities = self.generate_plot_data(
-                frequencies,
-                intensities,
+                self.raw_intensities,
+                self.raw_frequencies,
                 self.broadening,
             )
             self.frequencies_depolarized, self.intensities_depolarized = [], []
@@ -176,8 +184,8 @@ class RamanModel(Model):
         if self.spectrum_type == "Raman":
             dir_outgoing, _ = self._check_inputs_correct(self.pol_outgoing)
             (
-                intensities,
-                frequencies,
+                self.raw_intensities,
+                self.raw_frequencies,
                 _,
             ) = self.raman_data.run_single_crystal_raman_intensities(
                 pol_incoming=dir_incoming,
@@ -188,8 +196,8 @@ class RamanModel(Model):
             )
         elif self.spectrum_type == "IR":
             (
-                intensities,
-                frequencies,
+                self.raw_intensities,
+                self.raw_frequencies,
                 _,
             ) = self.raman_data.run_single_crystal_ir_intensities(
                 pol_incoming=dir_incoming,
@@ -197,7 +205,7 @@ class RamanModel(Model):
             )
 
         self.frequencies, self.intensities = self.generate_plot_data(
-            frequencies, intensities
+            self.raw_frequencies, self.raw_intensities
         )
         self.frequencies_depolarized, self.intensities_depolarized = [], []
 
@@ -229,7 +237,7 @@ class RamanModel(Model):
             elif plane == "xz":
                 return raman_susc_tensor[np.ix_([0, 2], [0, 2])]
 
-        raman_susc_tensor, frequencies, _ = (
+        raman_susc_tensor, self.raw_frequencies, _ = (
             self.raman_data.run_raman_susceptibility_tensors(
                 nac_direction=dir_nac_direction if self.use_nac_direction else None,
             )
@@ -245,13 +253,13 @@ class RamanModel(Model):
             intensities_plane.append(avg_intensity)
 
         intensities = np.array(intensities_plane)
-        raman_spectrum = intensities * raman_prefactor(
+        self.raw_intensities = intensities * raman_prefactor(
             self.frequency_laser, self.temperature, True
         )
 
         self.frequencies, self.intensities = self.generate_plot_data(
-            frequencies,
-            raman_spectrum,
+            self.raw_frequencies,
+            self.raw_intensities,
             self.broadening,
         )
 
@@ -264,7 +272,7 @@ class RamanModel(Model):
         """
         if self.plot_type == "powder":
             update_function = self._update_powder_plot
-        elif self.plot_type == "crystal":
+        elif self.plot_type == "single_crystal":
             update_function = self._update_single_crystal_plot
         else:
             update_function = self._update_plane_average_plot
@@ -486,6 +494,8 @@ class RamanModel(Model):
                 "Depolarized intensities": self.intensities_depolarized.tolist(),
                 "Eigenvectors": self.eigenvectors.tolist(),
                 "Raw Frequencies cm-1": self.raw_frequencies.tolist(),
+                "Raw Intensities Polarized": self.raw_pol_intensities.tolist(),
+                "Raw Intensities Depolarized": self.raw_depol_intensities.tolist(),
                 "Labels": self.labels,
             }
         else:
@@ -494,6 +504,7 @@ class RamanModel(Model):
                 "Intensities": self.intensities.tolist(),
                 "Eigenvectors": self.eigenvectors.tolist(),
                 "Raw Frequencies cm-1": self.raw_frequencies.tolist(),
+                "Raw Intensities": self.raw_intensities.tolist(),
                 "Labels": self.labels,
             }
         json_str = json.dumps(my_dict)

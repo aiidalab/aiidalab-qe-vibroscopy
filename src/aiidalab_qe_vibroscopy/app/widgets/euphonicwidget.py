@@ -1,7 +1,7 @@
 import ipywidgets as ipw
 from IPython.display import display
 
-from aiidalab_qe.common.widgets import LoadingWidget
+from aiidalab_widgets_base import LoadingWidget
 
 from aiidalab_qe_vibroscopy.app.widgets.structurefactorwidget import (
     EuphonicStructureFactorWidget,

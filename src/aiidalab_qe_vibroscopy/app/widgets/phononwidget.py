@@ -1,6 +1,6 @@
 import ipywidgets as ipw
 
-from aiidalab_qe.common.widgets import LoadingWidget
+from aiidalab_widgets_base import LoadingWidget
 from aiidalab_qe_vibroscopy.app.widgets.phononmodel import PhononModel
 
 import plotly.graph_objects as go
