@@ -41,7 +41,6 @@ def generate_force_constant_from_phonopy(
     fc_name: str = "FORCE_CONSTANTS",
     fc_format: Optional[str] = None,
     mode="stream",  # "download" to have the download of phonopy.yaml and fc.hdf5 . TOBE IMPLEMENTED.
-    use_euphonic_full_parser: bool = False,
 ):
     """
     Basically allows to obtain the ForceConstants instance from phonopy, both via files (from the second
@@ -137,18 +136,12 @@ def generate_force_constant_from_phonopy(
         # Read force constants (fc.hdf5) and summary+NAC (phonopy.yaml)
 
         # fc = euphonic.ForceConstants.from_phonopy(
-        if use_euphonic_full_parser:
-            fc = euphonic.ForceConstants.from_phonopy(
-                path=dirpath,
-                summary_name="phonopy.yaml",
-                fc_name="fc.hdf5",
-            )
-        else:
-            fc = generate_force_constant_instance_temporary_fix(
-                path=dirpath,
-                summary_name="phonopy.yaml",
-                fc_name="fc.hdf5",
-            )
+        fc = euphonic.ForceConstants.from_phonopy(
+            path=dirpath,
+            summary_name="phonopy.yaml",
+            fc_name="fc.hdf5",
+        )
+
         # print(filename)
         # print(dirpath)
     enablePrint()
