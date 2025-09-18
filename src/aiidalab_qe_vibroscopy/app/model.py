@@ -95,6 +95,8 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
     )
     supercell_number_estimator = tl.Unicode("Click to estimate")
 
+    tmax = tl.Float(1000)
+
     def get_model_state(self):
         return {
             "simulation_type": self.simulation_type,
@@ -107,6 +109,7 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
         self.symmetry_symprec = parameters.get("symmetry_symprec", 1e-5)
         self.supercell = parameters.get("supercell", [2, 2, 2])
         self.supercell_x, self.supercell_y, self.supercell_z = self.supercell
+        self.tmax = parameters.get("tmax", 500)
 
     def reset(self):
         with self.hold_trait_notifications():
@@ -117,6 +120,7 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
             self.supercell_number_estimator = self._get_default(
                 "supercell_number_estimator"
             )
+            self.tmax = self._get_default("tmax")
 
     def _get_default(self, trait):
         return self._defaults.get(trait, self.traits()[trait].default_value)
