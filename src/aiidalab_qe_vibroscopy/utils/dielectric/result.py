@@ -68,7 +68,9 @@ def export_dielectric_data(node):
 
         elif "dielectric" in node:
             tensor_data = node.dielectric
-            output_data = get_priority_tensor(tensor_data)
+            output_data = get_priority_tensor(
+                getattr(tensor_data, "tensors", tensor_data)
+            )
             dielectric_tensor = output_data.get_array("dielectric").round(
                 6
             )  # Dielectric Constant
