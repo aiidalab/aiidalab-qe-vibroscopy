@@ -35,6 +35,11 @@ class VibroConfigurationSettingPanel(
             "input_structure",
         )
 
+        self._model.observe(
+            self._on_electronic_type_change,
+            "electronic_type",
+        )
+
     def render(self):
         if self.rendered:
             return
@@ -73,8 +78,16 @@ class VibroConfigurationSettingPanel(
                 high-frequency dielectric tensor, non-linear optical susceptibility and raman tensors.</li>
                 <li> <em>Inelastic neutron scattering (INS)</em>: dynamic structure factor and powder intensity maps.</li>
             </ul>
+
+            If the selected simulation type includes dielectric properties, please ensure that the
+            <b>"Electronic type"</b> in the <b>"Basic settings"</b> panel is set to <b>"Insulator"</b>.
             </div>""",
         )
+
+        # Warning widget for electronic type
+        self.warning_elec_type = ipw.HTML(layout=ipw.Layout(display="none"))
+
+        self._on_electronic_type_change(None)
 
         self.hint_button_help = ipw.HTML(
             """<div style="line-height: 140%; padding-top: 0px; padding-bottom: 5px">
@@ -288,6 +301,7 @@ class VibroConfigurationSettingPanel(
                 ],
             ),
             self.infobox_simulations.infobox,
+            self.warning_elec_type,
             self.supercell_widget,
             ipw.HBox(
                 [
@@ -304,20 +318,46 @@ class VibroConfigurationSettingPanel(
         self.refresh(specific="structure")
         self._model.on_input_structure_change()
 
+    def _on_electronic_type_change(self, _):
+        self.refresh(specific="electronic_type")
+        self._model.on_electronic_type_change()
+        if self._model.WARNING_ELECTRONIC_TYPE_MESSAGE == "":
+            self.warning_elec_type.layout.display = "none"
+        else:
+            # Create a styled warning box with yellow background, black text, and warning icon
+            styled_message = f"""
+            <div style="background-color: #fff3cd; color: #000; padding: 12px 15px;
+                        border-radius: 5px; border-left: 4px solid #ffc107;
+                        margin: 10px 0; line-height: 1.4;">
+                <div style="display: flex; align-items: flex-start;">
+                    <div style="margin-right: 10px; font-size: 20px; color: #856404;">⚠️</div>
+                    <div style="flex: 1; color: #000;">
+                        {self._model.WARNING_ELECTRONIC_TYPE_MESSAGE}
+                    </div>
+                </div>
+            </div>
+            """
+            self.warning_elec_type.value = styled_message
+            self.warning_elec_type.layout.display = "block"
+
     def _on_change_simulation_type(self, _):
         self.supercell_widget.layout.display = (
             "block" if self._model.simulation_type in [1, 3] else "none"
         )
+        # Check if input_structure exists before accessing sites
+        has_structure = self._model.input_structure is not None
+        is_small_structure = (
+            has_structure and len(self._model.input_structure.sites) <= 30
+        )
+
         self.supercell_number_estimator.layout.display = (
             "block"
-            if self._model.simulation_type in [1, 3]
-            and len(self._model.input_structure.sites) <= 30
+            if self._model.simulation_type in [1, 3] and is_small_structure
             else "none"
         )
         self.supercell_estimate_button.layout.display = (
             "block"
-            if self._model.simulation_type in [1, 3]
-            and len(self._model.input_structure.sites) <= 30
+            if self._model.simulation_type in [1, 3] and is_small_structure
             else "none"
         )
 
