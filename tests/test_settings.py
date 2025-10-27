@@ -142,3 +142,59 @@ def test_supercell_estimator_button(generate_structure_data):
     assert not configure_step.settings["vibronic"].supercell_estimate_button.disabled
     configure_step.settings["vibronic"]._estimate_supercells()
     assert configure_step.settings["vibronic"].supercell_estimate_button.disabled
+
+
+@pytest.mark.skip(reason="TODO: Rewrite test for new model-based architecture")
+@pytest.mark.usefixtures("sssp")
+def test_electronic_type_metal_warning(generate_structure_data):
+    """Test that metal electronic type shows warning and restricts simulation options.
+
+    TODO: This test needs to be rewritten to use the new model-based approach:
+    - Import VibroConfigurationSettingsModel directly
+    - Test model.electronic_type = "metal" / "insulator"
+    - Verify model.WARNING_ELECTRONIC_TYPE_MESSAGE
+    - Verify model.simulation_type_options restrictions
+    """
+    pass
+
+
+@pytest.mark.skip(reason="TODO: Rewrite test for new model-based architecture")
+@pytest.mark.usefixtures("sssp")
+def test_electronic_type_metal_forces_simulation_type(generate_structure_data):
+    """Test that setting electronic type to metal forces simulation type to 3.
+
+    TODO: This test needs to be rewritten to use the new model-based approach:
+    - Import VibroConfigurationSettingsModel directly
+    - Set model.simulation_type = 1
+    - Set model.electronic_type = "metal"
+    - Verify model.simulation_type == 3
+    """
+    pass
+
+
+@pytest.mark.skip(reason="TODO: Rewrite test for new model-based architecture")
+@pytest.mark.usefixtures("sssp")
+def test_electronic_type_warning_widget_display(generate_structure_data):
+    """Test that the warning widget displays/hides correctly based on electronic type.
+
+    TODO: This test needs to be rewritten to use the new model-based approach:
+    - Import VibroConfigurationSettingsModel and VibroConfigurationSettingPanel
+    - Create model and panel, call panel.render()
+    - Test panel.warning_elec_type.layout.display for metal vs insulator
+    - Verify warning styling (yellow background, warning icon)
+    """
+    pass
+
+
+@pytest.mark.skip(reason="TODO: Rewrite test for new model-based architecture")
+@pytest.mark.usefixtures("sssp")
+def test_electronic_type_insulator_restores_options(generate_structure_data):
+    """Test that switching back to insulator restores all simulation options.
+
+    TODO: This test needs to be rewritten to use the new model-based approach:
+    - Import VibroConfigurationSettingsModel directly
+    - Test switching between metal and insulator
+    - Verify all 4 simulation_type_options are restored
+    - Verify WARNING_ELECTRONIC_TYPE_MESSAGE is cleared
+    """
+    pass

@@ -65,16 +65,22 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
 
     dependencies = [
         "input_structure",
+        "workchain.electronic_type",
     ]
+
+    default_simulations_options = [
+        ("IR/Raman, Phonon, Dielectric, INS properties", 1),
+        ("IR/Raman and Dielectric in Primitive Cell Approach", 2),
+        ("Phonons for non-polar materials and INS", 3),
+        ("Dielectric properties", 4),
+    ]
+
+    electronic_type = tl.Unicode()
+    WARNING_ELECTRONIC_TYPE_MESSAGE = tl.Unicode("")
 
     simulation_type_options = tl.List(
         trait=tl.List(tl.Union([tl.Unicode(), tl.Int()])),
-        default_value=[
-            ("IR/Raman, Phonon, Dielectric, INS properties", 1),
-            ("IR/Raman and Dielectric in Primitive Cell Approach", 2),
-            ("Phonons for non-polar materials and INS", 3),
-            ("Dielectric properties", 4),
-        ],
+        default_value=default_simulations_options,
     )
     simulation_type = tl.Int(1)
 
@@ -147,6 +153,29 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
                 self.disable_x = self.disable_y = self.disable_z = False
 
             self.supercell = [self.supercell_x, self.supercell_y, self.supercell_z]
+
+    def on_electronic_type_change(self, _=None):
+        if self.electronic_type == "metal":
+            # For metals, only allow simulation type 3
+            if self.simulation_type != 3:
+                self.simulation_type = 3
+
+            # and print a warning message to the user, saying that only simulation type 3 is allowed
+            self.WARNING_ELECTRONIC_TYPE_MESSAGE = """
+            <div style="line-height: 1.4; margin-bottom: 5px; color: black;">
+                <strong>Warning:</strong> For metallic systems, only the simulation type
+                "Phonons for non-polar materials and INS" is allowed. Please switch the "Electronic type" to "Insulator" in
+                the Basic Settings panel,
+                if you wish to use other simulation types (i.e. including the calculation of dielectric properties).
+            </div>
+            """
+            self.simulation_type_options = [
+                ("Phonons for non-polar materials and INS", 3)
+            ]
+        else:
+            # For insulators, all simulation types are allowed
+            self.WARNING_ELECTRONIC_TYPE_MESSAGE = ""
+            self.simulation_type_options = self.default_simulations_options
 
     def suggest_supercell(self, _=None):
         """

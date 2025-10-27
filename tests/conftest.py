@@ -7,7 +7,7 @@ import tempfile
 import pytest
 from aiida import orm
 
-from aiidalab_qe.common.setup_pseudos import SSSP_VERSION
+from aiidalab_qe.setup.pseudos import SSSP_VERSION
 
 pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]
 
