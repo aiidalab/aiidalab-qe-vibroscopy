@@ -108,6 +108,7 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
             "simulation_type": self.simulation_type,
             "symmetry_symprec": self.symmetry_symprec,
             "supercell": self.supercell,
+            "tmax": self.tmax,
         }
 
     def set_model_state(self, parameters: dict):
@@ -115,7 +116,7 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
         self.symmetry_symprec = parameters.get("symmetry_symprec", 1e-5)
         self.supercell = parameters.get("supercell", [2, 2, 2])
         self.supercell_x, self.supercell_y, self.supercell_z = self.supercell
-        self.tmax = parameters.get("tmax", 500)
+        self.tmax = parameters.get("tmax", 1000)
 
     def reset(self):
         with self.hold_trait_notifications():
