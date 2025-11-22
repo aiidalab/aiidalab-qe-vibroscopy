@@ -22,7 +22,7 @@ dependencies = [
     "aiida-phonopy>=1.1.3",
     "phonopy==2.25.0",
     "pre-commit",
-    "euphonic==1.3.0",
+    "euphonic==1.4.5",
     "kaleido",
     "weas-widget==0.1.25"
 ]
