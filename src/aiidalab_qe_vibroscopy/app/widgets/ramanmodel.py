@@ -168,8 +168,8 @@ class RamanModel(Model):
                 nac_direction=dir_nac_direction if self.use_nac_direction else None,
             )
             self.frequencies, self.intensities = self.generate_plot_data(
-                self.raw_intensities,
                 self.raw_frequencies,
+                self.raw_intensities,
                 self.broadening,
             )
             self.frequencies_depolarized, self.intensities_depolarized = [], []
