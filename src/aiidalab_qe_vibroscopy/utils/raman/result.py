@@ -139,7 +139,7 @@ def fix_eigenvectors_dimensions(model):
 
     for i, t in enumerate(p2s_map.tolist()):
         where = np.where(s2p_map == t)
-        print(i, t, where)
+        #print(i, t, where)
         for j in range(shape_primitive[0]):
             sc_eigenvectors[j, where[0], :] = model.eigenvectors[j, i, :]
 
