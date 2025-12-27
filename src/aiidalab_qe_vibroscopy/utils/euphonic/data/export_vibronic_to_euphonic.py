@@ -35,7 +35,6 @@ def export_euphonic_data(output_vibronic, fermi_energy=None):
     phonopy_calc = output_set.creator
     fc = generate_force_constant_from_phonopy(
         phonopy_calc,
-        use_euphonic_full_parser=False,  # This is to avoid the bug in euphonic. WE IGNORE THE NAC CORRECTIONS
     )
     # bands = compute_bands(fc)
     # pdos = compute_pdos(fc)
