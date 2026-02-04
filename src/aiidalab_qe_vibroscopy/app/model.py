@@ -157,11 +157,7 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
 
     def on_electronic_type_change(self, _=None):
         if self.electronic_type == "metal":
-            # For metals, only allow simulation type 3
-            if self.simulation_type != 3:
-                self.simulation_type = 3
-
-            # and print a warning message to the user, saying that only simulation type 3 is allowed
+            # For metals, print a warning message to the user, saying that only simulation type 3 is allowed
             self.WARNING_ELECTRONIC_TYPE_MESSAGE = """
             <div style="line-height: 1.4; margin-bottom: 5px; color: black;">
                 <strong>Warning:</strong> For metallic systems, only the simulation type
@@ -170,13 +166,9 @@ class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStruct
                 if you wish to use other simulation types (i.e. including the calculation of dielectric properties).
             </div>
             """
-            self.simulation_type_options = [
-                ("Phonons for non-polar materials and INS", 3)
-            ]
         else:
             # For insulators, all simulation types are allowed
             self.WARNING_ELECTRONIC_TYPE_MESSAGE = ""
-            self.simulation_type_options = self.default_simulations_options
 
     def suggest_supercell(self, _=None):
         """
