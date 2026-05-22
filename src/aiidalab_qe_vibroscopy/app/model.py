@@ -2,7 +2,7 @@ import traitlets as tl
 
 import numpy as np
 from aiidalab_qe.common.mixins import HasInputStructure
-from aiidalab_qe.common.panel import ConfigurationSettingsModel
+from aiidalab_qe.common.panel import PanelModel
 
 from aiida_phonopy.data.preprocess import PreProcessData
 from aiida.plugins import DataFactory
@@ -60,11 +60,11 @@ def disable_print(func):
     return wrapper
 
 
-class VibroConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStructure):
+class VibroConfigurationSettingsModel(PanelModel, HasInputStructure):
     title = "Vibrational settings"
 
     dependencies = [
-        "input_structure",
+        "structure_uuid",
         "workchain.electronic_type",
     ]
 
