@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "aiidalab-qe-vibroscopy"
 description="AiiDAlab QE plugin for vibrational spectroscopies."
-version = "1.2.4"
+version = "1.2.5"
 authors = [
     {name = "Miki Bonacci", email = "miki.bonacci@psi.ch"},
     {name = "Andres Ortega Guerrero", email = "andres.ortega-guerrero@empa.ch"}
