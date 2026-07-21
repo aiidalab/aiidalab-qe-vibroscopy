@@ -22,7 +22,7 @@ dependencies = [
     "aiida-vibroscopy~=1.5",
     "aiida-phonopy~=1.5",
     "phonopy>=3,<4",
-    "euphonic~=1.6",
+    "euphonic~=1.4.5",
     "kaleido",
     "weas-widget>=0.2.6"
 ]
