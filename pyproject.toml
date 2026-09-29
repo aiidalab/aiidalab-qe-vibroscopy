@@ -19,7 +19,7 @@ keywords = ["aiidalab", "plugin"]
 requires-python = ">=3.12"
 dependencies = [
     "aiida-core>=2.8,<3",
-    "aiida-vibroscopy~=1.6",
+    "aiida-vibroscopy>=1.6.1,<2",
     "aiida-phonopy~=1.5",
     "phonopy>=3,<4",
     "euphonic~=1.4.5",
