@@ -129,7 +129,7 @@ class RamanModel(Model):
                 self.raw_frequencies,
                 _,
             ) = self.raman_data.run_powder_raman_intensities(
-                frequencies=self.frequency_laser,
+                frequency_laser=self.frequency_laser,
                 temperature=self.temperature,
                 nac_direction=dir_nac_direction if self.use_nac_direction else None,
             )
@@ -190,7 +190,7 @@ class RamanModel(Model):
             ) = self.raman_data.run_single_crystal_raman_intensities(
                 pol_incoming=dir_incoming,
                 pol_outgoing=dir_outgoing,
-                frequencies=self.frequency_laser,
+                frequency_laser=self.frequency_laser,
                 temperature=self.temperature,
                 nac_direction=dir_nac_direction if self.use_nac_direction else None,
             )
@@ -205,7 +205,7 @@ class RamanModel(Model):
             )
 
         self.frequencies, self.intensities = self.generate_plot_data(
-            self.raw_frequencies, self.raw_intensities
+            self.raw_frequencies, self.raw_intensities, self.broadening
         )
         self.frequencies_depolarized, self.intensities_depolarized = [], []
 
@@ -254,7 +254,10 @@ class RamanModel(Model):
 
         intensities = np.array(intensities_plane)
         self.raw_intensities = intensities * raman_prefactor(
-            self.frequency_laser, self.temperature, True
+            frequency=self.raw_frequencies,
+            frequency_laser=self.frequency_laser,
+            temperature=self.temperature,
+            absolute=True,
         )
 
         self.frequencies, self.intensities = self.generate_plot_data(
