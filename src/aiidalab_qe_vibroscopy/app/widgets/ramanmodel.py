@@ -11,6 +11,7 @@ import base64
 import json
 from scipy.integrate import dblquad
 from aiida_vibroscopy.utils.spectra import raman_prefactor
+from aiidalab_qe_vibroscopy.utils.raman.result import fix_eigenvectors_dimensions
 
 
 class RamanModel(Model):
@@ -84,6 +85,8 @@ class RamanModel(Model):
         ]
         self.active_modes_options = self._get_active_modes_options()
         self.active_mode = 0
+
+        self.eigenvectors = fix_eigenvectors_dimensions(model=self)
 
     def _get_active_modes_options(self):
         active_modes_options = [
