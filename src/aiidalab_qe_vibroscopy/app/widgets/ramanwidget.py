@@ -1,5 +1,7 @@
+from html import escape
 import ipywidgets as ipw
 from aiidalab_qe_vibroscopy.app.widgets.ramanmodel import RamanModel
+from aiidalab_qe_vibroscopy.app.widgets.atom_selection import AtomSelectionControls
 import plotly.graph_objects as go
 from aiidalab_widgets_base.utils import StatusHTML
 from IPython.display import HTML, clear_output, display
@@ -20,7 +22,11 @@ class RamanWidget(ipw.VBox):
         )
         self._model = model
         self._model.spectrum_type = spectrum_type
-        self._model.vibro = node
+        self._model.vibrational_data_uuid = (
+            node
+            if isinstance(node, str)
+            else self._model.get_vibrational_data(node).uuid
+        )
         self._model.input_structure = input_structure
         self._model.fetch_data()
         self.rendered = False
@@ -77,7 +83,7 @@ class RamanWidget(ipw.VBox):
             (self.temperature, "value"),
         )
         self.frequency_laser = ipw.FloatText(
-            description="Laser frequency (nm):",
+            description="Laser wavelength (nm):",
             style={"description_width": "initial"},
         )
         ipw.link(
@@ -139,6 +145,9 @@ class RamanWidget(ipw.VBox):
         )
         self.download_button.on_click(self._model.download_data)
         self._wrong_syntax = StatusHTML(clear_after=8)
+        self.atom_controls = AtomSelectionControls(
+            len(self._model.input_structure), optical=True
+        )
 
         self.broadening = ipw.FloatText(
             description="Broadening (cm<sup>-1</sup>):",
@@ -253,6 +262,7 @@ class RamanWidget(ipw.VBox):
             self.pol_incoming,
             self.pol_outgoing,
             self.plane_type,
+            self.atom_controls,
             self._wrong_syntax,
             ipw.HBox([self.plot_button, self.download_button]),
             self.spectrum,
@@ -296,9 +306,7 @@ class RamanWidget(ipw.VBox):
 
         self.plane_type.layout.display = "none"
 
-        self.spectrum.add_scatter(
-            x=self._model.frequencies, y=self._model.intensities, name=""
-        )
+        self._model.update_plot(self.spectrum)
         self.spectrum.layout.title.text = f"Powder {self._model.spectrum_type} spectrum"
         self.modes_table.layout = {
             "overflow": "auto",
@@ -359,8 +367,31 @@ class RamanWidget(ipw.VBox):
                 </div>
             """
             return
-        self._model.update_data()
+        self._model.selected_atoms = self.atom_controls.selection.value
+        self._model.selected_only = self.atom_controls.selected_only.value
+        try:
+            self._model.update_data()
+        except ValueError as exc:
+            self.atom_controls.message.value = (
+                f"<div class='alert alert-danger'>{escape(str(exc))}</div>"
+            )
+            return
+        self.atom_controls.message.value = (
+            f"{len(self._model.selected_indices)} atoms selected."
+            if self._model.selected_indices
+            else ""
+        )
         self._model.update_plot(self.spectrum)
+        # NAC changes can alter the active modes and their frequencies.
+        self._select_active_mode(None)
+        with self.modes_table:
+            clear_output()
+            display(HTML(self._model.modes_table()))
+
+    def close(self):
+        if hasattr(self, "atom_controls"):
+            self.atom_controls.close()
+        super().close()
 
     def _select_active_mode(self, _):
         self.weas = self._model.set_vibrational_mode_animation(self.weas)
