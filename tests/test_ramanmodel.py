@@ -49,7 +49,7 @@ def test_plane_average_matches_cartesian_backend(
         frequency_laser=frequency_laser,
         temperature=temperature,
     )
-    model.raman_data = data
+    model.get_raman_data = lambda: data
     model.update_data()
 
     # Integrating independent incoming/outgoing angles over [0, 2*pi] gives
@@ -90,7 +90,7 @@ def test_raman_laser_wavelength_matches_backend(plot_type, frequency_laser):
         frequency_laser=frequency_laser,
         temperature=100.0,
     )
-    model.raman_data = data
+    model.get_raman_data = lambda: data
     model.update_data()
 
     if plot_type == "powder":
@@ -118,7 +118,7 @@ def test_single_crystal_uses_selected_broadening(spectrum_type, broadening):
         plot_type="single_crystal",
         broadening=broadening,
     )
-    model.raman_data = SyntheticRamanData()
+    model.get_raman_data = SyntheticRamanData
     model.update_data()
 
     expected = multilorentz(
