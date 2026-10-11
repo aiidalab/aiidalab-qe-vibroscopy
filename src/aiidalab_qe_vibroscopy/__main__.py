@@ -1,9 +1,10 @@
-from aiida.common.exceptions import NotExistent
-import subprocess
-from aiida.orm import load_code
-from aiida import load_profile
 import shutil
+import subprocess
+
 import click
+from aiida import load_profile
+from aiida.common.exceptions import NotExistent
+from aiida.orm import load_code
 
 """
 Automatic installation of the phonopy code.
@@ -82,6 +83,37 @@ def setup_phonopy():
         ]
         # Use subprocess.run to run the command
         subprocess.run(command, check=True)
+
+
+@cli.command(help="Verify the phonopy post-install setup.")
+@click.option("-p", "--profile", default="default", help="AiiDA profile name.")
+def verify_post_install(profile):
+    from importlib_metadata import PackageNotFoundError, version
+
+    load_profile(profile)
+    try:
+        load_code("phonopy@localhost")
+    except NotExistent as error:
+        raise click.ClickException(
+            "AiiDA code phonopy@localhost is not configured. Run setup-phonopy."
+        ) from error
+
+    if "arm" in machine:
+        expected_versions = {"scipy": "1.13.1", "spglib": "2.5.0"}
+        for package, expected_version in expected_versions.items():
+            try:
+                installed_version = version(package)
+            except PackageNotFoundError as error:
+                raise click.ClickException(
+                    f"{package} is not installed; expected {expected_version}."
+                ) from error
+            if installed_version != expected_version:
+                raise click.ClickException(
+                    f"{package} {installed_version} is installed; "
+                    f"expected {expected_version}."
+                )
+
+    click.echo("Vibroscopy post-install setup is valid.")
 
 
 if __name__ == "__main__":
