@@ -1,5 +1,7 @@
+import os
 import shutil
 import subprocess
+from pathlib import Path
 
 import click
 from aiida import load_profile
@@ -92,11 +94,24 @@ def verify_post_install(profile):
 
     load_profile(profile)
     try:
-        load_code("phonopy@localhost")
+        code = load_code("phonopy@localhost")
     except NotExistent as error:
         raise click.ClickException(
             "AiiDA code phonopy@localhost is not configured. Run setup-phonopy."
         ) from error
+
+    executable = code.filepath_executable
+    if not executable:
+        raise click.ClickException("AiiDA code phonopy@localhost executable is not set")
+
+    filepath = Path(executable)
+    failure_prefix = "AiiDA code phonopy@localhost executable is"
+    if not filepath.exists():
+        raise click.ClickException(f"{failure_prefix} missing: {executable}")
+    if not filepath.is_file():
+        raise click.ClickException(f"{failure_prefix} not a file: {executable}")
+    if not os.access(filepath, os.X_OK):
+        raise click.ClickException(f"{failure_prefix} not executable: {executable}")
 
     if "arm" in machine:
         expected_versions = {"scipy": "1.13.1", "spglib": "2.5.0"}
