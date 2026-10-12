@@ -40,6 +40,34 @@ def test_verify_post_install_fails_when_code_is_missing(monkeypatch):
     assert "phonopy@localhost is not configured" in result.output
 
 
+def test_setup_phonopy_uses_valid_arm_install_commands(monkeypatch):
+    from aiida.common.exceptions import NotExistent
+
+    commands = []
+    monkeypatch.setattr(plugin_cli, "load_profile", lambda: None)
+    monkeypatch.setattr(
+        plugin_cli,
+        "load_code",
+        lambda _label: (_ for _ in ()).throw(NotExistent("missing")),
+    )
+    monkeypatch.setattr(plugin_cli.shutil, "which", lambda _name: "/usr/bin/phonopy")
+    monkeypatch.setattr(plugin_cli, "machine", "aarch64")
+    monkeypatch.setattr(
+        plugin_cli.subprocess,
+        "run",
+        lambda command, **_kwargs: (
+            commands.append(command)
+            or plugin_cli.subprocess.CompletedProcess(command, 0, "", "")
+        ),
+    )
+
+    result = CliRunner().invoke(plugin_cli.cli, ["setup-phonopy"])
+
+    assert result.exit_code == 0, result.output
+    assert commands[1] == ["conda", "install", "scipy==1.13.1", "--y"]
+    assert commands[2] == ["pip", "install", "spglib==2.5.0"]
+
+
 @pytest.mark.parametrize(
     ("path_state", "expected_message"),
     [
