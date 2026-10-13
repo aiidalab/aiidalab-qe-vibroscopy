@@ -167,3 +167,51 @@ def export_phononworkchain_data(node, fermi_energy=None):
         return full_data
     else:
         return None
+
+
+def atomic_pdos_from_workchain(node):
+    """Read per-atom PDOS in displayed unit-cell order without recalculation."""
+    from aiidalab_qe_vibroscopy.utils.mode_projection import unitcell_to_primitive
+
+    pdos = node.outputs.phonon_pdos
+    creator = pdos.creator
+    if creator is None:
+        raise ValueError("The source of the saved atom-resolved DOS is unavailable.")
+    parameters = {
+        key.lower(): value
+        for key, value in creator.inputs.parameters.get_dict().items()
+    }
+    if str(parameters.get("pdos", "")).lower() != "auto":
+        raise ValueError(
+            "This calculation did not save DOS in automatic per-atom order."
+        )
+    if "primitive_axes" in parameters:
+        raise ValueError(
+            "Atom mapping for a manually overridden primitive cell is unavailable."
+        )
+    source = next(
+        (
+            getattr(creator.inputs, key)
+            for key in ("phonopy_data", "force_constants")
+            if key in creator.inputs
+        ),
+        None,
+    )
+    if source is None or not hasattr(source, "get_phonopy_instance"):
+        raise ValueError(
+            "The stored phonon data needed for atom mapping are unavailable."
+        )
+    phonopy = source.get_phonopy_instance()
+    structure = node.inputs.structure.get_ase()
+    mapping = unitcell_to_primitive(phonopy, structure)
+    values = np.array([row[1] for row in pdos.get_y()])
+    number_of_primitive_atoms = len(phonopy.primitive)
+    if (
+        parameters.get("xyz_projection")
+        and len(values) == 3 * number_of_primitive_atoms
+    ):
+        values = values.reshape(number_of_primitive_atoms, 3, -1).sum(axis=1)
+    if len(values) != number_of_primitive_atoms:
+        raise ValueError("The saved DOS curves cannot be assigned to individual atoms.")
+    # Report DOS per displayed unit cell, as in the existing element-grouped view.
+    return values[mapping]

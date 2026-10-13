@@ -1,14 +1,19 @@
 from aiidalab_qe.common.mvc import Model
 import traitlets as tl
 
-from aiida.orm.nodes.process.workflow.workchain import WorkChainNode
+from aiida import orm
+from aiidalab_qe_vibroscopy.utils.atom_selection import parse_atom_selection
+from aiidalab_qe_vibroscopy.utils.phonons.result import atomic_pdos_from_workchain
+from aiidalab_qe.common.bands_pdos.utils import _cmap
 from aiidalab_qe_vibroscopy.utils.phonons.result import export_phononworkchain_data
 from IPython.display import display
 import numpy as np
 
 
 class PhononModel(Model):
-    vibro = tl.Instance(WorkChainNode, allow_none=True)
+    process_uuid = tl.Unicode()
+    selected_atoms = tl.Unicode()
+    selected_only = tl.Bool(False)
 
     pdos_data = {}
     bands_data = {}
@@ -16,10 +21,47 @@ class PhononModel(Model):
 
     def fetch_data(self):
         """Fetch the phonon data from the VibroWorkChain"""
-        phonon_data = export_phononworkchain_data(self.vibro)
+        node = orm.load_node(self.process_uuid)
+        phonon_data = export_phononworkchain_data(node)
         self.pdos_data = phonon_data["pdos"][0]
         self.bands_data = phonon_data["bands"][0]
         self.thermo_data = phonon_data["thermo"][0]
+        self.input_structure = node.inputs.structure.get_ase()
+        self.selected_indices = []
+        self.selected_pdos = None
+        self.atomic_pdos = None
+        self.projection_error = ""
+        try:
+            self.atomic_pdos = atomic_pdos_from_workchain(node)
+        except (ValueError, AttributeError, KeyError) as exc:
+            self.projection_error = str(exc)
+        else:
+            # Group the verified atomic curves by physical elements. Phonopy
+            # may use dummy species numbers to represent distinct AiiDA kinds.
+            symbols = self.input_structure.get_chemical_symbols()
+            dos = self.pdos_data["dos"]
+            dos[0]["y"] = self.atomic_pdos.sum(axis=0).tolist()
+            self.pdos_data["dos"] = [dos[0]]
+            for symbol in dict.fromkeys(symbols):
+                indices = [i for i, value in enumerate(symbols) if value == symbol]
+                self.pdos_data["dos"].append(
+                    {
+                        "label": symbol,
+                        "x": dos[0]["x"],
+                        "y": self.atomic_pdos[indices].sum(axis=0).tolist(),
+                        "borderColor": _cmap(symbol),
+                        "backgroundColor": _cmap(symbol),
+                        "backgroundAlpha": "40%",
+                        "lineStyle": "solid",
+                    }
+                )
+
+    def update_atom_selection(self):
+        indices = parse_atom_selection(self.selected_atoms, len(self.input_structure))
+        if indices and self.atomic_pdos is None:
+            raise ValueError(self.projection_error)
+        self.selected_indices = indices
+        self.selected_pdos = self.atomic_pdos[indices].sum(axis=0) if indices else None
 
     def update_thermo_plot(self, fig):
         """Update the thermal properties plot."""
@@ -93,7 +135,16 @@ class PhononModel(Model):
             b64_str = base64.b64encode(json_str.encode()).decode()
             self._download(payload=b64_str, filename=file_name_bands)
         if self.pdos_data:
-            json_str = json.dumps(jsanitize(self.pdos_data))
+            exported = dict(self.pdos_data)
+            if self.selected_indices:
+                exported["selected_atoms_1based"] = [
+                    i + 1 for i in self.selected_indices
+                ]
+                exported["selected_dos"] = self.selected_pdos.tolist()
+                exported["projection_definition"] = (
+                    "Sum of the stored atomic PDOS, per displayed unit cell."
+                )
+            json_str = json.dumps(jsanitize(exported))
             b64_str = base64.b64encode(json_str.encode()).decode()
             self._download(payload=b64_str, filename=file_name_pdos)
 
