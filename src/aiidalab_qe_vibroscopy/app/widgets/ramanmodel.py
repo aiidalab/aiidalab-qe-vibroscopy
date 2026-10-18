@@ -1,5 +1,4 @@
 from __future__ import annotations
-from aiidalab_qe.common.mvc import Model
 import traitlets as tl
 from aiida import orm
 from ase.atoms import Atoms
@@ -18,7 +17,7 @@ from aiidalab_qe_vibroscopy.utils.mode_projection import (
 )
 
 
-class RamanModel(Model):
+class RamanModel(tl.HasTraits):
     vibrational_data_uuid = tl.Unicode()
     selected_atoms = tl.Unicode()
     selected_only = tl.Bool(False)
