@@ -33,6 +33,43 @@ conda install h5py==3.11.0
 
 this will install also the `hdf5` library as dependency.
 
+## Selected-atom mode participation
+
+The Raman, IR and phonon DOS result panels accept one-based atom indices in
+input-structure order, for example `1 3 6..8` or `(1,3; 5. 8 10 .. 30 44)`.
+Ranges are inclusive; duplicates are counted once. Invalid or out-of-range
+indices are reported before changing the plot. Leave the selection empty to
+restore the original curves.
+
+For Raman and IR, a thick line shows the spectrum weighted by the selected
+atoms' **mode participation**. For a mode with Cartesian displacements
+$u_{a\nu}$, the weight is
+
+$$
+w_\nu(S) =
+\frac{\sum_{a\in S} M_a |u_{a\nu}|^2}
+     {\sum_a M_a |u_{a\nu}|^2}.
+$$
+
+This recovers the mass-weighted eigenvector convention used for phonon PDOS.
+Weights are averaged over frequency-degenerate modes (using the backend's
+$10^{-5}$ THz tolerance) to avoid dependence on arbitrary rotations within
+a degenerate subspace. Each optical mode intensity is multiplied by this
+weight **before broadening**, using the total curve's normalization.
+Selecting every atom therefore reproduces the total; complementary selections
+add back to it. This describes the character of the modes carrying the
+optical signal, not an additive decomposition into atomic IR/Raman
+intensities, whose amplitudes can interfere.
+
+Phonon DOS selections sum the saved atomic PDOS and report it per input unit
+cell. This requires automatic per-atom PDOS and verifiable primitive-to-unit
+cell mapping; if these are unavailable, the panel explains why atom selection
+cannot be applied. Phonon dispersion curves are not atom projected.
+
+Both panels offer a selected-only view and include the selection and its
+definition in their JSON downloads. Existing results can be used without
+rerunning the original calculation.
+
 ## License
 
 MIT

@@ -13,7 +13,7 @@ class IRRamanWidget(ipw.VBox):
             **kwargs,
         )
         self._model = model
-        self._model.vibro = node
+        self._model.vibrational_data_uuid = RamanModel.get_vibrational_data(node).uuid
         self._model.input_structure = input_structure
         self.rendered = False
 
@@ -34,7 +34,7 @@ class IRRamanWidget(ipw.VBox):
             self.raman_model = RamanModel()
             self.raman_widget = RamanWidget(
                 model=self.raman_model,
-                node=self._model.vibro,
+                node=self._model.vibrational_data_uuid,
                 input_structure=self._model.input_structure,
                 spectrum_type="Raman",
             )
@@ -45,7 +45,7 @@ class IRRamanWidget(ipw.VBox):
             self.ir_model = RamanModel()
             self.ir_widget = RamanWidget(
                 model=self.ir_model,
-                node=self._model.vibro,
+                node=self._model.vibrational_data_uuid,
                 input_structure=self._model.input_structure,
                 spectrum_type="IR",
             )
