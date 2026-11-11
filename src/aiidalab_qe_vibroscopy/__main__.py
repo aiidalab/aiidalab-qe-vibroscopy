@@ -4,7 +4,6 @@ import subprocess
 from pathlib import Path
 
 import click
-import importlib_metadata
 from aiida import load_profile
 from aiida.common.exceptions import NotExistent
 from aiida.orm import load_code
@@ -15,18 +14,6 @@ Automatic installation of the phonopy code.
 we suppose phonopy is already installed (pip install phonopy --user).
 So we only setup in AiiDA.
 """
-
-import platform
-
-try:
-    machine = platform.machine()
-except Exception:
-    machine = "aarch"
-
-
-def _is_arm_machine(machine_name: str) -> bool:
-    machine_name = machine_name.lower()
-    return machine_name.startswith("arm") or machine_name == "aarch64"
 
 
 @click.group()
@@ -71,25 +58,6 @@ def setup_phonopy():
     else:
         print("Code phonopy@localhost is already installed! Nothing to do here.")
 
-    # OPENBLAS is broken in the pip scipy package on ARM
-    if _is_arm_machine(machine):
-        command = [
-            "conda",
-            "install",
-            "scipy==1.13.1",
-            "--y",
-        ]
-        # Use subprocess.run to run the command
-        subprocess.run(command, check=True)
-
-        command = [
-            "pip",
-            "install",
-            "spglib==2.5.0",
-        ]
-        # Use subprocess.run to run the command
-        subprocess.run(command, check=True)
-
 
 @cli.command(help="Verify the phonopy post-install setup.")
 @click.option("-p", "--profile", default="default", help="AiiDA profile name.")
@@ -115,20 +83,25 @@ def verify_post_install(profile):
     if not os.access(filepath, os.X_OK):
         raise click.ClickException(f"{failure_prefix} not executable: {executable}")
 
-    if _is_arm_machine(machine):
-        expected_versions = {"scipy": "1.13.1", "spglib": "2.5.0"}
-        for package, expected_version in expected_versions.items():
-            try:
-                installed_version = importlib_metadata.version(package)
-            except importlib_metadata.PackageNotFoundError as error:
-                raise click.ClickException(
-                    f"{package} is not installed; expected {expected_version}."
-                ) from error
-            if installed_version != expected_version:
-                raise click.ClickException(
-                    f"{package} {installed_version} is installed; "
-                    f"expected {expected_version}."
-                )
+    try:
+        result = subprocess.run(
+            [executable, "--help"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise click.ClickException(
+            f"Could not start AiiDA code phonopy@localhost: {error}"
+        ) from error
+
+    if result.returncode != 0:
+        details = (result.stderr or result.stdout).strip()[:500]
+        raise click.ClickException(
+            f"AiiDA code phonopy@localhost failed to start "
+            f"(exit code {result.returncode}): {details}"
+        )
 
     click.echo("Vibroscopy post-install setup is valid.")
 
