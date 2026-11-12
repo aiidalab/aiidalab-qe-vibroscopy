@@ -67,6 +67,27 @@ def test_mapping_reduced_cell_and_dummy_species():
         unitcell_to_primitive(phonopy, reordered)
 
 
+def test_mapping_with_different_standard_atomic_mass_tables():
+    structure = bulk("Si", "diamond", a=5.43)
+    unitcell = PhonopyAtoms(
+        symbols=structure.get_chemical_symbols(),
+        cell=structure.cell,
+        positions=structure.positions,
+    )
+    phonopy = Phonopy(unitcell, [1, 1, 1], primitive_matrix=np.eye(3))
+    np.testing.assert_allclose(structure.get_masses(), [28.085, 28.085])
+    np.testing.assert_allclose(unitcell.masses, [28.0855, 28.0855])
+    np.testing.assert_array_equal(unitcell_to_primitive(phonopy, structure), [0, 1])
+
+
+def test_mapping_rejects_incompatible_masses():
+    structure = bulk("Si", "diamond", a=5.43)
+    phonopy = make_phonopy(structure, np.eye(3))
+    structure.set_masses([29.0, 28.085])
+    with pytest.raises(ValueError, match="masses"):
+        unitcell_to_primitive(phonopy, structure)
+
+
 @pytest.mark.parametrize("invalid", [0.0, np.nan, np.inf])
 def test_invalid_mode_norm(invalid):
     modes = np.full((1, 2, 3), invalid)
@@ -74,9 +95,11 @@ def test_invalid_mode_norm(invalid):
         atom_participation(modes, [12, 1], [100])
 
 
-def test_atomic_pdos_uses_mapping_and_input_cell_normalization():
+@pytest.mark.parametrize("displayed_mass_shift", [0.0, 0.0005])
+def test_atomic_pdos_uses_mapping_and_input_cell_normalization(displayed_mass_shift):
     structure = bulk("Al", "fcc", a=4.0, cubic=True)
     phonopy = make_phonopy(structure)
+    structure.set_masses(structure.get_masses() + displayed_mass_shift)
     curve = np.array([0.0, 1.0, 2.0])
     source = SimpleNamespace(get_phonopy_instance=lambda: phonopy)
     creator = SimpleNamespace(
@@ -141,6 +164,23 @@ def projected_model(spectrum="Raman", plot_type="powder", separate=False):
     model.get_raman_data = lambda: data
     model.fetch_data()
     return model
+
+
+@pytest.mark.parametrize("spectrum", ["Raman", "IR"])
+def test_participation_uses_masses_saved_with_modes(spectrum):
+    data = SyntheticProjectedData()
+    displayed_structure = data.structure.copy()
+    displayed_structure.set_masses(data.structure.get_masses() + [0.0005, 0.0002])
+    model = RamanModel(
+        spectrum_type=spectrum,
+        input_structure=displayed_structure,
+        vibrational_data_uuid="synthetic-loader",
+    )
+    model.get_raman_data = lambda: data
+    model.fetch_data()
+    np.testing.assert_allclose(
+        model._atom_participation, [[0.8, 0.2], [0.1, 0.9]], rtol=1e-12
+    )
 
 
 @pytest.mark.parametrize(
