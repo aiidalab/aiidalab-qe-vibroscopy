@@ -8,7 +8,7 @@ def unitcell_to_primitive(phonopy, structure):
     """Map displayed unit-cell indices to primitive eigenvector indices.
 
     AiiDA kinds may be encoded as dummy chemical species in Phonopy. Check
-    positions and the actual masses, rather than interpreting those symbols.
+    positions and compatible masses rather than interpreting those symbols.
     """
     unitcell = phonopy.unitcell
     if len(structure) != len(unitcell):
@@ -23,7 +23,8 @@ def unitcell_to_primitive(phonopy, structure):
     delta[:, periodic] -= np.rint(delta[:, periodic])
     if not np.allclose(delta @ unitcell.cell, 0, atol=1e-6, rtol=0):
         raise ValueError("Cannot match displayed atom numbering to the stored modes.")
-    if not np.allclose(structure.get_masses(), unitcell.masses, atol=1e-6, rtol=0):
+    # Allow 0.1% differences between standard atomic-weight tables.
+    if not np.allclose(structure.get_masses(), unitcell.masses, rtol=1e-3, atol=0):
         raise ValueError("Displayed atomic masses do not match the stored modes.")
     primitive = phonopy.primitive
     mapping = np.array(

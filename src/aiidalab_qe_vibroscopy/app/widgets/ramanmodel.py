@@ -102,7 +102,7 @@ class RamanModel(tl.HasTraits):
         mapping = unitcell_to_primitive(phonopy, self.input_structure)
         self.eigenvectors = np.asarray(displacements)[:, mapping, :]
         self._atom_participation = atom_participation(
-            self.eigenvectors, self.input_structure.get_masses(), frequencies
+            self.eigenvectors, phonopy.unitcell.masses, frequencies
         )
         self._mode_frequencies = np.asarray(frequencies)
         self.raw_frequencies = np.asarray(frequencies)
