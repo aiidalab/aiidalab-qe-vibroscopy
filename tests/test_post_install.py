@@ -16,7 +16,6 @@ def test_verify_post_install_passes(monkeypatch, tmp_path):
         "load_code",
         lambda _label: SimpleNamespace(filepath_executable=str(executable)),
     )
-    monkeypatch.setattr(plugin_cli, "machine", "x86_64")
 
     result = CliRunner().invoke(plugin_cli.cli, ["verify-post-install"])
 
@@ -40,7 +39,7 @@ def test_verify_post_install_fails_when_code_is_missing(monkeypatch):
     assert "phonopy@localhost is not configured" in result.output
 
 
-def test_setup_phonopy_uses_valid_arm_install_commands(monkeypatch):
+def test_setup_phonopy_only_registers_code(monkeypatch):
     from aiida.common.exceptions import NotExistent
 
     commands = []
@@ -51,7 +50,6 @@ def test_setup_phonopy_uses_valid_arm_install_commands(monkeypatch):
         lambda _label: (_ for _ in ()).throw(NotExistent("missing")),
     )
     monkeypatch.setattr(plugin_cli.shutil, "which", lambda _name: "/usr/bin/phonopy")
-    monkeypatch.setattr(plugin_cli, "machine", "aarch64")
     monkeypatch.setattr(
         plugin_cli.subprocess,
         "run",
@@ -64,8 +62,23 @@ def test_setup_phonopy_uses_valid_arm_install_commands(monkeypatch):
     result = CliRunner().invoke(plugin_cli.cli, ["setup-phonopy"])
 
     assert result.exit_code == 0, result.output
-    assert commands[1] == ["conda", "install", "scipy==1.13.1", "--y"]
-    assert commands[2] == ["pip", "install", "spglib==2.5.0"]
+    assert commands == [
+        [
+            "verdi",
+            "code",
+            "create",
+            "core.code.installed",
+            "--non-interactive",
+            "--label",
+            "phonopy",
+            "--default-calc-job-plugin",
+            "phonopy.phonopy",
+            "--computer",
+            "localhost",
+            "--filepath-executable",
+            "/usr/bin/phonopy",
+        ]
+    ]
 
 
 @pytest.mark.parametrize(
@@ -105,10 +118,7 @@ def test_verify_post_install_reports_executable_path_state(
     assert expected_message in result.output
 
 
-@pytest.mark.parametrize("machine", ["arm64", "aarch64"])
-def test_verify_post_install_checks_arm_dependency_versions(
-    monkeypatch, tmp_path, machine
-):
+def test_verify_post_install_runs_registered_executable(monkeypatch, tmp_path):
     executable = tmp_path / "phonopy"
     executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     executable.chmod(0o755)
@@ -118,38 +128,26 @@ def test_verify_post_install_checks_arm_dependency_versions(
         "load_code",
         lambda _label: SimpleNamespace(filepath_executable=str(executable)),
     )
-    monkeypatch.setattr(plugin_cli, "machine", machine)
-    checked_packages = []
+    commands = []
 
-    def get_version(package):
-        checked_packages.append(package)
-        return {"scipy": "1.13.1", "spglib": "2.5.0"}[package]
+    def run(command, **kwargs):
+        commands.append(command)
+        assert kwargs["timeout"] == 30
+        return plugin_cli.subprocess.CompletedProcess(command, 0, "Phonopy help", "")
 
-    monkeypatch.setattr(
-        plugin_cli.importlib_metadata,
-        "version",
-        get_version,
-    )
+    monkeypatch.setattr(plugin_cli.subprocess, "run", run)
 
     result = CliRunner().invoke(plugin_cli.cli, ["verify-post-install"])
 
     assert result.exit_code == 0
-    assert set(checked_packages) == {"scipy", "spglib"}
+    assert commands == [[str(executable), "--help"]]
 
 
-@pytest.mark.parametrize("machine", ["arm64", "aarch64"])
 @pytest.mark.parametrize(
-    ("state", "package", "expected_message"),
-    [
-        ("missing", "scipy", "scipy is not installed; expected 1.13.1"),
-        ("wrong", "scipy", "scipy 1.13.0 is installed; expected 1.13.1"),
-        ("missing", "spglib", "spglib is not installed; expected 2.5.0"),
-        ("wrong", "spglib", "spglib 2.4.0 is installed; expected 2.5.0"),
-    ],
+    "error",
+    [OSError("cannot execute"), plugin_cli.subprocess.TimeoutExpired("phonopy", 30)],
 )
-def test_verify_post_install_reports_arm_dependency_problems(
-    monkeypatch, tmp_path, machine, state, package, expected_message
-):
+def test_verify_post_install_reports_startup_error(monkeypatch, tmp_path, error):
     executable = tmp_path / "phonopy"
     executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     executable.chmod(0o755)
@@ -159,18 +157,51 @@ def test_verify_post_install_reports_arm_dependency_problems(
         "load_code",
         lambda _label: SimpleNamespace(filepath_executable=str(executable)),
     )
-    monkeypatch.setattr(plugin_cli, "machine", machine)
 
-    def get_version(name):
-        if name == package and state == "missing":
-            raise plugin_cli.importlib_metadata.PackageNotFoundError(name)
-        if name == "scipy":
-            return "1.13.0" if package == name and state == "wrong" else "1.13.1"
-        return "2.4.0" if package == name and state == "wrong" else "2.5.0"
+    def run(*_args, **_kwargs):
+        raise error
 
-    monkeypatch.setattr(plugin_cli.importlib_metadata, "version", get_version)
+    monkeypatch.setattr(plugin_cli.subprocess, "run", run)
 
     result = CliRunner().invoke(plugin_cli.cli, ["verify-post-install"])
 
     assert result.exit_code != 0
-    assert expected_message in result.output
+    assert "Could not start AiiDA code phonopy@localhost" in result.output
+
+
+def test_verify_post_install_reports_broken_executable(monkeypatch, tmp_path):
+    executable = tmp_path / "phonopy"
+    executable.write_text(
+        "#!/bin/sh\necho 'ImportError: broken native library' >&2\nexit 1\n",
+        encoding="utf-8",
+    )
+    executable.chmod(0o755)
+    monkeypatch.setattr(plugin_cli, "load_profile", lambda _profile: None)
+    monkeypatch.setattr(
+        plugin_cli,
+        "load_code",
+        lambda _label: SimpleNamespace(filepath_executable=str(executable)),
+    )
+
+    result = CliRunner().invoke(plugin_cli.cli, ["verify-post-install"])
+
+    assert result.exit_code != 0
+    assert "exit code 1" in result.output
+    assert "ImportError: broken native library" in result.output
+
+
+def test_setup_phonopy_preserves_existing_code(monkeypatch):
+    monkeypatch.setattr(plugin_cli, "load_profile", lambda: None)
+    monkeypatch.setattr(plugin_cli, "load_code", lambda _label: SimpleNamespace())
+    commands = []
+    monkeypatch.setattr(
+        plugin_cli.subprocess,
+        "run",
+        lambda command, **_kwargs: commands.append(command),
+    )
+
+    result = CliRunner().invoke(plugin_cli.cli, ["setup-phonopy"])
+
+    assert result.exit_code == 0
+    assert "already installed" in result.output
+    assert commands == []
