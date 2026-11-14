@@ -1,24 +1,10 @@
 """Vibronic results view widgets"""
 
-from aiidalab_qe_vibroscopy.app.result.model import VibroResultsModel
+import ipywidgets as ipw
+from aiidalab_qe.common.infobox import InAppGuide
 from aiidalab_qe.common.panel import ResultsPanel
 
-from aiidalab_qe_vibroscopy.app.widgets.dielectricwidget import DielectricWidget
-from aiidalab_qe_vibroscopy.app.widgets.dielectricmodel import DielectricModel
-import ipywidgets as ipw
-
-from aiidalab_qe_vibroscopy.app.widgets.ir_ramanwidget import IRRamanWidget
-from aiidalab_qe_vibroscopy.app.widgets.ir_ramanmodel import IRRamanModel
-
-from aiidalab_qe_vibroscopy.app.widgets.phononwidget import PhononWidget
-from aiidalab_qe_vibroscopy.app.widgets.phononmodel import PhononModel
-
-from aiidalab_qe_vibroscopy.app.widgets.euphonicwidget import EuphonicWidget
-from aiidalab_qe_vibroscopy.app.widgets.euphonicmodel import (
-    EuphonicResultsModel as EuphonicModel,
-)
-
-from aiidalab_qe.common.infobox import InAppGuide
+from aiidalab_qe_vibroscopy.app.result.model import VibroResultsModel
 
 
 class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
@@ -44,6 +30,9 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
 
         needs_phonons_tab = self._model.needs_phonons_tab()
         if needs_phonons_tab:
+            from ..widgets.phononmodel import PhononModel
+            from ..widgets.phononwidget import PhononWidget
+
             vibroscopy_node = self._model.fetch_child_process_node()
             phonon_model = PhononModel()
             phonon_widget = PhononWidget(
@@ -54,6 +43,9 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
 
         needs_raman_tab = self._model.needs_raman_tab()
         if needs_raman_tab:
+            from ..widgets.ir_ramanmodel import IRRamanModel
+            from ..widgets.ir_ramanwidget import IRRamanWidget
+
             vibroscopy_node = self._model.fetch_child_process_node()
             input_structure = vibroscopy_node.inputs.structure.get_ase()
             irraman_model = IRRamanModel()
@@ -67,6 +59,9 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
 
         needs_dielectric_tab = self._model.needs_dielectric_tab()
         if needs_dielectric_tab:
+            from ..widgets.dielectricmodel import DielectricModel
+            from ..widgets.dielectricwidget import DielectricWidget
+
             dielectric_model = DielectricModel()
             dielectric_widget = DielectricWidget(
                 model=dielectric_model,
@@ -76,6 +71,9 @@ class VibroResultsPanel(ResultsPanel[VibroResultsModel]):
 
         needs_euphonic_tab = self._model.needs_euphonic_tab()
         if needs_euphonic_tab:
+            from ..widgets.euphonicmodel import EuphonicResultsModel as EuphonicModel
+            from ..widgets.euphonicwidget import EuphonicWidget
+
             euphonic_model = EuphonicModel()
             euphonic_widget = EuphonicWidget(
                 model=euphonic_model,

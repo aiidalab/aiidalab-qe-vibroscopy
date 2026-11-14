@@ -65,8 +65,6 @@ def generate_force_constant_from_phonopy(
         )
 
     ####### This is almost copied from PhonopyCalculation and is done to support functionalities in aiidalab env:
-    from phonopy.interface.phonopy_yaml import PhonopyYaml
-
     kwargs = {}
 
     if "settings" in phonopy_calc.inputs:
@@ -96,8 +94,14 @@ def generate_force_constant_from_phonopy(
     #
     with tempfile.TemporaryDirectory() as dirpath:
         # phonopy.yaml generation:
-        phpy_yaml = PhonopyYaml()
-        phpy_yaml.set_phonon_info(ph)
+        if hasattr(ph, "to_phonopy_yaml"):
+            phpy_yaml = ph.to_phonopy_yaml()
+        else:
+            from phonopy.interface.phonopy_yaml import PhonopyYaml
+
+            phpy_yaml = PhonopyYaml()
+            phpy_yaml.set_phonon_info(ph)
+
         phpy_yaml_txt = str(phpy_yaml)
 
         with open(

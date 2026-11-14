@@ -36,8 +36,8 @@ Source = "https://github.com/aiidalab/aiidalab-qe-vibroscopy"
 [project.entry-points.'aiida.workflows']
 "vibroscopy_app.vibro" = "aiidalab_qe_vibroscopy.workflows.vibroworkchain:VibroWorkChain"
 
-[project.entry-points.'aiidalab_qe.properties']
-"vibronic" = "aiidalab_qe_vibroscopy.app:property"
+[project.entry-points.'aiidalab_qe.plugins']
+"vibronic" = "aiidalab_qe_vibroscopy.app:VibroPlugin"
 
 [project.scripts]
 "aiidalab-qe-vibroscopy" = "aiidalab_qe_vibroscopy.__main__:cli"

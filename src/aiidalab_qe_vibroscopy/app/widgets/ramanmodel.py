@@ -216,13 +216,15 @@ class RamanModel(Model):
 
         def intensity(a, b, c, d):
             return dblquad(
-                lambda t, x: np.abs(
-                    a * np.cos(t) * np.cos(t + x)
-                    + b * np.sin(t) * np.cos(t + x)
-                    + c * np.cos(t) * np.sin(t + x)
-                    + d * np.sin(t) * np.sin(t + x)
-                )
-                ** 2,
+                lambda t, x: (
+                    np.abs(
+                        a * np.cos(t) * np.cos(t + x)
+                        + b * np.sin(t) * np.cos(t + x)
+                        + c * np.cos(t) * np.sin(t + x)
+                        + d * np.sin(t) * np.sin(t + x)
+                    )
+                    ** 2
+                ),
                 0,
                 2 * np.pi,
                 lambda x: 0,
