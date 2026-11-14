@@ -214,7 +214,7 @@ def produce_bands_weigthed_data(
 
     if not frequencies_only and type(data) is QpointFrequencies:
         raise TypeError(
-            "Eigenvectors are required to use " '"--weighting coherent" option'
+            'Eigenvectors are required to use "--weighting coherent" option'
         )
     if args.weighting.lower() == "coherent" and args.temperature is not None:
         if not isinstance(data, ForceConstants):
@@ -384,11 +384,11 @@ def produce_powder_data(
 
     if not isinstance(fc, ForceConstants):
         raise TypeError(
-            "Force constants are required to use the " "euphonic-powder-map tool"
+            "Force constants are required to use the euphonic-powder-map tool"
         )
     if args.pdos is not None and args.weighting == "coherent":
         raise ValueError(
-            '"--pdos" is only compatible with ' '"--weighting" options that include dos'
+            '"--pdos" is only compatible with "--weighting" options that include dos'
         )
     # print("Setting up dimensions...")
 
@@ -637,9 +637,9 @@ def produce_Q_section_modes(
         dw = None
 
     labels = {
-        "q": f"Q0={[np.round(i,3) for i in Q0]}",
-        "h": f"h={[np.round(i,3) for i in h]}",
-        "k": f"k={[np.round(i,3) for i in k]}",
+        "q": f"Q0={[np.round(i, 3) for i in Q0]}",
+        "h": f"h={[np.round(i, 3) for i in h]}",
+        "k": f"k={[np.round(i, 3) for i in k]}",
     }
 
     return modes, q_array, h_array, k_array, labels, dw

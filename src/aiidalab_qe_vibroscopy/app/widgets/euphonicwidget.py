@@ -89,10 +89,6 @@ class EuphonicWidget(ipw.VBox):
         # tabs creation
         self.tab_widget = ipw.Tab()
         self.tab_widget.layout.display = "none"
-        self.tab_widget.set_title(0, "Single crystal")
-        self.tab_widget.set_title(1, "Powder sample")
-        self.tab_widget.set_title(2, "Q-plane view")
-        self.tab_widget.children = ()
 
         self.plot_button = ipw.Button(
             description="Initialise INS data",
@@ -147,7 +143,7 @@ class EuphonicWidget(ipw.VBox):
 
         # rendering transition
         self.plot_button.layout.display = "none"
-        self.loading_widget.layout.display = "block"
+        self.loading_widget.layout.display = "flex"
 
         # fetch the data
         self._model.fetch_data()
@@ -179,6 +175,10 @@ class EuphonicWidget(ipw.VBox):
                 node=self._model.vibro, model=qsection_model, spectrum_type="q_planes"
             ),
         )
+
+        self.tab_widget.set_title(0, "Single crystal")
+        self.tab_widget.set_title(1, "Powder sample")
+        self.tab_widget.set_title(2, "Q-plane view")
 
         for widget in self.tab_widget.children:
             widget.render()  # this is the render method of the widget.

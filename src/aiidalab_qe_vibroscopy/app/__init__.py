@@ -1,40 +1,48 @@
-from aiidalab_qe.common.panel import PluginOutline
+"""AiiDAlab QE plugin for vibrational spectroscopy (phonons)."""
 
-from aiidalab_qe_vibroscopy.app.model import VibroConfigurationSettingsModel
-from aiidalab_qe_vibroscopy.app.settings import VibroConfigurationSettingPanel
-from aiidalab_qe_vibroscopy.app.code import (
-    VibroResourceSettingsModel,
-    VibroResourcesSettingsPanel,
-)
-from aiidalab_qe_vibroscopy.app.result.result import VibroResultsPanel
-from aiidalab_qe_vibroscopy.app.result.model import VibroResultsModel
-
-from aiidalab_qe_vibroscopy.app.workchain import workchain_and_builder
-
-from pathlib import Path
+from aiidalab_qe.plugins import QeAppPlugin
 
 
-class VibroPluginOutline(PluginOutline):
-    title = "Vibrational spectroscopy (phonons)"
+class VibroPlugin(QeAppPlugin):
+    @property
+    def outline(self) -> str:
+        return "Vibrational spectroscopy (phonons)"
 
+    def configuration(self):
+        from .model import VibroConfigurationSettingsModel
+        from .settings import VibroConfigurationSettingPanel
 
-property = {
-    "outline": VibroPluginOutline,
-    "configuration": {
-        "panel": VibroConfigurationSettingPanel,
-        "model": VibroConfigurationSettingsModel,
-    },
-    "resources": {
-        "panel": VibroResourcesSettingsPanel,
-        "model": VibroResourceSettingsModel,
-    },
-    "result": {
-        "panel": VibroResultsPanel,
-        "model": VibroResultsModel,
-    },
-    "workchain": workchain_and_builder,
-    "guides": {
-        "title": "Phonons",
-        "path": Path(__file__).resolve().parent / "guides",
-    },
-}
+        return {
+            "panel": VibroConfigurationSettingPanel,
+            "model": VibroConfigurationSettingsModel,
+        }
+
+    def resources(self):
+        from .code import VibroResourceSettingsModel, VibroResourcesSettingsPanel
+
+        return {
+            "panel": VibroResourcesSettingsPanel,
+            "model": VibroResourceSettingsModel,
+        }
+
+    def result(self):
+        from .result.model import VibroResultsModel
+        from .result.result import VibroResultsPanel
+
+        return {
+            "panel": VibroResultsPanel,
+            "model": VibroResultsModel,
+        }
+
+    def workchain(self):
+        from .workchain import workchain_and_builder
+
+        return workchain_and_builder
+
+    def guides(self):
+        from pathlib import Path
+
+        return {
+            "title": "Phonons",
+            "path": Path(__file__).resolve().parent / "guides",
+        }

@@ -156,7 +156,7 @@ class DielectricModel(Model):
             }}
         </style>
         <table>
-            {''.join(rows)}
+            {"".join(rows)}
         </table>
         """
         return table_html
